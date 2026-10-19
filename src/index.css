@@ -272,3 +272,10 @@ img.av { object-fit: cover; padding: 0; background: var(--chip) }
 h3 > span { display: inline-flex; gap: 8px; align-items: baseline }
 .chat-target { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-weight: 500 }
 .chat-target svg { width: 18px; height: 18px; color: var(--amber) }
+
+/* ===== Аватарка компании ===== */
+.crew-av { border-radius: 30%; object-fit: cover; display: grid; place-items: center; color: #fff; font-family: var(--display); font-weight: 700; flex: none }
+.crew-head { display: flex; flex-direction: column; align-items: center; text-align: center; margin: 4px 0 18px }
+.crew-head-av { position: relative; cursor: pointer; margin-bottom: 10px }
+.crew-head-name { font: 700 22px/1.2 var(--display) }
+.crew-head .s { color: var(--muted); font-size: 14px; margin-top: 2px }

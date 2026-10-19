@@ -219,9 +219,9 @@ export async function disconnectCrewChat(crewId: string) {
   if (error) throw error;
 }
 
-/** Аватарка: квадрат 256 px, в папку пользователя; возвращает публичную ссылку */
-export async function uploadAvatar(userId: string, file: File): Promise<string> {
-  const blob = await new Promise<Blob>((resolve, reject) => {
+/** Квадратная картинка 256 px из фото (по центру) */
+function squareJpeg(file: File): Promise<Blob> {
+  return new Promise<Blob>((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       const side = Math.min(img.width, img.height);
@@ -234,8 +234,22 @@ export async function uploadAvatar(userId: string, file: File): Promise<string> 
     img.onerror = () => reject(new Error('Не удалось открыть фото'));
     img.src = URL.createObjectURL(file);
   });
-  const path = `${userId}/${Date.now()}.jpg`;
-  const { error } = await supabase.storage.from('avatars').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+}
+
+async function uploadTo(bucket: string, path: string, blob: Blob) {
+  const { error } = await supabase.storage.from(bucket).upload(path, blob, { contentType: 'image/jpeg', upsert: false });
   if (error) throw error;
-  return supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+}
+
+/** Аватарка пользователя: в его папку в хранилище avatars */
+export async function uploadAvatar(userId: string, file: File): Promise<string> {
+  return uploadTo('avatars', `${userId}/${Date.now()}.jpg`, await squareJpeg(file));
+}
+
+/** Аватарка компании: в папку компании в хранилище place-photos и сразу в карточку компании */
+export async function setCrewAvatar(crewId: string, file: File | null): Promise<void> {
+  const url = file ? await uploadTo('place-photos', `${crewId}/crew-${Date.now()}.jpg`, await squareJpeg(file)) : '';
+  const { error } = await supabase.from('crews').update({ avatar_url: url }).eq('id', crewId);
+  if (error) throw error;
 }

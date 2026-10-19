@@ -3,10 +3,10 @@ import { useAccount } from '../lib/account';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { totalBalance } from '../lib/calc';
-import { disconnectCrewChat } from '../lib/remote';
+import { disconnectCrewChat, setCrewAvatar } from '../lib/remote';
 import { humanError, supabase } from '../lib/supabase';
 import { Icon } from '../components/Icons';
-import { Av, Pill } from '../components/common';
+import { Av, CrewAvatar, Pill } from '../components/common';
 import { PersonSheet } from '../sheets/PersonSheet';
 import { ConnectChatSheet } from '../sheets/ConnectChatSheet';
 import { CrewSetup } from './auth/CrewSetup';
@@ -17,6 +17,19 @@ export function CrewScreen() {
   const ui = useUI();
   const [renaming, setRenaming] = useState(false);
   const [crewName, setCrewName] = useState(acc.crew.name);
+  const [avBusy, setAvBusy] = useState(false);
+
+  const changeAvatar = async (file: File | null) => {
+    setAvBusy(true);
+    try {
+      await setCrewAvatar(acc.crew.id, file);
+      await acc.reload();
+      ui.toast(file ? 'Аватарка компании обновлена' : 'Аватарка убрана');
+    } catch (e) {
+      ui.toast(humanError(e));
+    }
+    setAvBusy(false);
+  };
 
   const share = async () => {
     const text = `Залетай в нашу компанию «${acc.crew.name}» в BarTab, там делим счёт за посиделки 🍻`;
@@ -65,10 +78,22 @@ export function CrewScreen() {
         <button className="icon-btn" aria-label="Добавить человека" onClick={() => ui.open(<PersonSheet />)}>{Icon.plus}</button>
       </header>
 
+      <div className="crew-head">
+        <label className="crew-head-av" aria-label="Сменить аватарку компании">
+          <CrewAvatar crew={acc.crew} size={96} />
+          <span className="profile-avatar-btn">{Icon.cam}</span>
+          <input type="file" accept="image/*" hidden disabled={avBusy} onChange={(e) => e.target.files?.[0] && changeAvatar(e.target.files[0])} />
+        </label>
+        <div className="crew-head-name">{acc.crew.name}</div>
+        <div className="s">{state.people.filter((p) => p.userId).length} в приложении · {state.people.length} всего</div>
+        {acc.crew.avatar_url && <button className="link-btn" style={{ margin: '4px 0 0' }} onClick={() => changeAvatar(null)} disabled={avBusy}>Убрать фото</button>}
+      </div>
+
       <h3 style={{ marginTop: 4 }}>Мои компании</h3>
       <div className="list">
         {acc.crews.map((c) => (
           <button key={c.id} className="row" onClick={() => { if (c.id !== acc.crew.id) { acc.setCrewId(c.id); ui.toast(`Компания «${c.name}»`); } }}>
+            <CrewAvatar crew={c} size={36} />
             <div className="grow"><div className="t">{c.name}</div></div>
             {c.id === acc.crew.id && <span className="crew-check">{Icon.check}</span>}
           </button>

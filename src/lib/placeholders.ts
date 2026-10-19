@@ -101,6 +101,74 @@ export function placeholderFor(key: string, hue: number): string {
 
 export const SCENE_COUNT = scenes.length;
 
+// ---------- Квадратные заглушки для аватарок компаний ----------
+
+const sqBg = (h: number) => `
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="${hex(h, 50, 40)}"/><stop offset="1" stop-color="${hex((h + 40) % 360, 45, 20)}"/>
+  </linearGradient></defs>
+  <rect width="200" height="200" fill="url(#g)"/>`;
+
+const shot = (x: number, y: number, col: string) => `
+  <path d="M${x} ${y} H${x + 26} L${x + 22} ${y + 34} H${x + 4} Z" fill="${C.glass}" stroke="${C.foam}" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M${x + 2} ${y + 10} H${x + 24} L${x + 22} ${y + 34} H${x + 4} Z" fill="${col}"/>`;
+
+const crewScenes: ((h: number) => string)[] = [
+  // три пинты чокаются
+  (h) => `${sqBg(h)}
+    <g transform="rotate(-14 70 120)">${pint(48, 70, 0.8)}</g>
+    <g>${pint(82, 62, 0.8)}</g>
+    <g transform="rotate(14 130 120)">${pint(116, 70, 0.8)}</g>
+    <path d="M100 40 V24 M84 46 L74 32 M116 46 L126 32" stroke="${C.foam}" stroke-width="4.5" stroke-linecap="round"/>`,
+  // пиво и коктейль
+  (h) => `${sqBg(h)}
+    <g transform="rotate(-10 80 120)">${pint(48, 64, 0.95)}</g>
+    <g transform="rotate(10 140 120)">
+      <path d="M104 72 H168 L136 112 Z" fill="${C.cherry}"/>
+      <rect x="133" y="110" width="6" height="40" fill="${C.foam}"/><rect x="116" y="148" width="40" height="7" rx="3.5" fill="${C.foam}"/>
+      <path d="M128 52 L150 74" stroke="${C.foam}" stroke-width="3" stroke-linecap="round"/><circle cx="148" cy="70" r="7" fill="${C.amber}"/>
+    </g>`,
+  // шоты в ряд
+  (h) => `${sqBg(h)}
+    <rect x="20" y="140" width="160" height="8" rx="4" fill="${C.ink}" opacity=".7"/>
+    ${shot(30, 104, C.amber)}${shot(67, 104, C.lime)}${shot(104, 104, C.cherry)}${shot(141, 104, C.amber)}
+    <path d="M100 52 L100 78 M86 58 L80 70 M114 58 L120 70" stroke="${C.foam}" stroke-width="4" stroke-linecap="round"/>`,
+  // дартс
+  (h) => `${sqBg(h)}
+    <circle cx="100" cy="100" r="62" fill="${C.ink}"/>
+    <circle cx="100" cy="100" r="50" fill="${C.foam}"/><circle cx="100" cy="100" r="38" fill="${C.cherry}"/>
+    <circle cx="100" cy="100" r="26" fill="${C.foam}"/><circle cx="100" cy="100" r="13" fill="${C.amber}"/>
+    <path d="M100 100 L150 50" stroke="${C.ink}" stroke-width="5" stroke-linecap="round"/>
+    <path d="M144 48 L160 40 L152 56 Z" fill="${C.lime}"/>`,
+  // бутылка и бокалы
+  (h) => `${sqBg(h)}
+    <path d="M86 150 V92 Q86 80 94 74 V40 H106 V74 Q114 80 114 92 V150 Z" fill="${C.lime}" opacity=".9"/>
+    <rect x="92" y="100" width="16" height="22" rx="3" fill="${C.foam}" opacity=".8"/>
+    ${pint(30, 86, 0.6)}${pint(142, 86, 0.6)}`,
+  // гирлянда и кружки
+  (h) => `${sqBg(h)}
+    <path d="M0 40 Q100 90 200 40" stroke="${C.ink}" stroke-width="2.5" fill="none"/>
+    ${[22, 60, 100, 140, 178].map((x) => { const y = 40 + Math.sin((x / 200) * Math.PI) * 25; return `<circle cx="${x}" cy="${y + 9}" r="7" fill="${C.amber}"/><circle cx="${x}" cy="${y + 9}" r="15" fill="${C.amber}" opacity=".16"/>`; }).join('')}
+    ${pint(56, 96, 0.7)}${pint(110, 96, 0.7)}`,
+];
+
+const crewCache = new Map<string, string>();
+
+/** Квадратная картинка-заглушка для аватарки компании */
+export function crewPlaceholderFor(key: string): string {
+  const hit = crewCache.get(key);
+  if (hit) return hit;
+  const seed = seedOf(key);
+  const hue = seed % 360;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">${crewScenes[(seed >> 3) % crewScenes.length](hue)}</svg>`;
+  const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.replace(/\s+/g, ' '))}`;
+  crewCache.set(key, url);
+  return url;
+}
+
+export const crewSceneSvg = (i: number, hue: number) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">${crewScenes[i](hue)}</svg>`;
+export const CREW_SCENE_COUNT = crewScenes.length;
+
 /** Для проверки: SVG конкретной сцены */
 export const sceneSvg = (i: number, hue: number) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice">${scenes[i](hue)}</svg>`;

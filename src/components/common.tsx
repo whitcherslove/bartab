@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { Place } from '../lib/types';
 import { hueOf, money } from '../lib/format';
 import { useStore } from '../lib/store';
-import { placeholderFor } from '../lib/placeholders';
+import { crewPlaceholderFor, placeholderFor } from '../lib/placeholders';
 
 export function Av({ id, sm, lg }: { id: string; sm?: boolean; lg?: boolean }) {
   const { nameOf, state } = useStore();
@@ -48,5 +48,18 @@ export function PeopleChips({ ids, selected, onToggle }: { ids: string[]; select
         </button>
       ))}
     </div>
+  );
+}
+
+/** Аватарка компании: своё фото или иллюстрация (у каждой компании своя) */
+export function CrewAvatar({ crew, size = 40 }: { crew: { id: string; name: string; avatar_url?: string }; size?: number }) {
+  return (
+    <img
+      className="crew-av"
+      src={crew.avatar_url || crewPlaceholderFor(crew.id)}
+      alt=""
+      style={{ width: size, height: size }}
+      loading="lazy"
+    />
   );
 }
