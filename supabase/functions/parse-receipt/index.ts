@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
 
     const { data: ev, error: evErr } = await db
       .from('events')
-      .select('id, crew_id, event_members(person_id)')
+      .select('id, crew_id')
       .eq('id', eventId)
       .single();
     if (evErr || !ev) return json({ error: 'Посиделка не найдена или нет доступа' }, 404);
@@ -66,16 +66,10 @@ Deno.serve(async (req) => {
     const rows = normalize(receipt);
     if (!rows.length) throw new Error('Не нашёл позиций на фото. Попробуй сфотографировать чек ровнее и ближе.');
 
-    // Позиции — по умолчанию поровну на всех участников посиделки
-    const members: string[] = (ev.event_members ?? []).map((m: { person_id: string }) => m.person_id);
+    // Позиции добавляются без людей — кто что пил, отмечают в приложении
     const items = rows.map((r) => ({ id: crypto.randomUUID(), event_id: eventId, name: r.name, price: r.price, qty: r.qty, split_mode: 'equal' }));
     const { error: itemsErr } = await db.from('items').insert(items);
     if (itemsErr) throw new Error('Не удалось сохранить позиции: ' + itemsErr.message);
-    const shares = items.flatMap((it) => members.map((person_id) => ({ item_id: it.id, person_id, qty: 1 })));
-    if (shares.length) {
-      const { error: shErr } = await db.from('item_shares').insert(shares);
-      if (shErr) throw new Error('Не удалось разбить позиции: ' + shErr.message);
-    }
 
     // Сверка с итогом чека
     const sum = rows.reduce((s, r) => s + r.price * r.qty, 0);

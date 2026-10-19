@@ -7,6 +7,7 @@
 // Секреты (Edge Functions → Secrets):
 //   YANDEX_SUGGEST_KEY — ключ API Геосаджеста (для России)
 //   HERE_API_KEY       — необязательно: ключ HERE для поиска за границей
+//   SITE_URL           — необязательно: адрес сайта для Яндекса (по умолчанию https://bartab-rose.vercel.app/)
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -44,15 +45,20 @@ const yOrgLink = (uri?: string) => {
 async function searchYandex(q: string, near: Near): Promise<Found[]> {
   const key = Deno.env.get('YANDEX_SUGGEST_KEY');
   if (!key) return [];
-  const params = new URLSearchParams({ apikey: key, text: q, types: 'biz', results: '8', lang: 'ru', print_address: '1', attrs: 'uri', highlight: '0' });
+  const params = new URLSearchParams({ apikey: key.trim(), text: q, types: 'biz', results: '8', lang: 'ru', print_address: '1', attrs: 'uri', highlight: '0' });
   if (near) {
     params.set('ll', `${near.lon},${near.lat}`);
     params.set('spn', '0.5,0.5');
     params.set('ull', `${near.lon},${near.lat}`);
   }
-  const resp = await fetch(`https://suggest-maps.yandex.ru/v1/suggest?${params}`);
+  const site = Deno.env.get('SITE_URL') || 'https://bartab-rose.vercel.app/';
+  const resp = await fetch(`https://suggest-maps.yandex.ru/v1/suggest?${params}`, {
+    headers: { Referer: site, Origin: new URL(site).origin, 'User-Agent': 'BarTab/1.0' },
+  });
   if (!resp.ok) {
-    console.error('Яндекс', resp.status, (await resp.text()).slice(0, 200));
+    const body = (await resp.text()).slice(0, 300) || '(пустой ответ)';
+    const k = key.trim();
+    console.error(`Яндекс ${resp.status}: ${body} | ключ: ${k.length} символов, начало ${k.slice(0, 4)}…, пробелы по краям: ${k !== key ? 'ДА' : 'нет'}`);
     return [];
   }
   const data = (await resp.json()) as { results?: YItem[] };

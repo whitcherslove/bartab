@@ -1,6 +1,6 @@
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
-import { stats } from '../lib/calc';
+import { personItems, stats } from '../lib/calc';
 import { money } from '../lib/format';
 import { personalText } from '../lib/messages';
 import { Icon } from '../components/Icons';
@@ -14,6 +14,7 @@ export function MemberSheet({ eventId, pid }: { eventId: string; pid: string }) 
   if (!ev || !person) return null;
 
   const st = stats(ev, pid);
+  const items = personItems(ev, pid);
   const placeName = state.places.find((p) => p.id === ev.placeId)?.name ?? 'Посиделка';
   const payerName = ev.payer ? nameOf(ev.payer) : '';
   const link = person.tg
@@ -37,6 +38,18 @@ export function MemberSheet({ eventId, pid }: { eventId: string; pid: string }) 
   return (
     <>
       <h4>{person.name}</h4>
+      {items.length > 0 ? (
+        <div className="member-items">
+          {items.map((it) => (
+            <div key={it.id} className="row">
+              <div className="grow"><div className="t">{it.name}</div><div className="s">{it.detail}</div></div>
+              <span className="amt num">{money(it.amount)}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="hint" style={{ margin: '0 0 10px' }}>Пока ни одной позиции не отмечено на этого человека.</p>
+      )}
       <div className="kv"><span>Позиции</span><b className="num">{money(st.food)}</b></div>
       <div className="kv"><span>Доля чаевых</span><b className="num">{money(st.tip)}</b></div>
       <div className="kv"><span>Его часть</span><b className="num">{money(st.owed)}</b></div>

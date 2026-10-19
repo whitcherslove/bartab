@@ -4,6 +4,7 @@ import { useAccount } from './account';
 import { fetchCrew, pushDiff } from './remote';
 import { humanError, supabase } from './supabase';
 import { readCache, writeCache } from './cache';
+import { clone } from './format';
 import { Splash } from '../screens/auth/Splash';
 import { ClaimStep } from '../screens/auth/ClaimStep';
 
@@ -92,7 +93,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const update = useCallback((fn: (draft: State) => void) => {
     const prev = stateRef.current;
     if (!prev) return;
-    const next = structuredClone(prev);
+    const next = clone(prev);
     fn(next);
     if (!base.current) base.current = prev;
     setState(next);

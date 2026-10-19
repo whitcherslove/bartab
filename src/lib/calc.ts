@@ -58,3 +58,20 @@ export function evenSplit(ids: string[], qty: number): Record<string, number> {
   });
   return out;
 }
+
+/** Что из позиций досталось человеку: для шторки участника */
+export function personItems(ev: BarEvent, pid: string) {
+  return ev.items
+    .map((it) => {
+      if (it.splitMode === 'qty') {
+        const n = it.split[pid] || 0;
+        return n > 0 ? { id: it.id, name: it.name, detail: `${n} из ${it.qty} шт.`, amount: it.price * n } : null;
+      }
+      if (!it.consumers.includes(pid) || !it.consumers.length) return null;
+      const k = it.consumers.length;
+      const total = itemTotal(it);
+      const detail = k === 1 ? (it.qty > 1 ? `${it.qty} шт.` : 'целиком') : `пополам на ${k}`.replace('пополам на 2', 'пополам').replace(/пополам на (\d+)/, 'на $1 чел.');
+      return { id: it.id, name: it.name, detail, amount: total / k };
+    })
+    .filter((x): x is { id: string; name: string; detail: string; amount: number } => x !== null);
+}

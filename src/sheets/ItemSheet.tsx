@@ -17,7 +17,7 @@ export function ItemSheet({ eventId, itemId }: { eventId: string; itemId?: strin
   const [price, setPrice] = useState(existing ? String(existing.price) : '');
   const [qtyText, setQtyText] = useState(String(existing?.qty ?? 1));
   const [mode, setMode] = useState<SplitMode>(existing?.splitMode ?? 'equal');
-  const [consumers, setConsumers] = useState<string[]>(existing?.consumers ?? [...members]);
+  const [consumers, setConsumers] = useState<string[]>(existing?.consumers ?? []);
   const [split, setSplit] = useState<Record<string, number>>(existing?.split ?? {});
 
   if (!ev) return null;

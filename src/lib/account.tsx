@@ -2,12 +2,13 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import type { Session } from '@supabase/supabase-js';
 import { configError, humanError, supabase } from './supabase';
 import { clearCache, readCache, writeCache } from './cache';
+import { setCurrency } from './format';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { ProfileStep } from '../screens/auth/ProfileStep';
 import { CrewSetup } from '../screens/auth/CrewSetup';
 import { Splash } from '../screens/auth/Splash';
 
-export type Profile = { id: string; name: string; tg: string; avatar_url: string };
+export type Profile = { id: string; name: string; tg: string; avatar_url: string; currency: string };
 export type Crew = { id: string; name: string; invite_code: string };
 
 type Account = {
@@ -19,6 +20,7 @@ type Account = {
   reload: () => Promise<void>;
   saveProfile: (p: { name: string; tg: string; avatar_url?: string }) => Promise<void>;
   leaveCrew: (id: string) => Promise<void>;
+  saveCurrency: (code: string) => Promise<void>;
   signOut: () => Promise<void>;
   inviteLink: string;
 };
@@ -86,12 +88,12 @@ export function AccountGate({ children }: { children: ReactNode }) {
         else if (joined) setCrewId(joined as string);
       }
       const [{ data: p, error: pErr }, { data: c, error: cErr }] = await Promise.all([
-        supabase.from('profiles').select('id, name, tg, avatar_url').eq('id', user.id).maybeSingle(),
+        supabase.from('profiles').select('id, name, tg, avatar_url, currency').eq('id', user.id).maybeSingle(),
         supabase.from('crews').select('id, name, invite_code').order('created_at'),
       ]);
       if (pErr) throw pErr;
       if (cErr) throw cErr;
-      const prof = p ?? { id: user.id, name: '', tg: '', avatar_url: '' };
+      const prof = p ?? { id: user.id, name: '', tg: '', avatar_url: '', currency: 'RUB' };
       setProfile(prof);
       setCrews(c ?? []);
       writeCache('account:' + user.id, { profile: prof, crews: c ?? [] });
@@ -122,8 +124,15 @@ export function AccountGate({ children }: { children: ReactNode }) {
     const avatar = avatar_url ?? profile?.avatar_url ?? '';
     const { error: e } = await supabase.rpc('update_my_profile', { p_name: name, p_tg: tg, p_avatar: avatar });
     if (e) throw e;
-    setProfile({ id: userId, name, tg, avatar_url: avatar });
+    setProfile((pr) => ({ id: userId, name, tg, avatar_url: avatar, currency: pr?.currency ?? 'RUB' }));
   }, [userId, profile?.avatar_url]);
+
+  const saveCurrency = useCallback(async (currency: string) => {
+    if (!userId) return;
+    const { error: e } = await supabase.from('profiles').update({ currency }).eq('id', userId);
+    if (e) throw e;
+    setProfile((pr) => (pr ? { ...pr, currency } : pr));
+  }, [userId]);
 
   const leaveCrew = useCallback(async (id: string) => {
     const { error: e } = await supabase.rpc('leave_crew', { c: id });
@@ -147,11 +156,12 @@ export function AccountGate({ children }: { children: ReactNode }) {
   if (!profile.name) return <ProfileStep profile={profile} email={session.user.email ?? ''} onSave={saveProfile} />;
   if (crews.length === 0) return <CrewSetup myName={profile.name} error={error} onDone={async (id) => { setCrewId(id); await reload(); }} onSignOut={signOut} />;
 
+  setCurrency(profile.currency || 'RUB');
   const crew = crews.find((c) => c.id === crewId) ?? crews[0];
   const inviteLink = `${window.location.origin}/?join=${crew.invite_code}`;
 
   return (
-    <Ctx.Provider value={{ session, profile, crews, crew, setCrewId, reload, saveProfile, leaveCrew, signOut, inviteLink }}>
+    <Ctx.Provider value={{ session, profile, crews, crew, setCrewId, reload, saveProfile, leaveCrew, saveCurrency, signOut, inviteLink }}>
       {children}
     </Ctx.Provider>
   );

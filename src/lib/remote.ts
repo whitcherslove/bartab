@@ -22,7 +22,8 @@ function must<T>(res: { data: T | null; error: unknown }): T {
 export async function fetchCrew(crewId: string, userId: string): Promise<State> {
   const [peopleRes, placesRes, eventsRes, chatsRes] = await Promise.all([
     supabase.from('people').select('id, name, tg, user_id, avatar_url').eq('crew_id', crewId).order('created_at'),
-    supabase.from('places').select('id, name, address, hue, photo_path, map_url, lat, lon').eq('crew_id', crewId).order('created_at'),
+    // бары всех моих компаний и посиделок — правила доступа в базе решают, что видно
+    supabase.from('places').select('id, name, address, hue, photo_path, map_url, lat, lon').order('created_at'),
     supabase
       .from('events')
       .select('id, place_id, date, tips, tips_mode, payer_id, status, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, item_shares(person_id, qty))')
@@ -92,10 +93,14 @@ export async function pushDiff(prev: State, next: State, crewId: string) {
   });
   if (people.length) await run(supabase.from('people').upsert(people.map((p) => ({ id: p.id, crew_id: crewId, name: p.name, tg: p.tg }))));
 
+  // Бары: новые создаём в текущей компании, существующие меняем, не трогая их компанию
   const prevPlaces = byId(prev.places);
-  const places = next.places.filter((p) => !same(prevPlaces.get(p.id), p));
-  if (places.length) {
-    await run(supabase.from('places').upsert(places.map((p) => ({ id: p.id, crew_id: crewId, name: p.name, address: p.address, hue: p.hue, photo_path: p.photo, map_url: p.mapUrl, lat: p.lat, lon: p.lon }))));
+  const placeRow = (p: State['places'][number]) => ({ name: p.name, address: p.address, hue: p.hue, photo_path: p.photo, map_url: p.mapUrl, lat: p.lat, lon: p.lon });
+  const newPlaces = next.places.filter((p) => !prevPlaces.has(p.id));
+  if (newPlaces.length) await run(supabase.from('places').insert(newPlaces.map((p) => ({ id: p.id, crew_id: crewId, ...placeRow(p) }))));
+  for (const p of next.places) {
+    const o = prevPlaces.get(p.id);
+    if (o && !same(o, p)) await run(supabase.from('places').update(placeRow(p)).eq('id', p.id));
   }
 
   // 2. Посиделки

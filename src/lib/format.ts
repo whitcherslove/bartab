@@ -1,4 +1,20 @@
-export const money = (n: number) => Math.round(n).toLocaleString('ru-RU');
+// Валюта отображения (из профиля). Пересчёта курсов нет — это просто подпись к суммам.
+export const CURRENCIES: { code: string; label: string }[] = [
+  { code: 'RUB', label: '₽ Рубль' }, { code: 'USD', label: '$ Доллар' }, { code: 'EUR', label: '€ Евро' },
+  { code: 'GBP', label: '£ Фунт' }, { code: 'TRY', label: '₺ Лира' }, { code: 'GEL', label: '₾ Лари' },
+  { code: 'KZT', label: '₸ Тенге' }, { code: 'AMD', label: '֏ Драм' }, { code: 'AED', label: 'Дирхам ОАЭ' },
+  { code: 'THB', label: '฿ Бат' }, { code: 'RSD', label: 'Динар' }, { code: 'CNY', label: '¥ Юань' },
+];
+let fmt = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0, minimumFractionDigits: 0 });
+let currentCurrency = 'RUB';
+export function setCurrency(code: string) {
+  if (!code || code === currentCurrency) return;
+  try {
+    fmt = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: code, maximumFractionDigits: 0, minimumFractionDigits: 0 });
+    currentCurrency = code;
+  } catch { /* неизвестная валюта — оставляем прежнюю */ }
+}
+export const money = (n: number) => fmt.format(Math.round(n));
 
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 
@@ -18,8 +34,18 @@ export function hueOf(s: string) {
   return h;
 }
 
-/** id новых записей — сразу в формате базы (uuid) */
-export const uid = () => crypto.randomUUID();
+/** id новых записей — сразу в формате базы (uuid). На старых телефонах randomUUID нет — собираем сами. */
+export const uid = (): string => {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+};
+
+/** Глубокая копия; на старых телефонах нет structuredClone */
+export const clone = <T,>(v: T): T => (typeof structuredClone === 'function' ? structuredClone(v) : JSON.parse(JSON.stringify(v)));
 
 /** Число из поля ввода: понимает и запятую, и точку */
 export const parseNum = (v: string) => Number(v.replace(',', '.').trim()) || 0;

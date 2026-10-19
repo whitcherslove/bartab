@@ -1,5 +1,5 @@
 import { StoreProvider } from './lib/store';
-import { AccountGate } from './lib/account';
+import { AccountGate, useAccount } from './lib/account';
 import { UIProvider, useUI, type View } from './lib/ui';
 import { Icon } from './components/Icons';
 import { EventsScreen } from './screens/EventsScreen';
@@ -22,9 +22,10 @@ export default function App() {
 
 function Shell() {
   const { view } = useUI();
+  const { profile } = useAccount();
   return (
     <>
-      <main className="app">
+      <main className="app" key={profile.currency}>
         {view.screen === 'event' ? (
           <EventScreen id={view.id} />
         ) : view.screen === 'crew' ? (

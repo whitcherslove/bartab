@@ -30,8 +30,8 @@
 
 /* ===== База ===== */
 *, *::before, *::after { box-sizing: inherit }
-html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px) }
-body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font: 400 16px/1.45 var(--text); -webkit-font-smoothing: antialiased }
+html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); overscroll-behavior-y: none }
+body { overscroll-behavior-y: none; margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font: 400 16px/1.45 var(--text); -webkit-font-smoothing: antialiased }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg) }
 button, input, select { font: inherit; color: inherit }
 button { cursor: pointer }
@@ -246,3 +246,11 @@ img.av { object-fit: cover; padding: 0; background: var(--chip) }
 .crew-check svg, .crew-card .row > svg { width: 20px; height: 20px; color: var(--muted) }
 .crew-check svg { color: var(--amber) }
 .inline-input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 9px 12px; font-size: 16px }
+
+.crash-text { white-space: pre-wrap; color: var(--cherry); font-size: 12px; margin-top: 8px }
+
+/* ===== Позиции участника ===== */
+.member-items { margin: 4px 0 6px }
+.member-items .row { padding: 8px 0; border-bottom: 1px dashed var(--line) }
+.member-items .row:last-child { border-bottom: 0 }
+.coaster .mat { font-size: 13px }

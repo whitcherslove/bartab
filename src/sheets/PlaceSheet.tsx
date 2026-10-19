@@ -110,6 +110,19 @@ export function PlaceSheet({ id }: { id?: string }) {
     ui.toast('Бар сохранён');
   };
 
+  const remove = () => {
+    if (!id) return;
+    const used = state.events.filter((e) => e.placeId === id).length;
+    const msg = used ? `Удалить бар? В ${used} посиделк${used === 1 ? 'е' : 'ах'} пропадёт привязка к нему, остальное сохранится.` : 'Удалить бар?';
+    if (!confirm(msg)) return;
+    update((d) => {
+      d.places = d.places.filter((p) => p.id !== id);
+      d.events.forEach((e) => { if (e.placeId === id) e.placeId = ''; });
+    });
+    ui.close();
+    ui.toast('Бар удалён');
+  };
+
   const preview = { name: name || 'Б', address, mapUrl: mapUrl.trim(), lat: coords?.lat ?? null, lon: coords?.lon ?? null };
 
   return (
@@ -157,7 +170,10 @@ export function PlaceSheet({ id }: { id?: string }) {
         <input type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
       </label>
 
-      <div className="sheet-btns"><button className="btn primary" onClick={save} disabled={busy}>{busy ? 'Загружаю фото…' : 'Сохранить'}</button></div>
+      <div className="sheet-btns">
+        {id && <button className="btn danger" onClick={remove} disabled={busy}>Удалить</button>}
+        <button className="btn primary" onClick={save} disabled={busy}>{busy ? 'Загружаю фото…' : 'Сохранить'}</button>
+      </div>
     </>
   );
 }
