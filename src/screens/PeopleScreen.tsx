@@ -4,6 +4,7 @@ import { totalBalance } from '../lib/calc';
 import { Icon } from '../components/Icons';
 import { Av, Pill } from '../components/common';
 import { PersonSheet } from '../sheets/PersonSheet';
+import { CrewCard } from '../components/CrewCard';
 
 export function PeopleScreen() {
   const { state, reset } = useStore();
@@ -21,7 +22,8 @@ export function PeopleScreen() {
         <h1>Люди</h1>
         <button className="icon-btn" aria-label="Добавить человека" onClick={() => ui.open(<PersonSheet />)}>{Icon.plus}</button>
       </header>
-      <p className="sub">Баланс по всем посиделкам</p>
+      <CrewCard />
+      <h3>Люди <small>баланс по всем посиделкам</small></h3>
       <div className="list">
         {state.people.map((p) => (
           <button key={p.id} className="row" onClick={() => ui.open(<PersonSheet id={p.id} />)}>

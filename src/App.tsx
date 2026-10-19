@@ -1,4 +1,5 @@
 import { StoreProvider } from './lib/store';
+import { AccountGate } from './lib/account';
 import { UIProvider, useUI, type View } from './lib/ui';
 import { Icon } from './components/Icons';
 import { EventsScreen } from './screens/EventsScreen';
@@ -8,11 +9,13 @@ import { PlacesScreen } from './screens/PlacesScreen';
 
 export default function App() {
   return (
-    <StoreProvider>
-      <UIProvider>
-        <Shell />
-      </UIProvider>
-    </StoreProvider>
+    <AccountGate>
+      <StoreProvider>
+        <UIProvider>
+          <Shell />
+        </UIProvider>
+      </StoreProvider>
+    </AccountGate>
   );
 }
 
