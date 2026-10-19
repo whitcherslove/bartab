@@ -124,6 +124,53 @@ export function UIProvider({ children }: { children: ReactNode }) {
 
   const toast = useCallback((text: string) => setToastMsg({ text, key: ++counter.current }), []);
 
+  // Смахивание шторки вниз: тянем за полоску или за шторку, когда она пролистана до начала
+  const sheetEl = useRef<HTMLDivElement | null>(null);
+  const scrimEl = useRef<HTMLDivElement | null>(null);
+  const drag = useRef<{ y0: number; t0: number; dy: number; active: boolean; fromGrab: boolean } | null>(null);
+
+  const setOffset = (dy: number, animate: boolean) => {
+    const el = sheetEl.current;
+    if (!el) return;
+    el.style.transition = animate ? 'transform .22s ease' : 'none';
+    el.style.transform = dy ? `translateY(${dy}px)` : '';
+    if (scrimEl.current) scrimEl.current.style.backgroundColor = dy ? `rgba(0,0,0,${Math.max(0, 0.45 * (1 - dy / 400))})` : '';
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    const el = sheetEl.current;
+    if (!el) return;
+    const target = e.target as HTMLElement;
+    const fromGrab = !!target.closest('.grab');
+    // поля ввода и прокручиваемые списки внутри не перехватываем
+    if (!fromGrab && (target.closest('input, textarea, select') || el.scrollTop > 0)) { drag.current = null; return; }
+    drag.current = { y0: e.touches[0].clientY, t0: Date.now(), dy: 0, active: false, fromGrab };
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    const d = drag.current, el = sheetEl.current;
+    if (!d || !el) return;
+    const dy = e.touches[0].clientY - d.y0;
+    if (!d.active) {
+      if (dy < 6) { if (dy < -6) drag.current = null; return; } // вверх — обычная прокрутка
+      if (!d.fromGrab && el.scrollTop > 0) { drag.current = null; return; }
+      d.active = true;
+    }
+    d.dy = Math.max(0, dy);
+    setOffset(d.dy, false);
+  };
+  const onTouchEnd = () => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d?.active) return;
+    const fast = d.dy > 50 && d.dy / Math.max(1, Date.now() - d.t0) > 0.6;
+    if (d.dy > 120 || fast) {
+      setOffset(window.innerHeight, true);
+      setTimeout(() => close(), 180);
+    } else {
+      setOffset(0, true);
+    }
+  };
+
   useEffect(() => {
     if (!toastMsg) return;
     const t = setTimeout(() => setToastMsg(null), 2600);
@@ -141,8 +188,18 @@ export function UIProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{ view, go, back, closeAndBack, open, close, toast }}>
       {children}
       {sheet && (
-        <div className="scrim" onClick={(e) => e.target === e.currentTarget && close()}>
-          <div className="sheet" role="dialog" aria-modal="true" key={sheet.key}>
+        <div className="scrim" ref={scrimEl} onClick={(e) => e.target === e.currentTarget && close()}>
+          <div
+            className="sheet"
+            role="dialog"
+            aria-modal="true"
+            key={sheet.key}
+            ref={sheetEl}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            onTouchCancel={onTouchEnd}
+          >
             <div className="grab" />
             {sheet.node}
           </div>

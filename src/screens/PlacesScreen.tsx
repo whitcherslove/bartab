@@ -1,7 +1,6 @@
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
-import { Icon } from '../components/Icons';
-import { PlacePhoto } from '../components/common';
+import { Fab, PlacePhoto } from '../components/common';
 import { PlaceSheet } from '../sheets/PlaceSheet';
 
 export function PlacesScreen() {
@@ -10,10 +9,8 @@ export function PlacesScreen() {
 
   return (
     <>
-      <header className="top">
-        <h1>Бары</h1>
-        <button className="icon-btn" aria-label="Добавить бар" onClick={() => ui.open(<PlaceSheet />)}>{Icon.plus}</button>
-      </header>
+      <header className="top"><h1>Бары</h1></header>
+      <Fab label="Бар" onClick={() => ui.open(<PlaceSheet />)} />
       <div className="list">
         {state.places.length === 0 && <div className="empty">Добавь любимый бар</div>}
         {state.places.map((p) => (

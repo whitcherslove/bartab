@@ -2,8 +2,7 @@ import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { evWithTips, stats } from '../lib/calc';
 import { fdate, money } from '../lib/format';
-import { Icon } from '../components/Icons';
-import { Pill, PlacePhoto } from '../components/common';
+import { Fab, Pill, PlacePhoto } from '../components/common';
 import { EventSheet } from '../sheets/EventSheet';
 
 export function EventsScreen() {
@@ -13,10 +12,8 @@ export function EventsScreen() {
 
   return (
     <>
-      <header className="top">
-        <h1>Посиделки</h1>
-        <button className="icon-btn" aria-label="Новая посиделка" onClick={() => ui.open(<EventSheet />)}>{Icon.plus}</button>
-      </header>
+      <header className="top"><h1>Посиделки</h1></header>
+      <Fab label="Посиделка" onClick={() => ui.open(<EventSheet />)} />
       {list.length === 0 && (
         <div className="empty">
           Пока ни одной посиделки.

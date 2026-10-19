@@ -294,3 +294,23 @@ h3 > span { display: inline-flex; gap: 8px; align-items: baseline }
 .photo-choice .btn { cursor: pointer }
 label.btn[aria-disabled="true"] { opacity: .5; pointer-events: none }
 button.profile-avatar, button.crew-head-av { border: 0; background: none; padding: 0; color: inherit }
+
+/* ===== Плавающая кнопка ===== */
+.fab {
+  position: fixed; z-index: 7;
+  right: max(16px, calc(50% - 260px + 16px));
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 0; border-radius: 999px; padding: 14px 20px 14px 16px;
+  background: var(--amber); color: var(--amber-ink);
+  font: 600 16px var(--text);
+  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+}
+.fab svg { width: 22px; height: 22px }
+.fab:active { transform: scale(.97) }
+.add-link { margin: 0; display: inline-flex; align-items: center; gap: 4px; font: 500 14px var(--text); text-decoration: none }
+.add-link svg { width: 16px; height: 16px }
+
+/* ===== Шторки: смахивание ===== */
+.sheet { overscroll-behavior: contain; will-change: transform }
+.grab { padding: 8px 0; margin-top: -8px; box-sizing: content-box; background-clip: content-box; cursor: grab; touch-action: none }

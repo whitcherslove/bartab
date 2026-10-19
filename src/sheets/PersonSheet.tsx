@@ -4,6 +4,7 @@ import { useUI } from '../lib/ui';
 import { uid } from '../lib/format';
 import { removePerson } from '../lib/remote';
 import { humanError } from '../lib/supabase';
+import { Av } from '../components/common';
 
 export function PersonSheet({ id }: { id?: string }) {
   const { state, update, refresh } = useStore();
@@ -45,7 +46,17 @@ export function PersonSheet({ id }: { id?: string }) {
 
   return (
     <>
-      <h4>{id ? 'Человек' : 'Новый человек'}</h4>
+      {id && person ? (
+        <div className="member-head">
+          <Av id={id} lg />
+          <div className="grow">
+            <h4>{person.name}</h4>
+            <div className="s">{person.tg ? '@' + person.tg : 'нет Telegram'}{person.userId ? '' : ' · без аккаунта'}</div>
+          </div>
+        </div>
+      ) : (
+        <h4>Новый человек</h4>
+      )}
       <label className="field"><span>Имя</span><input value={name} onChange={(e) => setName(e.target.value)} /></label>
       <label className="field">
         <span>Юзернейм в Telegram, без @</span>

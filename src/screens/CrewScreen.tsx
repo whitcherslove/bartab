@@ -75,10 +75,7 @@ export function CrewScreen() {
 
   return (
     <>
-      <header className="top">
-        <h1>Компания</h1>
-        <button className="icon-btn" aria-label="Добавить человека" onClick={() => ui.open(<PersonSheet />)}>{Icon.plus}</button>
-      </header>
+      <header className="top"><h1>Компания</h1></header>
 
       <div className="crew-head">
         <button
@@ -130,7 +127,10 @@ export function CrewScreen() {
         </div>
       </div>
 
-      <h3>Люди <small>баланс по всем посиделкам</small></h3>
+      <h3>
+        <span>Люди <small>баланс по всем посиделкам</small></span>
+        <button className="link-btn add-link" onClick={() => ui.open(<PersonSheet />)}>{Icon.plus} Добавить</button>
+      </h3>
       <div className="list">
         {state.people.filter((p) => !p.archived).map((p) => (
           <button key={p.id} className="row" onClick={() => ui.open(<PersonSheet id={p.id} />)}>
