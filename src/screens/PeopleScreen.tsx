@@ -5,10 +5,24 @@ import { Icon } from '../components/Icons';
 import { Av, Pill } from '../components/common';
 import { PersonSheet } from '../sheets/PersonSheet';
 import { CrewCard } from '../components/CrewCard';
+import { ConnectChatSheet } from '../sheets/ConnectChatSheet';
+import { deleteTgChat } from '../lib/remote';
+import { humanError } from '../lib/supabase';
 
 export function PeopleScreen() {
-  const { state } = useStore();
+  const { state, refresh } = useStore();
   const ui = useUI();
+
+  const removeChat = async (id: string, name: string) => {
+    if (!confirm(`Отключить чат «${name}»? Бот останется в группе, его можно удалить там вручную.`)) return;
+    try {
+      await deleteTgChat(id);
+      await refresh();
+      ui.toast('Чат отключён');
+    } catch (e) {
+      ui.toast(humanError(e));
+    }
+  };
 
   return (
     <>
@@ -30,13 +44,17 @@ export function PeopleScreen() {
           </button>
         ))}
       </div>
-      <h3>Мои чаты для итогов</h3>
+      <h3>Мои чаты для итогов <small>видны только тебе</small></h3>
       <div className="list">
-        {state.chats.length === 0 && <div className="empty">Подключим на этапе с Telegram</div>}
+        {state.chats.length === 0 && <div className="empty">Подключи групповой чат, и бот будет присылать туда итоги посиделок</div>}
         {state.chats.map((c) => (
-          <div key={c.id} className="row"><div className="grow"><div className="t">{c.name}</div></div></div>
+          <div key={c.id} className="row">
+            <div className="grow"><div className="t">{c.name}</div></div>
+            <button className="btn undo sm" onClick={() => removeChat(c.id, c.name)}>Отключить</button>
+          </div>
         ))}
       </div>
+      <button className="btn block" style={{ marginTop: 10 }} onClick={() => ui.open(<ConnectChatSheet />)}>{Icon.plus} Подключить чат</button>
     </>
   );
 }

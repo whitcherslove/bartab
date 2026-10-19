@@ -1,5 +1,6 @@
 import type { BarEvent, Item, State } from './types';
 import { supabase } from './supabase';
+import { RECEIPT_FN, TELEGRAM_FN } from './functions';
 
 // ---------- Загрузка всех данных компании ----------
 
@@ -183,13 +184,31 @@ export async function recognizeReceipt(crewId: string, eventId: string, blob: Bl
   const path = `${crewId}/${eventId}-${Date.now()}.jpg`;
   const up = await supabase.storage.from('receipts').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
   if (up.error) throw up.error;
-  const { data, error } = await supabase.functions.invoke('dynamic-responder', { body: { eventId, path } });
-  if (error) {
-    // достаём понятный текст ошибки из ответа функции
-    const ctx = (error as { context?: Response }).context;
-    let msg = error.message;
-    try { if (ctx) msg = (await ctx.json()).error ?? msg; } catch { /* оставляем как есть */ }
-    throw new Error(msg);
-  }
+  const { data, error } = await supabase.functions.invoke(RECEIPT_FN, { body: { eventId, path } });
+  if (error) throw await functionError(error);
   return data as { count: number; sum: number; total: number; status: string };
+}
+
+/** Достаём понятный текст ошибки из ответа функции */
+async function functionError(error: Error): Promise<Error> {
+  const ctx = (error as { context?: Response }).context;
+  let msg = error.message;
+  try { if (ctx) msg = (await ctx.json()).error ?? msg; } catch { /* оставляем как есть */ }
+  if (/Failed to send a request/i.test(msg)) msg = 'Функция недоступна: проверь её адрес в src/lib/functions.ts и что она задеплоена';
+  return new Error(msg);
+}
+
+/** Telegram-бот: имя, подключение чата по коду, отправка итогов */
+async function telegram<T>(body: Record<string, unknown>): Promise<T> {
+  const { data, error } = await supabase.functions.invoke(TELEGRAM_FN, { body });
+  if (error) throw await functionError(error);
+  return data as T;
+}
+export const tgBotName = () => telegram<{ username: string }>({ action: 'info' }).then((r) => r.username);
+export const tgFindChat = (code: string) => telegram<{ found: boolean; name?: string }>({ action: 'find_chat', code });
+export const tgSend = (chatRowId: string, text: string) => telegram<{ ok: boolean; name: string }>({ action: 'send', chatRowId, text });
+
+export async function deleteTgChat(id: string) {
+  const { error } = await supabase.from('tg_chats').delete().eq('id', id);
+  if (error) throw error;
 }
