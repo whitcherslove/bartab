@@ -44,6 +44,32 @@ export function PersonSheet({ id }: { id?: string }) {
     }
   };
 
+  // Человек с аккаунтом: данные — из его профиля, менять может только он сам
+  if (id && person?.userId) {
+    const isMe = id === state.me;
+    return (
+      <>
+        <div className="member-head">
+          <Av id={id} lg />
+          <div className="grow">
+            <h4>{person.name}</h4>
+            <div className="s">{person.tg ? '@' + person.tg : 'нет Telegram'}</div>
+          </div>
+        </div>
+        <p className="hint" style={{ margin: '0 0 14px' }}>
+          {isMe
+            ? 'Это ты. Имя, Telegram и фото меняются в профиле — и сразу обновляются во всех компаниях и посиделках.'
+            : 'Имя, Telegram и фото берутся из профиля этого человека и обновляются сами.'}
+        </p>
+        <div className="sheet-btns">
+          {isMe
+            ? <button className="btn primary" onClick={() => ui.go({ screen: 'profile' })}>Изменить в профиле</button>
+            : <button className="btn danger" onClick={remove}>Удалить из компании</button>}
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       {id && person ? (
@@ -51,7 +77,7 @@ export function PersonSheet({ id }: { id?: string }) {
           <Av id={id} lg />
           <div className="grow">
             <h4>{person.name}</h4>
-            <div className="s">{person.tg ? '@' + person.tg : 'нет Telegram'}{person.userId ? '' : ' · без аккаунта'}</div>
+            <div className="s">{person.tg ? '@' + person.tg : 'нет Telegram'} · гость без аккаунта</div>
           </div>
         </div>
       ) : (
