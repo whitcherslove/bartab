@@ -10,6 +10,7 @@ import { humanError } from '../lib/supabase';
 import { getTheme, setTheme, type Theme } from '../lib/theme';
 import { Icon } from '../components/Icons';
 import { InstallCard } from '../components/InstallCard';
+import { PhotoChoiceSheet } from '../components/PhotoPick';
 import { PlacePhoto } from '../components/common';
 
 export function ProfileScreen() {
@@ -81,15 +82,19 @@ export function ProfileScreen() {
       <header className="top"><h1>Профиль</h1></header>
 
       <div className="profile-head">
-        <label className="profile-avatar" aria-label="Сменить фото">
+        <button
+          type="button"
+          className="profile-avatar"
+          aria-label="Сменить фото"
+          disabled={busy}
+          onClick={() => ui.open(<PhotoChoiceSheet title="Фото профиля" facing="user" onFile={onAvatar} onRemove={acc.profile.avatar_url ? removeAvatar : undefined} />)}
+        >
           <img src={acc.profile.avatar_url || personPlaceholderFor(acc.profile.id)} alt="" />
           <span className="profile-avatar-btn">{Icon.cam}</span>
-          <input type="file" accept="image/*" hidden disabled={busy} onChange={(e) => onAvatar(e.target.files?.[0])} />
-        </label>
+        </button>
         <div className="grow">
           <div className="profile-name">{acc.profile.name}</div>
           <div className="s">{acc.session.user.email}</div>
-          {acc.profile.avatar_url && <button className="link-btn" style={{ margin: '6px 0 0' }} onClick={removeAvatar} disabled={busy}>Убрать фото</button>}
         </div>
       </div>
 

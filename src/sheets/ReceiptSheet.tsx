@@ -3,7 +3,7 @@ import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { recognizeReceipt } from '../lib/remote';
 import { humanError } from '../lib/supabase';
-import { Icon } from '../components/Icons';
+import { PhotoButtons } from '../components/PhotoPick';
 
 /** Сжимаем фото чека: по длинной стороне до 1600 px — текст читается, а файл лёгкий */
 function compress(file: File): Promise<Blob> {
@@ -64,10 +64,9 @@ export function ReceiptSheet({ eventId }: { eventId: string }) {
       <p style={{ color: 'var(--muted)', margin: '-6px 0 16px', fontSize: 15 }}>
         Сфотографируй чек целиком и ровно, при хорошем свете. Позиции добавятся сами, останется отметить, кто что пил.
       </p>
-      <label className="btn primary block" style={{ cursor: 'pointer' }}>
-        {Icon.cam} Сфотографировать или выбрать
-        <input type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
-      </label>
+      <div className="photo-choice">
+        <PhotoButtons className="btn block" galleryLabel="Выбрать из галереи" onFile={onFile} />
+      </div>
     </>
   );
 }

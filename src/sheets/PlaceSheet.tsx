@@ -5,6 +5,7 @@ import { hueOf, uid } from '../lib/format';
 import { Icon } from '../components/Icons';
 import { photoStyle } from '../components/common';
 import { MapButtons } from '../components/MapButtons';
+import { PhotoButtons } from '../components/PhotoPick';
 import { uploadPlacePhoto } from '../lib/remote';
 import { humanError } from '../lib/supabase';
 import { locate, searchPlaces, type FoundPlace } from '../lib/maps';
@@ -167,10 +168,7 @@ export function PlaceSheet({ id }: { id?: string }) {
 
       <div className="photo hero place-cover" style={{ height: 140, ...photoStyle({ id: id ?? draftId, name: name || 'Б', hue: place?.hue ?? hueOf(name || 'Б'), photo }) }}>
         <div className="cover-actions">
-          <label className="btn sm cover-btn">
-            {Icon.cam} {photo ? 'Заменить фото' : 'Своё фото'}
-            <input type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
-          </label>
+          <PhotoButtons className="btn sm cover-btn" cameraLabel="Камера" galleryLabel="Галерея" onFile={onFile} />
           {photo && <button type="button" className="btn sm cover-btn" onClick={() => setPhoto('')}>Убрать</button>}
         </div>
       </div>

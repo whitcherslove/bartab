@@ -11,6 +11,7 @@ import { PersonSheet } from '../sheets/PersonSheet';
 import { ConnectChatSheet } from '../sheets/ConnectChatSheet';
 import { CrewSetup } from './auth/CrewSetup';
 import { QrSheet } from '../sheets/QrSheet';
+import { PhotoChoiceSheet } from '../components/PhotoPick';
 
 export function CrewScreen() {
   const acc = useAccount();
@@ -80,14 +81,18 @@ export function CrewScreen() {
       </header>
 
       <div className="crew-head">
-        <label className="crew-head-av" aria-label="Сменить аватарку компании">
+        <button
+          type="button"
+          className="crew-head-av"
+          aria-label="Сменить аватарку компании"
+          disabled={avBusy}
+          onClick={() => ui.open(<PhotoChoiceSheet title="Аватарка компании" facing="environment" onFile={(f) => changeAvatar(f)} onRemove={acc.crew.avatar_url ? () => changeAvatar(null) : undefined} />)}
+        >
           <CrewAvatar crew={acc.crew} size={96} />
           <span className="profile-avatar-btn">{Icon.cam}</span>
-          <input type="file" accept="image/*" hidden disabled={avBusy} onChange={(e) => e.target.files?.[0] && changeAvatar(e.target.files[0])} />
-        </label>
+        </button>
         <div className="crew-head-name">{acc.crew.name}</div>
         <div className="s">{state.people.filter((p) => p.userId && !p.archived).length} в приложении · {state.people.filter((p) => !p.archived).length} всего</div>
-        {acc.crew.avatar_url && <button className="link-btn" style={{ margin: '4px 0 0' }} onClick={() => changeAvatar(null)} disabled={avBusy}>Убрать фото</button>}
       </div>
 
       <h3 style={{ marginTop: 4 }}>Мои компании</h3>

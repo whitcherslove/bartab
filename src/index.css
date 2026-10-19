@@ -288,3 +288,9 @@ h3 > span { display: inline-flex; gap: 8px; align-items: baseline }
 .install-help { display: flex; flex-direction: column; gap: 10px; width: 100%; font-size: 14px }
 .install-help b { font-size: 15px }
 .install-help span { color: var(--muted) }
+
+/* ===== Камера / галерея ===== */
+.photo-choice { display: flex; flex-direction: column; gap: 10px }
+.photo-choice .btn { cursor: pointer }
+label.btn[aria-disabled="true"] { opacity: .5; pointer-events: none }
+button.profile-avatar, button.crew-head-av { border: 0; background: none; padding: 0; color: inherit }
