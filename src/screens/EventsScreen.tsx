@@ -28,9 +28,9 @@ export function EventsScreen() {
             <PlacePhoto place={place} />
             <div className="body">
               <p className="place">{place?.name ?? 'Без места'}</p>
-              <div className="sum num">{money(evWithTips(ev))}</div>
+              <div className="sum num">{money(evWithTips(ev), ev.currency)}</div>
               <div className="meta">{fdate(ev.date)}, {ev.members.length} чел.</div>
-              <div>{ev.members.includes(state.me) && <Pill b={stats(ev, state.me).balance} me />}</div>
+              <div>{ev.members.includes(state.me) && <Pill b={stats(ev, state.me).balance} me cur={ev.currency} />}</div>
             </div>
           </button>
         );

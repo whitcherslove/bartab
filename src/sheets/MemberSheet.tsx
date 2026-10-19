@@ -24,8 +24,8 @@ export function MemberSheet({ eventId, pid }: { eventId: string; pid: string }) 
 
   let status = 'Пока не отмечено, кто оплатил счёт';
   if (ev.payer) {
-    if (st.isPayer) status = st.balance > 1 ? `Оплатил счёт, ждёт ещё ${money(st.balance)}` : 'Оплатил счёт, все уже перевели ✅';
-    else status = st.settled ? `Перевёл ${payerName} ✅` : `Должен ${payerName} ${money(st.owed)}`;
+    if (st.isPayer) status = st.balance > 1 ? `Оплатил счёт, ждёт ещё ${money(st.balance, ev.currency)}` : 'Оплатил счёт, все уже перевели ✅';
+    else status = st.settled ? `Перевёл ${payerName} ✅` : `Должен ${payerName} ${money(st.owed, ev.currency)}`;
   }
 
   const toggle = () => {
@@ -50,16 +50,16 @@ export function MemberSheet({ eventId, pid }: { eventId: string; pid: string }) 
           {items.map((it) => (
             <div key={it.id} className="row">
               <div className="grow"><div className="t">{it.name}</div><div className="s">{it.detail}</div></div>
-              <span className="amt num">{money(it.amount)}</span>
+              <span className="amt num">{money(it.amount, ev.currency)}</span>
             </div>
           ))}
         </div>
       ) : (
         <p className="hint" style={{ margin: '0 0 10px' }}>Пока ни одной позиции не отмечено на этого человека.</p>
       )}
-      <div className="kv"><span>Позиции</span><b className="num">{money(st.food)}</b></div>
-      <div className="kv"><span>Доля чаевых</span><b className="num">{money(st.tip)}</b></div>
-      <div className="kv"><span>Его часть</span><b className="num">{money(st.owed)}</b></div>
+      <div className="kv"><span>Позиции</span><b className="num">{money(st.food, ev.currency)}</b></div>
+      <div className="kv"><span>Доля чаевых</span><b className="num">{money(st.tip, ev.currency)}</b></div>
+      <div className="kv"><span>Его часть</span><b className="num">{money(st.owed, ev.currency)}</b></div>
       <p style={{ margin: '14px 0 0', fontWeight: 600 }}>{status}</p>
       <div className="sheet-btns" style={{ marginTop: 14, flexDirection: 'column' }}>
         {ev.payer && !st.isPayer && (

@@ -120,16 +120,16 @@ export function ProfileScreen() {
       <h3>Мои посиделки <small>во всех компаниях</small></h3>
       <MyVisits />
 
-      <h3>Валюта</h3>
+      <h3>Валюта по умолчанию</h3>
       <label className="field" style={{ marginBottom: 0 }}>
         <select
           value={acc.profile.currency || 'RUB'}
-          onChange={async (e) => { try { await acc.saveCurrency(e.target.value); ui.toast('Валюта сохранена'); } catch (err) { ui.toast(humanError(err)); } }}
+          onChange={async (e) => { try { await acc.saveCurrency(e.target.value); ui.toast('Валюта по умолчанию сохранена'); } catch (err) { ui.toast(humanError(err)); } }}
         >
           {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.label} ({c.code})</option>)}
         </select>
       </label>
-      <p className="hint">Это подпись к суммам, курсы не пересчитываются. Выбирай ту, в которой платили.</p>
+      <p className="hint">Подставляется в новые посиделки. У каждой посиделки валюту можно поменять в «Изменить». Курсы не пересчитываются.</p>
 
       <h3>Тема</h3>
       <div className="seg">

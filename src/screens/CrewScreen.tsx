@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useAccount } from '../lib/account';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
-import { totalBalance } from '../lib/calc';
+import { balancesByCurrency } from '../lib/calc';
 import { disconnectCrewChat, setCrewAvatar } from '../lib/remote';
 import { humanError, supabase } from '../lib/supabase';
 import { Icon } from '../components/Icons';
-import { Av, CrewAvatar, Pill } from '../components/common';
+import { Av, CrewAvatar, MultiPill } from '../components/common';
 import { PersonSheet } from '../sheets/PersonSheet';
 import { ConnectChatSheet } from '../sheets/ConnectChatSheet';
 import { CrewSetup } from './auth/CrewSetup';
@@ -139,7 +139,7 @@ export function CrewScreen() {
               <div className="t">{p.name}{p.id === state.me ? ' (это ты)' : ''}</div>
               <div className="s">{p.tg ? '@' + p.tg : 'нет Telegram'}{p.userId ? '' : ' · без аккаунта'}</div>
             </div>
-            <Pill b={totalBalance(state.events, p.id)} me={p.id === state.me} />
+            <MultiPill balances={balancesByCurrency(state.events, p.id)} me={p.id === state.me} />
           </button>
         ))}
       </div>

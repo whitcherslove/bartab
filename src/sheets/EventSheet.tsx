@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
-import { todayIso, toggleIn, uid } from '../lib/format';
+import { CURRENCIES, getDefaultCurrency, todayIso, toggleIn, uid } from '../lib/format';
 import { PeopleChips } from '../components/common';
 
 export function EventSheet({ id }: { id?: string }) {
@@ -12,12 +12,13 @@ export function EventSheet({ id }: { id?: string }) {
   const [placeId, setPlaceId] = useState(ev?.placeId ?? state.places[0]?.id ?? '');
   const [date, setDate] = useState(ev?.date ?? todayIso());
   const [members, setMembers] = useState<string[]>(ev?.members ?? [state.me]);
+  const [currency, setCurrency] = useState(ev?.currency ?? getDefaultCurrency());
 
   const save = () => {
     if (!members.length) return ui.toast('Отметь хотя бы одного участника');
     if (id) {
       updateEvent(id, (e) => {
-        Object.assign(e, { placeId, date, members });
+        Object.assign(e, { placeId, date, members, currency });
         if (!members.includes(e.payer)) e.payer = '';
         e.settled = e.settled.filter((m) => members.includes(m));
       });
@@ -26,7 +27,7 @@ export function EventSheet({ id }: { id?: string }) {
     } else {
       const newId = uid();
       update((d) => {
-        d.events.push({ id: newId, date, placeId, members, tips: 0, tipsMode: 'sum', payer: '', settled: [], status: '', items: [] });
+        d.events.push({ id: newId, date, placeId, members, currency, tips: 0, tipsMode: 'sum', payer: '', settled: [], status: '', items: [] });
       });
       ui.go({ screen: 'event', id: newId });
       ui.toast('Посиделка создана');
@@ -50,10 +51,18 @@ export function EventSheet({ id }: { id?: string }) {
           {state.places.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
       </label>
-      <label className="field">
-        <span>Дата</span>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-      </label>
+      <div className="two">
+        <label className="field">
+          <span>Дата</span>
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </label>
+        <label className="field">
+          <span>Валюта</span>
+          <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+            {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.label}</option>)}
+          </select>
+        </label>
+      </div>
       <div className="field">
         <span>Кто был</span>
         <PeopleChips ids={state.people.filter((p) => !p.archived || members.includes(p.id)).map((p) => p.id)} selected={members} onToggle={(pid) => setMembers(toggleIn(members, pid))} />

@@ -5,16 +5,22 @@ export const CURRENCIES: { code: string; label: string }[] = [
   { code: 'KZT', label: '₸ Тенге' }, { code: 'AMD', label: '֏ Драм' }, { code: 'AED', label: 'Дирхам ОАЭ' },
   { code: 'THB', label: '฿ Бат' }, { code: 'RSD', label: 'Динар' }, { code: 'CNY', label: '¥ Юань' },
 ];
-let fmt = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0, minimumFractionDigits: 0 });
-let currentCurrency = 'RUB';
-export function setCurrency(code: string) {
-  if (!code || code === currentCurrency) return;
-  try {
-    fmt = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: code, maximumFractionDigits: 0, minimumFractionDigits: 0 });
-    currentCurrency = code;
-  } catch { /* неизвестная валюта — оставляем прежнюю */ }
+const formatters = new Map<string, Intl.NumberFormat>();
+function formatter(code: string) {
+  let f = formatters.get(code);
+  if (!f) {
+    try { f = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: code, maximumFractionDigits: 0, minimumFractionDigits: 0 }); }
+    catch { f = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }); }
+    formatters.set(code, f);
+  }
+  return f;
 }
-export const money = (n: number) => fmt.format(Math.round(n));
+/** Валюта по умолчанию — из профиля (для новых посиделок) */
+let defaultCurrency = 'RUB';
+export function setCurrency(code: string) { if (code) defaultCurrency = code; }
+export const getDefaultCurrency = () => defaultCurrency;
+/** Сумма с валютой. Для посиделки передавай её валюту: money(x, ev.currency) */
+export const money = (n: number, code?: string) => formatter(code || defaultCurrency).format(Math.round(n));
 
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 

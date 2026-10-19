@@ -32,6 +32,8 @@ export type BarEvent = {
   members: string[];
   tips: number;
   tipsMode: TipsMode;
+  /** валюта посиделки, например RUB */
+  currency: string;
   /** кто оплатил счёт бару */
   payer: string;
   /** кто уже перевёл свою часть плательщику */

@@ -46,7 +46,18 @@ export function stats(ev: BarEvent, pid: string) {
   return { ...o, isPayer, settled, balance };
 }
 
-/** Баланс человека по всем посиделкам */
+/** Баланс человека по всем посиделкам, отдельно по каждой валюте */
+export function balancesByCurrency(events: BarEvent[], pid: string): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const e of events) {
+    if (!e.members.includes(pid)) continue;
+    const cur = e.currency || 'RUB';
+    out[cur] = (out[cur] ?? 0) + stats(e, pid).balance;
+  }
+  return out;
+}
+
+/** Баланс человека по всем посиделкам (без учёта валют) */
 export const totalBalance = (events: BarEvent[], pid: string) =>
   events.filter((e) => e.members.includes(pid)).reduce((s, e) => s + stats(e, pid).balance, 0);
 

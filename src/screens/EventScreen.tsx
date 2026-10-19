@@ -70,9 +70,9 @@ export function EventScreen({ id }: { id: string }) {
       {place && (place.address || place.mapUrl || place.lat != null) && <MapButtons place={place} compact />}
 
       <div className="totals">
-        <div><b className="num">{money(evTotal(ev))}</b><span>по чеку</span></div>
-        <div><b className="num">{money(tipAmount(ev))}</b><span>чаевые{ev.tipsMode === 'pct' ? ` ${ev.tips || 0}%` : ''}</span></div>
-        <div><b className="num">{money(evWithTips(ev))}</b><span>всего</span></div>
+        <div><b className="num">{money(evTotal(ev), ev.currency)}</b><span>по чеку</span></div>
+        <div><b className="num">{money(tipAmount(ev), ev.currency)}</b><span>чаевые{ev.tipsMode === 'pct' ? ` ${ev.tips || 0}%` : ''}</span></div>
+        <div><b className="num">{money(evWithTips(ev), ev.currency)}</b><span>всего</span></div>
       </div>
       <TipsCard key={ev.id} ev={ev} />
 
@@ -98,15 +98,15 @@ export function EventScreen({ id }: { id: string }) {
         {ev.members.map((m) => {
           const st = stats(ev, m);
           // подпись сверху и сумма снизу — вместо «+» и «−»
-          let cls = 'zero', cap = 'часть', val = money(st.owed);
+          let cls = 'zero', cap = 'часть', val = money(st.owed, ev.currency);
           if (payer) {
             if (st.isPayer) {
-              if (st.balance > 1) { cls = 'pos'; cap = 'ждёт'; val = money(st.balance); }
+              if (st.balance > 1) { cls = 'pos'; cap = 'ждёт'; val = money(st.balance, ev.currency); }
               else { cls = 'pos'; cap = 'оплатил'; val = '✓'; }
             } else if (st.settled || st.owed < 1) {
               cap = st.settled ? 'перевёл' : 'не должен'; val = '✓';
             } else {
-              cls = 'neg'; cap = 'должен'; val = money(st.owed);
+              cls = 'neg'; cap = 'должен'; val = money(st.owed, ev.currency);
             }
           }
           return (
@@ -129,7 +129,7 @@ export function EventScreen({ id }: { id: string }) {
                 <div key={m} className={'row' + (st.settled ? ' done' : '')}>
                   <Av id={m} /><span className="arrow" aria-hidden="true">→</span><Av id={payer} />
                   <div className="grow"><div className="t">{nameOf(m)} {st.settled ? 'перевёл' : 'переводит'} {nameOf(payer)}</div></div>
-                  <span className="amt num">{money(st.owed)}</span>
+                  <span className="amt num">{money(st.owed, ev.currency)}</span>
                   <button className={'btn sm ' + (st.settled ? 'undo' : 'ghost')} onClick={() => toggleSettled(m)}>
                     {st.settled ? 'Отменить' : 'Готово'}
                   </button>
@@ -152,7 +152,7 @@ export function EventScreen({ id }: { id: string }) {
             <div className="grow">
               <div className="t">{it.name}</div>
               <div className="s num">
-                {it.qty} × {money(it.price)}{' '}
+                {it.qty} × {money(it.price, ev.currency)}{' '}
                 {it.splitMode === 'qty' ? (
                   <span>{it.consumers.map((c) => `${nameOf(c)} ${it.split[c] || 0}`).join(', ')}</span>
                 ) : (
@@ -161,7 +161,7 @@ export function EventScreen({ id }: { id: string }) {
                 {!it.consumers.length && <span style={{ color: 'var(--amber)' }}>ни на кого</span>}
               </div>
             </div>
-            <span className="amt num">{money(itemTotal(it))}</span>
+            <span className="amt num">{money(itemTotal(it), ev.currency)}</span>
           </button>
         ))}
       </div>

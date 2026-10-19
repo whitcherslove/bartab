@@ -14,11 +14,24 @@ export function Av({ id, sm, lg }: { id: string; sm?: boolean; lg?: boolean }) {
 }
 
 /** Баланс словами: «тебе должны 1 300 ₽» / «должен 700 ₽» / «в расчёте» */
-export function Pill({ b, me }: { b: number; me?: boolean }) {
+export function Pill({ b, me, cur }: { b: number; me?: boolean; cur?: string }) {
   if (Math.abs(b) < 1) return <span className="pill zero">в расчёте</span>;
   return b > 0
-    ? <span className="pill pos num">{me ? 'тебе должны' : 'ему должны'} {money(b)}</span>
-    : <span className="pill neg num">{me ? 'ты должен' : 'должен'} {money(-b)}</span>;
+    ? <span className="pill pos num">{me ? 'тебе должны' : 'ему должны'} {money(b, cur)}</span>
+    : <span className="pill neg num">{me ? 'ты должен' : 'должен'} {money(-b, cur)}</span>;
+}
+
+/** Балансы в нескольких валютах: «должен 700 ₽ · 20 $» */
+export function MultiPill({ balances, me }: { balances: Record<string, number>; me?: boolean }) {
+  const entries = Object.entries(balances).filter(([, b]) => Math.abs(b) >= 1);
+  if (!entries.length) return <span className="pill zero">в расчёте</span>;
+  const pos = entries.filter(([, b]) => b > 0), neg = entries.filter(([, b]) => b < 0);
+  return (
+    <span className="multi-pill">
+      {pos.length > 0 && <span className="pill pos num">{me ? 'тебе должны' : 'ему должны'} {pos.map(([c, b]) => money(b, c)).join(' · ')}</span>}
+      {neg.length > 0 && <span className="pill neg num">{me ? 'ты должен' : 'должен'} {neg.map(([c, b]) => money(-b, c)).join(' · ')}</span>}
+    </span>
+  );
 }
 
 /** Фото бара или, если своего нет, иллюстрация (у каждого бара своя) */

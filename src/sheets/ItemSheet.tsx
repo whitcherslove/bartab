@@ -113,7 +113,7 @@ export function ItemSheet({ eventId, itemId }: { eventId: string; itemId?: strin
                   <Av id={m} />
                   <div className="grow">
                     <div className="t">{nameOf(m)}</div>
-                    <div className="s num">{split[m] ? money(priceNum * split[m]) : '—'}</div>
+                    <div className="s num">{split[m] ? money(priceNum * split[m], ev.currency) : '—'}</div>
                   </div>
                   <div className="stepper">
                     <button type="button" aria-label="Меньше" disabled={!(split[m] > 0)} onClick={() => step(m, -1)}>−</button>

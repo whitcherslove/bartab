@@ -9,7 +9,7 @@ type PlaceRow = { id: string; name: string; address: string; hue: number; photo_
 type ShareRow = { person_id: string; qty: number };
 type ItemRow = { id: string; name: string; price: number | string; qty: number; split_mode: 'equal' | 'qty'; created_at: string; item_shares: ShareRow[] };
 type EventRow = {
-  id: string; place_id: string | null; date: string; tips: number | string; tips_mode: 'sum' | 'pct';
+  id: string; place_id: string | null; date: string; tips: number | string; tips_mode: 'sum' | 'pct'; currency: string;
   payer_id: string | null; status: string; event_members: { person_id: string; settled: boolean }[]; items: ItemRow[];
 };
 type ChatRow = { id: string; name: string; chat_id: string };
@@ -26,7 +26,7 @@ export async function fetchCrew(crewId: string, userId: string): Promise<State> 
     supabase.from('places').select('id, name, address, hue, photo_path, map_url, lat, lon').order('created_at'),
     supabase
       .from('events')
-      .select('id, place_id, date, tips, tips_mode, payer_id, status, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, item_shares(person_id, qty))')
+      .select('id, place_id, date, tips, tips_mode, currency, payer_id, status, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, item_shares(person_id, qty))')
       .eq('crew_id', crewId)
       .order('date', { ascending: false }),
     supabase.from('tg_chats').select('id, name, chat_id').order('created_at'),
@@ -50,6 +50,7 @@ export async function fetchCrew(crewId: string, userId: string): Promise<State> 
       placeId: e.place_id ?? '',
       tips: Number(e.tips) || 0,
       tipsMode: e.tips_mode,
+      currency: e.currency || 'RUB',
       payer: e.payer_id ?? '',
       status: e.status,
       members: e.event_members.map((m) => m.person_id).sort(byPeopleOrder),
@@ -107,7 +108,7 @@ export async function pushDiff(prev: State, next: State, crewId: string) {
   const prevEvents = byId(prev.events);
   const evRow = (e: BarEvent) => ({
     id: e.id, crew_id: crewId, place_id: e.placeId || null, date: e.date, tips: e.tips,
-    tips_mode: e.tipsMode, payer_id: e.payer || null, status: e.status,
+    tips_mode: e.tipsMode, currency: e.currency || 'RUB', payer_id: e.payer || null, status: e.status,
   });
   const events = next.events.filter((e) => {
     const o = prevEvents.get(e.id);
