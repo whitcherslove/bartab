@@ -4,7 +4,9 @@ export type TabId = 'crew' | 'events' | 'places' | 'profile';
 export const TAB_LABELS: Record<TabId, string> = { crew: 'Компания', events: 'Посиделки', places: 'Бары', profile: 'Профиль' };
 export const TAB_ICONS: Record<TabId, 'people' | 'glass' | 'pin' | 'user'> = { crew: 'people', events: 'glass', places: 'pin', profile: 'user' };
 
-const DEFAULT_ORDER: TabId[] = ['crew', 'events', 'places', 'profile'];
+/** По умолчанию (если человек ничего не менял в настройках) */
+const DEFAULT_ORDER: TabId[] = ['events', 'places', 'crew', 'profile'];
+const DEFAULT_HOME: TabId = 'events';
 const ORDER_KEY = 'bartab-tabs';
 const HOME_KEY = 'bartab-home';
 const EVENT = 'bartab-tabs-change';
@@ -25,9 +27,9 @@ export function getTabOrder(): TabId[] {
 export function getHome(): TabId {
   try {
     const h = localStorage.getItem(HOME_KEY);
-    return valid(h) ? h : 'crew';
+    return valid(h) ? h : DEFAULT_HOME;
   } catch {
-    return 'crew';
+    return DEFAULT_HOME;
   }
 }
 
