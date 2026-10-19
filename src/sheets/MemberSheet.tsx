@@ -5,6 +5,7 @@ import { money } from '../lib/format';
 import { personalText } from '../lib/messages';
 import { Icon } from '../components/Icons';
 import { PersonSheet } from './PersonSheet';
+import { Av } from '../components/common';
 
 export function MemberSheet({ eventId, pid }: { eventId: string; pid: string }) {
   const { state, updateEvent, nameOf } = useStore();
@@ -37,7 +38,13 @@ export function MemberSheet({ eventId, pid }: { eventId: string; pid: string }) 
 
   return (
     <>
-      <h4>{person.name}</h4>
+      <div className="member-head">
+        <Av id={pid} lg />
+        <div className="grow">
+          <h4>{person.name}</h4>
+          {person.tg && <div className="s">@{person.tg}</div>}
+        </div>
+      </div>
       {items.length > 0 ? (
         <div className="member-items">
           {items.map((it) => (

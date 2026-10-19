@@ -262,3 +262,9 @@ img.av { object-fit: cover; padding: 0; background: var(--chip) }
 .cover-actions { position: absolute; right: 10px; bottom: 10px; z-index: 1; display: flex; gap: 8px }
 .cover-btn { background: rgba(0,0,0,.55); color: #fff; border-color: transparent; cursor: pointer; backdrop-filter: blur(6px) }
 .cover-btn svg { width: 16px; height: 16px }
+
+/* ===== Шапка участника ===== */
+.av.lg { width: 64px; height: 64px; font-size: 24px; border-width: 0 }
+.member-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px }
+.member-head h4 { margin: 0 }
+.member-head .s { color: var(--muted); font-size: 14px; margin-top: 2px }

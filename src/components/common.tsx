@@ -4,13 +4,14 @@ import { hueOf, money } from '../lib/format';
 import { useStore } from '../lib/store';
 import { placeholderFor } from '../lib/placeholders';
 
-export function Av({ id, sm }: { id: string; sm?: boolean }) {
+export function Av({ id, sm, lg }: { id: string; sm?: boolean; lg?: boolean }) {
   const { nameOf, state } = useStore();
   const name = nameOf(id);
   const avatar = state.people.find((p) => p.id === id)?.avatar;
-  if (avatar) return <img className={'av' + (sm ? ' sm' : '')} src={avatar} alt={name} title={name} loading="lazy" />;
+  const cls = 'av' + (sm ? ' sm' : '') + (lg ? ' lg' : '');
+  if (avatar) return <img className={cls} src={avatar} alt={name} title={name} loading="lazy" />;
   return (
-    <span className={'av' + (sm ? ' sm' : '')} style={{ background: `hsl(${hueOf(name + id)} 45% 42%)` }} title={name}>
+    <span className={cls} style={{ background: `hsl(${hueOf(name + id)} 45% 42%)` }} title={name}>
       {name.slice(0, 1).toUpperCase()}
     </span>
   );
