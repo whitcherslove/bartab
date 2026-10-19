@@ -5,6 +5,7 @@ import { Icon } from './components/Icons';
 import { useEffect, useState } from 'react';
 import { getTabOrder, onTabsChange, TAB_ICONS, TAB_LABELS, type TabId } from './lib/tabs';
 import { WelcomeSheet } from './sheets/WelcomeSheet';
+import { InstallBanner } from './components/InstallBanner';
 import { EventsScreen } from './screens/EventsScreen';
 import { EventScreen } from './screens/EventScreen';
 import { CrewScreen } from './screens/CrewScreen';
@@ -39,6 +40,7 @@ function Shell() {
   return (
     <>
       <main className="app" key={profile.currency}>
+        {view.screen !== 'event' && <InstallBanner />}
         {view.screen === 'event' ? (
           <EventScreen id={view.id} />
         ) : view.screen === 'crew' ? (

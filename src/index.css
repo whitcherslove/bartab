@@ -359,3 +359,9 @@ button.profile-avatar, button.crew-head-av { border: 0; background: none; paddin
 .icon-btn:disabled { opacity: .3 }
 .icon-btn.on { background: var(--amber); color: var(--amber-ink); border-color: transparent }
 .icon-btn.on svg { fill: currentColor }
+
+/* ===== Плашка «Установить» ===== */
+.install-banner { display: flex; align-items: center; gap: 10px; background: var(--amber-soft); border: 1px solid var(--amber); border-radius: 16px; padding: 8px 8px 8px 12px; margin: 12px 0 0 }
+.install-banner .ib-emoji { font-size: 20px }
+.install-banner .ib-text { flex: 1; font-size: 14px; font-weight: 500 }
+.install-banner .ib-close { border: 0; background: none; color: var(--muted); font-size: 22px; line-height: 1; padding: 4px 6px }

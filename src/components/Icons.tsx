@@ -22,6 +22,9 @@ export const Icon = {
   check: (
     <svg viewBox="0 0 24 24" {...s} strokeWidth={2.2} aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
   ),
+  wallet: (
+    <svg viewBox="0 0 24 24" {...s} aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3" /><rect x="4" y="8" width="16" height="11" rx="2.5" /><circle cx="16" cy="13.5" r="1.2" fill="currentColor" /></svg>
+  ),
   star: (
     <svg viewBox="0 0 24 24" {...s} aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" /></svg>
   ),
