@@ -8,7 +8,7 @@ export function ClaimStep({ people, crewId, onDone }: { people: Person[]; crewId
   const { profile, crew, session } = useAccount();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const free = people.filter((p) => !p.userId);
+  const free = people.filter((p) => !p.userId && !p.archived);
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);

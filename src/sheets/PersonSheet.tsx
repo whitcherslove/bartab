@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { uid } from '../lib/format';
+import { removePerson } from '../lib/remote';
+import { humanError } from '../lib/supabase';
 
 export function PersonSheet({ id }: { id?: string }) {
-  const { state, update } = useStore();
+  const { state, update, refresh } = useStore();
   const ui = useUI();
   const person = id ? state.people.find((p) => p.id === id) : undefined;
   const [name, setName] = useState(person?.name ?? '');
@@ -23,6 +25,24 @@ export function PersonSheet({ id }: { id?: string }) {
     ui.toast('Сохранено');
   };
 
+  const remove = async () => {
+    if (!id || !person) return;
+    const used = state.events.filter((e) => e.members.includes(id)).length;
+    const account = person.userId ? ' У него есть аккаунт — он будет исключён из компании и перестанет её видеть.' : '';
+    const msg = used
+      ? `Удалить ${person.name} из компании? Он пропадёт из списка людей, но останется в ${used} старых посиделк${used === 1 ? 'е' : 'ах'} — долги в них не пересчитаются.${account}`
+      : `Удалить ${person.name} из компании?${account}`;
+    if (!confirm(msg)) return;
+    try {
+      await removePerson(id);
+      await refresh();
+      ui.close();
+      ui.toast(`${person.name} удалён из компании`);
+    } catch (e) {
+      ui.toast(humanError(e));
+    }
+  };
+
   return (
     <>
       <h4>{id ? 'Человек' : 'Новый человек'}</h4>
@@ -31,7 +51,10 @@ export function PersonSheet({ id }: { id?: string }) {
         <span>Юзернейм в Telegram, без @</span>
         <input value={tg} onChange={(e) => setTg(e.target.value)} placeholder="vasya_pub" autoCapitalize="off" autoCorrect="off" />
       </label>
-      <div className="sheet-btns"><button className="btn primary" onClick={save}>Сохранить</button></div>
+      <div className="sheet-btns">
+        {id && id !== state.me && <button className="btn danger" onClick={remove}>Удалить из компании</button>}
+        <button className="btn primary" onClick={save}>Сохранить</button>
+      </div>
     </>
   );
 }

@@ -4,7 +4,7 @@ import { RECEIPT_FN, TELEGRAM_FN } from './functions';
 
 // ---------- Загрузка всех данных компании ----------
 
-type PersonRow = { id: string; name: string; tg: string; user_id: string | null; avatar_url: string };
+type PersonRow = { id: string; name: string; tg: string; user_id: string | null; avatar_url: string; archived: boolean };
 type PlaceRow = { id: string; name: string; address: string; hue: number; photo_path: string; map_url: string; lat: number | null; lon: number | null };
 type ShareRow = { person_id: string; qty: number };
 type ItemRow = { id: string; name: string; price: number | string; qty: number; split_mode: 'equal' | 'qty'; created_at: string; item_shares: ShareRow[] };
@@ -21,7 +21,7 @@ function must<T>(res: { data: T | null; error: unknown }): T {
 
 export async function fetchCrew(crewId: string, userId: string): Promise<State> {
   const [peopleRes, placesRes, eventsRes, chatsRes] = await Promise.all([
-    supabase.from('people').select('id, name, tg, user_id, avatar_url').eq('crew_id', crewId).order('created_at'),
+    supabase.from('people').select('id, name, tg, user_id, avatar_url, archived').eq('crew_id', crewId).order('created_at'),
     // бары всех моих компаний и посиделок — правила доступа в базе решают, что видно
     supabase.from('places').select('id, name, address, hue, photo_path, map_url, lat, lon').order('created_at'),
     supabase
@@ -41,7 +41,7 @@ export async function fetchCrew(crewId: string, userId: string): Promise<State> 
 
   return {
     me: people.find((p) => p.user_id === userId)?.id ?? '',
-    people: people.map((p) => ({ id: p.id, name: p.name, tg: p.tg, userId: p.user_id, avatar: p.avatar_url ?? '' })),
+    people: people.map((p) => ({ id: p.id, name: p.name, tg: p.tg, userId: p.user_id, avatar: p.avatar_url ?? '', archived: !!p.archived })),
     places: places.map((p) => ({ id: p.id, name: p.name, address: p.address, hue: p.hue, photo: p.photo_path, mapUrl: p.map_url ?? '', lat: p.lat, lon: p.lon })),
     chats: chats.map((c) => ({ id: c.id, name: c.name, chatId: c.chat_id })),
     events: events.map((e): BarEvent => ({
@@ -252,4 +252,11 @@ export async function setCrewAvatar(crewId: string, file: File | null): Promise<
   const url = file ? await uploadTo('place-photos', `${crewId}/crew-${Date.now()}.jpg`, await squareJpeg(file)) : '';
   const { error } = await supabase.from('crews').update({ avatar_url: url }).eq('id', crewId);
   if (error) throw error;
+}
+
+/** Удалить человека из компании: 'deleted' — полностью, 'archived' — скрыт, история осталась */
+export async function removePerson(personId: string): Promise<'deleted' | 'archived'> {
+  const { data, error } = await supabase.rpc('remove_person', { p: personId });
+  if (error) throw error;
+  return data as 'deleted' | 'archived';
 }

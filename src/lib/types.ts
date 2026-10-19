@@ -1,7 +1,8 @@
 // Модель данных. Названия совпадают с будущими таблицами в Supabase.
 
 /** userId — аккаунт, если человек привязал себя («Это я») */
-export type Person = { id: string; name: string; tg: string; userId: string | null; avatar: string };
+/** archived — удалён из компании, но остаётся в старых посиделках */
+export type Person = { id: string; name: string; tg: string; userId: string | null; avatar: string; archived?: boolean };
 
 /** mapUrl — ссылка из Яндекс/Google Карт, lat/lon — точка на карте (если выбрали из поиска) */
 export type Place = { id: string; name: string; address: string; hue: number; photo: string; mapUrl: string; lat: number | null; lon: number | null };

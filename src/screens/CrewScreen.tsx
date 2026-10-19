@@ -85,7 +85,7 @@ export function CrewScreen() {
           <input type="file" accept="image/*" hidden disabled={avBusy} onChange={(e) => e.target.files?.[0] && changeAvatar(e.target.files[0])} />
         </label>
         <div className="crew-head-name">{acc.crew.name}</div>
-        <div className="s">{state.people.filter((p) => p.userId).length} в приложении · {state.people.length} всего</div>
+        <div className="s">{state.people.filter((p) => p.userId && !p.archived).length} в приложении · {state.people.filter((p) => !p.archived).length} всего</div>
         {acc.crew.avatar_url && <button className="link-btn" style={{ margin: '4px 0 0' }} onClick={() => changeAvatar(null)} disabled={avBusy}>Убрать фото</button>}
       </div>
 
@@ -125,7 +125,7 @@ export function CrewScreen() {
 
       <h3>Люди <small>баланс по всем посиделкам</small></h3>
       <div className="list">
-        {state.people.map((p) => (
+        {state.people.filter((p) => !p.archived).map((p) => (
           <button key={p.id} className="row" onClick={() => ui.open(<PersonSheet id={p.id} />)}>
             <Av id={p.id} />
             <div className="grow">
