@@ -254,3 +254,11 @@ img.av { object-fit: cover; padding: 0; background: var(--chip) }
 .member-items .row { padding: 8px 0; border-bottom: 1px dashed var(--line) }
 .member-items .row:last-child { border-bottom: 0 }
 .coaster .mat { font-size: 13px }
+
+/* ===== Обложка бара ===== */
+.photo { background-color: var(--chip) }
+.place-cover { margin-bottom: 14px }
+.place-cover::after { background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,.45)) }
+.cover-actions { position: absolute; right: 10px; bottom: 10px; z-index: 1; display: flex; gap: 8px }
+.cover-btn { background: rgba(0,0,0,.55); color: #fff; border-color: transparent; cursor: pointer; backdrop-filter: blur(6px) }
+.cover-btn svg { width: 16px; height: 16px }

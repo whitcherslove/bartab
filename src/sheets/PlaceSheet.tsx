@@ -37,6 +37,7 @@ export function PlaceSheet({ id }: { id?: string }) {
   const [mapUrl, setMapUrl] = useState(place?.mapUrl ?? '');
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(place?.lat != null && place?.lon != null ? { lat: place.lat, lon: place.lon } : null);
   const [busy, setBusy] = useState(false);
+  const [draftId] = useState(() => uid());
 
   // Поиск: включается, пока вводишь название нового бара
   const [searchOn, setSearchOn] = useState(!id);
@@ -89,7 +90,7 @@ export function PlaceSheet({ id }: { id?: string }) {
     const n = name.trim();
     if (!n) return ui.toast('Укажи название');
     const link = mapUrl.trim();
-    const placeId = id ?? uid();
+    const placeId = id ?? draftId;
     let url = photo;
     if (photo.startsWith('data:')) {
       setBusy(true);
@@ -164,11 +165,15 @@ export function PlaceSheet({ id }: { id?: string }) {
         <div className="field"><span>Показать на карте</span><MapButtons place={{ id: '', hue: 0, photo: '', ...preview }} /></div>
       )}
 
-      <div className="photo hero" style={{ height: 140, ...photoStyle({ name: name || 'Б', hue: place?.hue ?? hueOf(name || 'Б'), photo }) }} />
-      <label className="btn block" style={{ cursor: 'pointer', marginBottom: 14 }}>
-        {Icon.cam} {photo ? 'Заменить фото' : 'Добавить фото'}
-        <input type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
-      </label>
+      <div className="photo hero place-cover" style={{ height: 140, ...photoStyle({ id: id ?? draftId, name: name || 'Б', hue: place?.hue ?? hueOf(name || 'Б'), photo }) }}>
+        <div className="cover-actions">
+          <label className="btn sm cover-btn">
+            {Icon.cam} {photo ? 'Заменить фото' : 'Своё фото'}
+            <input type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
+          </label>
+          {photo && <button type="button" className="btn sm cover-btn" onClick={() => setPhoto('')}>Убрать</button>}
+        </div>
+      </div>
 
       <div className="sheet-btns">
         {id && <button className="btn danger" onClick={remove} disabled={busy}>Удалить</button>}

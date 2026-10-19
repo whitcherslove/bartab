@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { Place } from '../lib/types';
 import { hueOf, money } from '../lib/format';
 import { useStore } from '../lib/store';
+import { placeholderFor } from '../lib/placeholders';
 
 export function Av({ id, sm }: { id: string; sm?: boolean }) {
   const { nameOf, state } = useStore();
@@ -20,18 +21,16 @@ export function Pill({ b }: { b: number }) {
   return b > 0 ? <span className="pill pos num">+{money(b)}</span> : <span className="pill neg num">−{money(-b)}</span>;
 }
 
-export function photoStyle(place?: Pick<Place, 'name' | 'hue' | 'photo'>): CSSProperties {
+/** Фото бара или, если своего нет, иллюстрация (у каждого бара своя) */
+export function photoStyle(place?: Partial<Pick<Place, 'id' | 'name' | 'hue' | 'photo'>>): CSSProperties {
   if (place?.photo) return { backgroundImage: `url(${place.photo})` };
-  const h = place?.hue ?? hueOf(place?.name ?? '?');
-  return {
-    background: `radial-gradient(circle at 20% 20%, hsl(${h} 70% 62%), transparent 60%), linear-gradient(135deg, hsl(${h} 55% 34%), hsl(${(h + 40) % 360} 45% 18%))`,
-  };
+  const name = place?.name ?? '?';
+  return { backgroundImage: `url("${placeholderFor(place?.id || name, place?.hue ?? hueOf(name))}")` };
 }
 
 export function PlacePhoto({ place, className = '', children }: { place?: Place; className?: string; children?: ReactNode }) {
   return (
     <div className={'photo ' + className} style={photoStyle(place)}>
-      {!place?.photo && <span className="ph-letter">{(place?.name ?? '?').slice(0, 1)}</span>}
       {children}
     </div>
   );
