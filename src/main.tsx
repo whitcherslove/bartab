@@ -2,10 +2,11 @@ import { Component, StrictMode, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.tsx';
-import { applyTheme } from './lib/theme';
+import { applyAccent, applyTheme } from './lib/theme';
 import './lib/install'; // ловим «можно установить» как можно раньше
 
 applyTheme();
+applyAccent();
 
 /** Если что-то упало при отрисовке — показываем ошибку и кнопки вместо пустого экрана */
 class Crash extends Component<{ children: ReactNode }, { error: Error | null }> {

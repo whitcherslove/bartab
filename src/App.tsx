@@ -66,9 +66,9 @@ function TabBar({ current }: { current: View['screen'] }) {
   return (
     <nav className="tabbar" aria-label="Разделы">
       <div className="tabbar-in">
+        {tab('crew', 'people', 'Компания')}
         {tab('events', 'glass', 'Посиделки')}
         {tab('places', 'pin', 'Бары')}
-        {tab('crew', 'people', 'Компания')}
         {tab('profile', 'user', 'Профиль')}
       </div>
     </nav>

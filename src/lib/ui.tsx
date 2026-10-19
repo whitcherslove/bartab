@@ -21,7 +21,7 @@ const Ctx = createContext<UI | null>(null);
 // шторку или возвращает на предыдущий экран, а не выходит из приложения.
 type HistState = { bartab: true; view: View; depth: number; sheet?: boolean };
 
-const ROOT: View = { screen: 'events' };
+const ROOT: View = { screen: 'crew' };
 const sameView = (a: View, b: View) => a.screen === b.screen && (a.screen !== 'event' || (b.screen === 'event' && a.id === b.id));
 
 export function UIProvider({ children }: { children: ReactNode }) {

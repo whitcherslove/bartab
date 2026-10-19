@@ -314,3 +314,30 @@ button.profile-avatar, button.crew-head-av { border: 0; background: none; paddin
 /* ===== Шторки: смахивание ===== */
 .sheet { overscroll-behavior: contain; will-change: transform }
 .grab { padding: 8px 0; margin-top: -8px; box-sizing: content-box; background-clip: content-box; cursor: grab; touch-action: none }
+
+/* ===== Цветовые схемы (акцент) ===== */
+:root[data-accent="hop"] { --amber: #2F7D5B; --amber-soft: #DDF0E6; --amber-ink: #FFFFFF }
+@media (prefers-color-scheme: dark) { :root[data-accent="hop"]:not([data-theme="light"]) { --amber: #5FC79A; --amber-soft: #173327; --amber-ink: #0B1F16 } }
+:root[data-theme="dark"][data-accent="hop"] { --amber: #5FC79A; --amber-soft: #173327; --amber-ink: #0B1F16 }
+:root[data-accent="cherry"] { --amber: #B4234E; --amber-soft: #F9DDE6; --amber-ink: #FFFFFF }
+@media (prefers-color-scheme: dark) { :root[data-accent="cherry"]:not([data-theme="light"]) { --amber: #F0718F; --amber-soft: #3A1622; --amber-ink: #2A0A14 } }
+:root[data-theme="dark"][data-accent="cherry"] { --amber: #F0718F; --amber-soft: #3A1622; --amber-ink: #2A0A14 }
+:root[data-accent="lavender"] { --amber: #6B4BC4; --amber-soft: #E9E2FA; --amber-ink: #FFFFFF }
+@media (prefers-color-scheme: dark) { :root[data-accent="lavender"]:not([data-theme="light"]) { --amber: #A98DF5; --amber-soft: #261C40; --amber-ink: #150C2B } }
+:root[data-theme="dark"][data-accent="lavender"] { --amber: #A98DF5; --amber-soft: #261C40; --amber-ink: #150C2B }
+:root[data-accent="ocean"] { --amber: #1F6FB2; --amber-soft: #DCEBF8; --amber-ink: #FFFFFF }
+@media (prefers-color-scheme: dark) { :root[data-accent="ocean"]:not([data-theme="light"]) { --amber: #6BB2F0; --amber-soft: #142A3D; --amber-ink: #071827 } }
+:root[data-theme="dark"][data-accent="ocean"] { --amber: #6BB2F0; --amber-soft: #142A3D; --amber-ink: #071827 }
+:root[data-accent="mint"] { --amber: #0F8080; --amber-soft: #D7F1EF; --amber-ink: #FFFFFF }
+@media (prefers-color-scheme: dark) { :root[data-accent="mint"]:not([data-theme="light"]) { --amber: #4FD1C5; --amber-soft: #10302E; --amber-ink: #04201E } }
+:root[data-theme="dark"][data-accent="mint"] { --amber: #4FD1C5; --amber-soft: #10302E; --amber-ink: #04201E }
+:root[data-accent="coral"] { --amber: #C94E33; --amber-soft: #FBE3DC; --amber-ink: #FFFFFF }
+@media (prefers-color-scheme: dark) { :root[data-accent="coral"]:not([data-theme="light"]) { --amber: #FF8A6B; --amber-soft: #3A1D16; --amber-ink: #2B0E07 } }
+:root[data-theme="dark"][data-accent="coral"] { --amber: #FF8A6B; --amber-soft: #3A1D16; --amber-ink: #2B0E07 }
+:root[data-accent="graphite"] { --amber: #3A4A45; --amber-soft: #E3E8E6; --amber-ink: #FFFFFF }
+@media (prefers-color-scheme: dark) { :root[data-accent="graphite"]:not([data-theme="light"]) { --amber: #C9D3CF; --amber-soft: #2A3532; --amber-ink: #121917 } }
+:root[data-theme="dark"][data-accent="graphite"] { --amber: #C9D3CF; --amber-soft: #2A3532; --amber-ink: #121917 }
+.swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px }
+.swatch { border: 0; background: var(--surface); border-radius: 16px; padding: 12px 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; color: var(--ink) }
+.swatch i { width: 34px; height: 34px; border-radius: 50%; display: block; box-shadow: inset 0 0 0 3px rgba(255,255,255,.35) }
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--amber) }

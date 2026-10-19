@@ -7,7 +7,7 @@ import { CURRENCIES, fdate, money } from '../lib/format';
 import { personPlaceholderFor } from '../lib/placeholders';
 import { uploadAvatar } from '../lib/remote';
 import { humanError } from '../lib/supabase';
-import { getTheme, setTheme, type Theme } from '../lib/theme';
+import { ACCENTS, getAccent, getTheme, setAccent, setTheme, type Accent, type Theme } from '../lib/theme';
 import { Icon } from '../components/Icons';
 import { InstallCard } from '../components/InstallCard';
 import { PhotoChoiceSheet } from '../components/PhotoPick';
@@ -21,6 +21,7 @@ export function ProfileScreen() {
   const [tg, setTg] = useState(acc.profile.tg);
   const [busy, setBusy] = useState(false);
   const [theme, setThemeState] = useState<Theme>(getTheme);
+  const [accent, setAccentState] = useState<Accent>(getAccent);
   const dirty = name.trim() !== acc.profile.name || tg.trim().replace(/^@/, '') !== acc.profile.tg;
 
   const save = async () => {
@@ -163,6 +164,19 @@ export function ProfileScreen() {
         <button type="button" aria-pressed={theme === 'system'} onClick={() => pickTheme('system')}>Как в системе</button>
         <button type="button" aria-pressed={theme === 'light'} onClick={() => pickTheme('light')}>Светлая</button>
         <button type="button" aria-pressed={theme === 'dark'} onClick={() => pickTheme('dark')}>Тёмная</button>
+      </div>
+
+      <h3>Цвет приложения</h3>
+      <div className="swatches">
+        {ACCENTS.map((a) => {
+          const dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          return (
+            <button key={a.id} type="button" className="swatch" aria-pressed={accent === a.id} onClick={() => { setAccent(a.id); setAccentState(a.id); }}>
+              <i style={{ background: dark ? a.dark : a.light }} />
+              {a.name}
+            </button>
+          );
+        })}
       </div>
 
       <InstallCard />
