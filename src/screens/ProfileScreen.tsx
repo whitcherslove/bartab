@@ -3,7 +3,8 @@ import { useAccount } from '../lib/account';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { stats } from '../lib/calc';
-import { CURRENCIES, fdate, hueOf, money } from '../lib/format';
+import { CURRENCIES, fdate, money } from '../lib/format';
+import { personPlaceholderFor } from '../lib/placeholders';
 import { uploadAvatar } from '../lib/remote';
 import { humanError } from '../lib/supabase';
 import { getTheme, setTheme, type Theme } from '../lib/theme';
@@ -74,7 +75,6 @@ export function ProfileScreen() {
   const topPlaces = [...visits.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3)
     .map(([id, n]) => ({ place: state.places.find((p) => p.id === id), n })).filter((x) => x.place);
 
-  const initial = (acc.profile.name || '?').slice(0, 1).toUpperCase();
 
   return (
     <>
@@ -82,9 +82,7 @@ export function ProfileScreen() {
 
       <div className="profile-head">
         <label className="profile-avatar" aria-label="Сменить фото">
-          {acc.profile.avatar_url
-            ? <img src={acc.profile.avatar_url} alt="" />
-            : <span style={{ background: `hsl(${hueOf(acc.profile.name + acc.profile.id)} 45% 42%)` }}>{initial}</span>}
+          <img src={acc.profile.avatar_url || personPlaceholderFor(acc.profile.id)} alt="" />
           <span className="profile-avatar-btn">{Icon.cam}</span>
           <input type="file" accept="image/*" hidden disabled={busy} onChange={(e) => onAvatar(e.target.files?.[0])} />
         </label>

@@ -2,19 +2,15 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { Place } from '../lib/types';
 import { hueOf, money } from '../lib/format';
 import { useStore } from '../lib/store';
-import { crewPlaceholderFor, placeholderFor } from '../lib/placeholders';
+import { crewPlaceholderFor, personPlaceholderFor, placeholderFor } from '../lib/placeholders';
 
 export function Av({ id, sm, lg }: { id: string; sm?: boolean; lg?: boolean }) {
   const { nameOf, state } = useStore();
   const name = nameOf(id);
-  const avatar = state.people.find((p) => p.id === id)?.avatar;
-  const cls = 'av' + (sm ? ' sm' : '') + (lg ? ' lg' : '');
-  if (avatar) return <img className={cls} src={avatar} alt={name} title={name} loading="lazy" />;
-  return (
-    <span className={cls} style={{ background: `hsl(${hueOf(name + id)} 45% 42%)` }} title={name}>
-      {name.slice(0, 1).toUpperCase()}
-    </span>
-  );
+  const person = state.people.find((p) => p.id === id);
+  // своё фото или значок; ключ — аккаунт, чтобы значок совпадал с профилем во всех компаниях
+  const src = person?.avatar || personPlaceholderFor(person?.userId || id);
+  return <img className={'av' + (sm ? ' sm' : '') + (lg ? ' lg' : '')} src={src} alt={name} title={name} loading="lazy" />;
 }
 
 export function Pill({ b }: { b: number }) {

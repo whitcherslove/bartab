@@ -172,3 +172,43 @@ export const CREW_SCENE_COUNT = crewScenes.length;
 /** Для проверки: SVG конкретной сцены */
 export const sceneSvg = (i: number, hue: number) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice">${scenes[i](hue)}</svg>`;
+
+
+// ---------- Круглые заглушки для людей без фото ----------
+// Простые значки, чтобы читались даже в маленьком кружке 22 px.
+
+const personIcons: string[] = [
+  // пинта
+  `<path d="M32 34 H64 L60 78 Q59 82 55 82 H41 Q37 82 36 78 Z" fill="${C.amber}"/><path d="M29 36 Q28 24 38 25 Q41 18 49 20 Q57 16 61 24 Q70 23 67 36 Z" fill="${C.foam}"/>`,
+  // коктейль
+  `<path d="M24 30 H76 L50 58 Z" fill="${C.cherry}"/><rect x="47" y="56" width="6" height="20" fill="${C.foam}"/><rect x="36" y="74" width="28" height="6" rx="3" fill="${C.foam}"/><circle cx="66" cy="28" r="7" fill="${C.lime}"/>`,
+  // бокал вина
+  `<path d="M34 22 H66 Q68 52 50 56 Q32 52 34 22 Z" fill="${C.foam}" opacity=".35"/><path d="M35 36 H65 Q64 52 50 55 Q36 52 35 36 Z" fill="${C.cherry}"/><rect x="47" y="55" width="6" height="20" fill="${C.foam}"/><rect x="36" y="74" width="28" height="6" rx="3" fill="${C.foam}"/>`,
+  // шот
+  `<path d="M34 30 H66 L61 76 H39 Z" fill="${C.foam}" opacity=".3" stroke="${C.foam}" stroke-width="3" stroke-linejoin="round"/><path d="M36 46 H64 L61 76 H39 Z" fill="${C.amber}"/>`,
+  // долька лайма
+  `<path d="M22 60 A28 28 0 0 1 78 60 Z" fill="${C.lime}"/><path d="M28 60 A22 22 0 0 1 72 60 Z" fill="${C.foam}" opacity=".6"/><path d="M50 60 V40 M50 60 L36 46 M50 60 L64 46" stroke="${C.lime}" stroke-width="3"/>`,
+  // вишенки
+  `<path d="M40 64 Q46 36 62 26 M60 64 Q58 42 62 26" stroke="${C.foam}" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="38" cy="66" r="12" fill="${C.cherry}"/><circle cx="62" cy="66" r="12" fill="${C.cherry}"/><circle cx="34" cy="62" r="3" fill="${C.foam}" opacity=".7"/>`,
+  // крендель
+  `<path d="M50 70 C20 50 26 26 40 28 C52 30 50 46 50 46 C50 46 48 30 60 28 C74 26 80 50 50 70 Z M38 62 L62 46 M62 62 L38 46" stroke="${C.amber}" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
+  // бутылка
+  `<path d="M42 82 V48 Q42 40 46 36 V18 H54 V36 Q58 40 58 48 V82 Z" fill="${C.lime}"/><rect x="44" y="54" width="12" height="14" rx="2" fill="${C.foam}" opacity=".85"/>`,
+];
+
+const personCache = new Map<string, string>();
+
+/** Круглая картинка-заглушка для человека (ключ — id аккаунта или человека) */
+export function personPlaceholderFor(key: string): string {
+  const hit = personCache.get(key);
+  if (hit) return hit;
+  const seed = seedOf(key);
+  const h = (seed >> 5) % 360;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${hex(h, 45, 42)}"/><stop offset="1" stop-color="${hex((h + 30) % 360, 40, 26)}"/></linearGradient></defs><circle cx="50" cy="50" r="50" fill="url(#g)"/>${personIcons[seed % personIcons.length]}</svg>`;
+  const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  personCache.set(key, url);
+  return url;
+}
+
+export const personIconSvg = (i: number, h: number) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${hex(h, 45, 42)}"/><stop offset="1" stop-color="${hex((h + 30) % 360, 40, 26)}"/></linearGradient></defs><circle cx="50" cy="50" r="50" fill="url(#g)"/>${personIcons[i]}</svg>`;
+export const PERSON_ICON_COUNT = personIcons.length;
