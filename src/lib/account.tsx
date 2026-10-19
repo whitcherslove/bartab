@@ -7,7 +7,7 @@ import { ProfileStep } from '../screens/auth/ProfileStep';
 import { CrewSetup } from '../screens/auth/CrewSetup';
 import { Splash } from '../screens/auth/Splash';
 
-export type Profile = { id: string; name: string; tg: string };
+export type Profile = { id: string; name: string; tg: string; avatar_url: string };
 export type Crew = { id: string; name: string; invite_code: string };
 
 type Account = {
@@ -17,7 +17,8 @@ type Account = {
   crew: Crew;
   setCrewId: (id: string) => void;
   reload: () => Promise<void>;
-  saveProfile: (p: { name: string; tg: string }) => Promise<void>;
+  saveProfile: (p: { name: string; tg: string; avatar_url?: string }) => Promise<void>;
+  leaveCrew: (id: string) => Promise<void>;
   signOut: () => Promise<void>;
   inviteLink: string;
 };
@@ -85,12 +86,12 @@ export function AccountGate({ children }: { children: ReactNode }) {
         else if (joined) setCrewId(joined as string);
       }
       const [{ data: p, error: pErr }, { data: c, error: cErr }] = await Promise.all([
-        supabase.from('profiles').select('id, name, tg').eq('id', user.id).maybeSingle(),
+        supabase.from('profiles').select('id, name, tg, avatar_url').eq('id', user.id).maybeSingle(),
         supabase.from('crews').select('id, name, invite_code').order('created_at'),
       ]);
       if (pErr) throw pErr;
       if (cErr) throw cErr;
-      const prof = p ?? { id: user.id, name: '', tg: '' };
+      const prof = p ?? { id: user.id, name: '', tg: '', avatar_url: '' };
       setProfile(prof);
       setCrews(c ?? []);
       writeCache('account:' + user.id, { profile: prof, crews: c ?? [] });
@@ -116,12 +117,21 @@ export function AccountGate({ children }: { children: ReactNode }) {
     reload();
   }, [userId, reload]);
 
-  const saveProfile = useCallback(async ({ name, tg }: { name: string; tg: string }) => {
+  const saveProfile = useCallback(async ({ name, tg, avatar_url }: { name: string; tg: string; avatar_url?: string }) => {
     if (!userId) return;
-    const { error: e } = await supabase.from('profiles').update({ name, tg }).eq('id', userId);
+    const avatar = avatar_url ?? profile?.avatar_url ?? '';
+    const { error: e } = await supabase.rpc('update_my_profile', { p_name: name, p_tg: tg, p_avatar: avatar });
     if (e) throw e;
-    setProfile({ id: userId, name, tg });
-  }, [userId]);
+    setProfile({ id: userId, name, tg, avatar_url: avatar });
+  }, [userId, profile?.avatar_url]);
+
+  const leaveCrew = useCallback(async (id: string) => {
+    const { error: e } = await supabase.rpc('leave_crew', { c: id });
+    if (e) throw e;
+    try { localStorage.removeItem(CREW_KEY); } catch { /* ignore */ }
+    setCrewIdState('');
+    await reload();
+  }, [reload]);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
@@ -141,7 +151,7 @@ export function AccountGate({ children }: { children: ReactNode }) {
   const inviteLink = `${window.location.origin}/?join=${crew.invite_code}`;
 
   return (
-    <Ctx.Provider value={{ session, profile, crews, crew, setCrewId, reload, saveProfile, signOut, inviteLink }}>
+    <Ctx.Provider value={{ session, profile, crews, crew, setCrewId, reload, saveProfile, leaveCrew, signOut, inviteLink }}>
       {children}
     </Ctx.Provider>
   );

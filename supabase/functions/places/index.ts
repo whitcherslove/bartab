@@ -26,12 +26,15 @@ type YItem = { title?: { text: string }; subtitle?: { text: string }; address?: 
 
 function yShortAddress(a?: YItem['address']) {
   const comps = a?.component ?? [];
-  const pick = (k: string) => comps.find((c) => c.kind.includes(k))?.name;
-  const built = [[pick('STREET'), pick('HOUSE')].filter(Boolean).join(', '), pick('LOCALITY')].filter(Boolean).join(', ');
-  return built || (a?.formatted_address ?? '').replace(/^(Россия|Russia),\s*/, '');
+  const pick = (k: string) => comps.find((c) => c.kind.some((x) => x.toUpperCase() === k))?.name;
+  const street = pick('STREET');
+  // улица из компонентов — «Вознесенский проспект, 13, Санкт-Петербург», иначе готовый адрес без страны
+  if (street) return [[street, pick('HOUSE')].filter(Boolean).join(', '), pick('LOCALITY')].filter(Boolean).join(', ');
+  return (a?.formatted_address ?? '').replace(/^(Россия|Russia),\s*/, '');
 }
+/** Страна — только если Яндекс указал её явно отдельным полем */
 const yCountry = (a?: YItem['address']) =>
-  a?.component?.find((c) => c.kind.includes('COUNTRY'))?.name ?? a?.formatted_address?.split(',')[0]?.trim() ?? '';
+  a?.component?.find((c) => c.kind.some((k) => k.toUpperCase() === 'COUNTRY'))?.name ?? '';
 const yOrgLink = (uri?: string) => {
   const oid = uri?.match(/[?&]oid=(\d+)/)?.[1];
   return oid ? `https://yandex.ru/maps/org/${oid}/` : '';
@@ -53,8 +56,14 @@ async function searchYandex(q: string, near: Near): Promise<Found[]> {
     return [];
   }
   const data = (await resp.json()) as { results?: YItem[] };
-  return (data.results ?? [])
-    .filter((r) => r.title?.text && /^(Россия|Russia)$/i.test(yCountry(r.address)))
+  const raw = data.results ?? [];
+  // отбрасываем только заведения, где явно указана другая страна
+  const kept = raw.filter((r) => {
+    const country = yCountry(r.address);
+    return r.title?.text && (!country || /^(Россия|Russia)$/i.test(country));
+  });
+  console.log(`Яндекс: «${q}» — найдено ${raw.length}, в России ${kept.length}`);
+  return kept
     .map((r) => {
       const address = yShortAddress(r.address);
       const sub = r.subtitle?.text ?? '';

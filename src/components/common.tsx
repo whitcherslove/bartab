@@ -4,8 +4,10 @@ import { hueOf, money } from '../lib/format';
 import { useStore } from '../lib/store';
 
 export function Av({ id, sm }: { id: string; sm?: boolean }) {
-  const { nameOf } = useStore();
+  const { nameOf, state } = useStore();
   const name = nameOf(id);
+  const avatar = state.people.find((p) => p.id === id)?.avatar;
+  if (avatar) return <img className={'av' + (sm ? ' sm' : '')} src={avatar} alt={name} title={name} loading="lazy" />;
   return (
     <span className={'av' + (sm ? ' sm' : '')} style={{ background: `hsl(${hueOf(name + id)} 45% 42%)` }} title={name}>
       {name.slice(0, 1).toUpperCase()}

@@ -7,7 +7,7 @@ import { photoStyle } from '../components/common';
 import { MapButtons } from '../components/MapButtons';
 import { uploadPlacePhoto } from '../lib/remote';
 import { humanError } from '../lib/supabase';
-import { isMapUrl, locate, searchPlaces, type FoundPlace } from '../lib/maps';
+import { locate, searchPlaces, type FoundPlace } from '../lib/maps';
 
 /** Сжимаем фото на телефоне до 720 px по ширине */
 function resize(file: File): Promise<string> {
@@ -89,7 +89,6 @@ export function PlaceSheet({ id }: { id?: string }) {
     const n = name.trim();
     if (!n) return ui.toast('Укажи название');
     const link = mapUrl.trim();
-    if (link && !isMapUrl(link)) return ui.toast('Это не похоже на ссылку из карт');
     const placeId = id ?? uid();
     let url = photo;
     if (photo.startsWith('data:')) {
@@ -146,15 +145,10 @@ export function PlaceSheet({ id }: { id?: string }) {
         <button type="button" className="link-btn" onClick={() => setSearchOn(true)}>Найти на карте заново</button>
       )}
 
-      <label className="field"><span>Адрес</span><input value={address} onChange={(e) => setAddress(e.target.value)} /></label>
-
-      <label className="field">
-        <span>Ссылка на карты (необязательно)</span>
-        <input value={mapUrl} onChange={(e) => setMapUrl(e.target.value)} placeholder="Вставь ссылку из Яндекс Карт или Google Maps" inputMode="url" autoCapitalize="off" />
-      </label>
+      <label className="field"><span>Адрес</span><input value={address} onChange={(e) => { setAddress(e.target.value); setMapUrl(''); setCoords(null); }} /></label>
 
       {(coords || mapUrl.trim() || address.trim()) && name.trim() && (
-        <div className="field"><span>Проверить на карте</span><MapButtons place={{ id: '', hue: 0, photo: '', ...preview }} /></div>
+        <div className="field"><span>Показать на карте</span><MapButtons place={{ id: '', hue: 0, photo: '', ...preview }} /></div>
       )}
 
       <div className="photo hero" style={{ height: 140, ...photoStyle({ name: name || 'Б', hue: place?.hue ?? hueOf(name || 'Б'), photo }) }} />

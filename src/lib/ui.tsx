@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
-export type View = { screen: 'events' | 'people' | 'places' } | { screen: 'event'; id: string };
+export type View = { screen: 'events' | 'places' | 'crew' | 'profile' } | { screen: 'event'; id: string };
 
 type UI = {
   view: View;

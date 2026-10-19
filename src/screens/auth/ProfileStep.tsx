@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Profile } from '../../lib/account';
 import { humanError } from '../../lib/supabase';
 
-export function ProfileStep({ profile, email, onSave }: { profile: Profile; email: string; onSave: (p: { name: string; tg: string }) => Promise<void> }) {
+export function ProfileStep({ profile, email, onSave }: { profile: Profile; email: string; onSave: (p: { name: string; tg: string; avatar_url?: string }) => Promise<void> }) {
   const [name, setName] = useState(profile.name || email.split('@')[0]);
   const [tg, setTg] = useState(profile.tg);
   const [busy, setBusy] = useState(false);

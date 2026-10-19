@@ -4,7 +4,8 @@ import { UIProvider, useUI, type View } from './lib/ui';
 import { Icon } from './components/Icons';
 import { EventsScreen } from './screens/EventsScreen';
 import { EventScreen } from './screens/EventScreen';
-import { PeopleScreen } from './screens/PeopleScreen';
+import { CrewScreen } from './screens/CrewScreen';
+import { ProfileScreen } from './screens/ProfileScreen';
 import { PlacesScreen } from './screens/PlacesScreen';
 
 export default function App() {
@@ -26,8 +27,10 @@ function Shell() {
       <main className="app">
         {view.screen === 'event' ? (
           <EventScreen id={view.id} />
-        ) : view.screen === 'people' ? (
-          <PeopleScreen />
+        ) : view.screen === 'crew' ? (
+          <CrewScreen />
+        ) : view.screen === 'profile' ? (
+          <ProfileScreen />
         ) : view.screen === 'places' ? (
           <PlacesScreen />
         ) : (
@@ -41,7 +44,7 @@ function Shell() {
 
 function TabBar({ current }: { current: View['screen'] }) {
   const { go } = useUI();
-  const tab = (screen: 'events' | 'people' | 'places', icon: keyof typeof Icon, label: string) => (
+  const tab = (screen: 'events' | 'places' | 'crew' | 'profile', icon: keyof typeof Icon, label: string) => (
     <button className="tab" aria-current={current === screen ? 'page' : undefined} onClick={() => go({ screen })}>
       {Icon[icon]}
       {label}
@@ -51,8 +54,9 @@ function TabBar({ current }: { current: View['screen'] }) {
     <nav className="tabbar" aria-label="Разделы">
       <div className="tabbar-in">
         {tab('events', 'glass', 'Посиделки')}
-        {tab('people', 'people', 'Люди')}
         {tab('places', 'pin', 'Бары')}
+        {tab('crew', 'people', 'Компания')}
+        {tab('profile', 'user', 'Профиль')}
       </div>
     </nav>
   );

@@ -4,7 +4,7 @@ import { RECEIPT_FN, TELEGRAM_FN } from './functions';
 
 // ---------- Загрузка всех данных компании ----------
 
-type PersonRow = { id: string; name: string; tg: string; user_id: string | null };
+type PersonRow = { id: string; name: string; tg: string; user_id: string | null; avatar_url: string };
 type PlaceRow = { id: string; name: string; address: string; hue: number; photo_path: string; map_url: string; lat: number | null; lon: number | null };
 type ShareRow = { person_id: string; qty: number };
 type ItemRow = { id: string; name: string; price: number | string; qty: number; split_mode: 'equal' | 'qty'; created_at: string; item_shares: ShareRow[] };
@@ -21,7 +21,7 @@ function must<T>(res: { data: T | null; error: unknown }): T {
 
 export async function fetchCrew(crewId: string, userId: string): Promise<State> {
   const [peopleRes, placesRes, eventsRes, chatsRes] = await Promise.all([
-    supabase.from('people').select('id, name, tg, user_id').eq('crew_id', crewId).order('created_at'),
+    supabase.from('people').select('id, name, tg, user_id, avatar_url').eq('crew_id', crewId).order('created_at'),
     supabase.from('places').select('id, name, address, hue, photo_path, map_url, lat, lon').eq('crew_id', crewId).order('created_at'),
     supabase
       .from('events')
@@ -40,7 +40,7 @@ export async function fetchCrew(crewId: string, userId: string): Promise<State> 
 
   return {
     me: people.find((p) => p.user_id === userId)?.id ?? '',
-    people: people.map((p) => ({ id: p.id, name: p.name, tg: p.tg, userId: p.user_id })),
+    people: people.map((p) => ({ id: p.id, name: p.name, tg: p.tg, userId: p.user_id, avatar: p.avatar_url ?? '' })),
     places: places.map((p) => ({ id: p.id, name: p.name, address: p.address, hue: p.hue, photo: p.photo_path, mapUrl: p.map_url ?? '', lat: p.lat, lon: p.lon })),
     chats: chats.map((c) => ({ id: c.id, name: c.name, chatId: c.chat_id })),
     events: events.map((e): BarEvent => ({
@@ -211,4 +211,25 @@ export const tgSend = (chatRowId: string, text: string) => telegram<{ ok: boolea
 export async function deleteTgChat(id: string) {
   const { error } = await supabase.from('tg_chats').delete().eq('id', id);
   if (error) throw error;
+}
+
+/** Аватарка: квадрат 256 px, в папку пользователя; возвращает публичную ссылку */
+export async function uploadAvatar(userId: string, file: File): Promise<string> {
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const side = Math.min(img.width, img.height);
+      const c = document.createElement('canvas');
+      c.width = c.height = 256;
+      c.getContext('2d')?.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, 256, 256);
+      URL.revokeObjectURL(img.src);
+      c.toBlob((b) => (b ? resolve(b) : reject(new Error('Не удалось обработать фото'))), 'image/jpeg', 0.85);
+    };
+    img.onerror = () => reject(new Error('Не удалось открыть фото'));
+    img.src = URL.createObjectURL(file);
+  });
+  const path = `${userId}/${Date.now()}.jpg`;
+  const { error } = await supabase.storage.from('avatars').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+  if (error) throw error;
+  return supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl;
 }

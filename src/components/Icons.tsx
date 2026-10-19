@@ -16,6 +16,12 @@ export const Icon = {
       <path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" />
     </svg>
   ),
+  user: (
+    <svg viewBox="0 0 24 24" {...s} aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
+  ),
+  check: (
+    <svg viewBox="0 0 24 24" {...s} strokeWidth={2.2} aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+  ),
   back: (
     <svg viewBox="0 0 24 24" {...s} strokeWidth={2} aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
   ),
