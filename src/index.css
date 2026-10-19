@@ -365,3 +365,12 @@ button.profile-avatar, button.crew-head-av { border: 0; background: none; paddin
 .install-banner .ib-emoji { font-size: 20px }
 .install-banner .ib-text { flex: 1; font-size: 14px; font-weight: 500 }
 .install-banner .ib-close { border: 0; background: none; color: var(--muted); font-size: 22px; line-height: 1; padding: 4px 6px }
+
+/* ===== Мои посиделки ===== */
+.visits-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px }
+.visits-summary > div { background: var(--surface); border-radius: 16px; padding: 14px 12px }
+.visits-summary b { display: block; font: 700 22px/1.2 var(--display) }
+.visits-summary span { color: var(--muted); font-size: 13px }
+.visit-crews { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px }
+.visit-crew { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: var(--muted) }
+.place-thumb.sm { width: 40px; height: 40px; border-radius: 12px }

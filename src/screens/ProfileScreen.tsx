@@ -2,21 +2,20 @@ import { useState } from 'react';
 import { useAccount } from '../lib/account';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
-import { stats } from '../lib/calc';
-import { CURRENCIES, fdate, money } from '../lib/format';
+import { CURRENCIES } from '../lib/format';
 import { personPlaceholderFor } from '../lib/placeholders';
 import { uploadAvatar } from '../lib/remote';
 import { humanError } from '../lib/supabase';
 import { ACCENTS, getAccent, getTheme, setAccent, setTheme, type Accent, type Theme } from '../lib/theme';
 import { Icon } from '../components/Icons';
 import { InstallCard } from '../components/InstallCard';
+import { MyVisits } from '../components/MyVisits';
 import { PhotoChoiceSheet } from '../components/PhotoPick';
 import { getHome, getTabOrder, setHome, setTabOrder, TAB_ICONS, TAB_LABELS, type TabId } from '../lib/tabs';
-import { PlacePhoto } from '../components/common';
 
 export function ProfileScreen() {
   const acc = useAccount();
-  const { state, refresh } = useStore();
+  const { refresh } = useStore();
   const ui = useUI();
   const [name, setName] = useState(acc.profile.name);
   const [tg, setTg] = useState(acc.profile.tg);
@@ -86,14 +85,6 @@ export function ProfileScreen() {
     await acc.signOut();
   };
 
-  // ----- Мои посиделки (в текущей компании) -----
-  const mine = state.events.filter((e) => e.members.includes(state.me)).sort((a, b) => b.date.localeCompare(a.date));
-  const spent = mine.reduce((s, e) => s + stats(e, state.me).owed, 0);
-  const visits = new Map<string, number>();
-  mine.forEach((e) => e.placeId && visits.set(e.placeId, (visits.get(e.placeId) ?? 0) + 1));
-  const topPlaces = [...visits.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3)
-    .map(([id, n]) => ({ place: state.places.find((p) => p.id === id), n })).filter((x) => x.place);
-
 
   return (
     <>
@@ -126,44 +117,8 @@ export function ProfileScreen() {
         <p className="hint" style={{ margin: dirty ? '10px 2px 0' : 0 }}>Telegram и фото увидят друзья во всех твоих компаниях.</p>
       </div>
 
-      <h3>Мои посиделки <small>в компании «{acc.crew.name}»</small></h3>
-      {mine.length === 0 ? (
-        <div className="list"><div className="empty">Пока ни одной. Самое время позвать друзей 🍻</div></div>
-      ) : (
-        <>
-          <div className="stat-grid">
-            <div className="stat"><b className="num">{mine.length}</b><span>{mine.length % 10 === 1 && mine.length % 100 !== 11 ? 'посиделка' : 'посиделок'}</span></div>
-            <div className="stat"><b className="num">{money(spent)}</b><span>потрачено</span></div>
-            <div className="stat"><b className="num">{money(spent / mine.length)}</b><span>за вечер</span></div>
-          </div>
-          {topPlaces.length > 0 && (
-            <>
-              <h3>Любимые бары</h3>
-              <div className="list">
-                {topPlaces.map(({ place, n }) => (
-                  <div key={place!.id} className="row">
-                    <PlacePhoto place={place} className="place-thumb" />
-                    <div className="grow"><div className="t">{place!.name}</div><div className="s">{place!.address}</div></div>
-                    <span className="s">{n} раз</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-          <h3>Последние</h3>
-          <div className="list">
-            {mine.slice(0, 5).map((e) => {
-              const place = state.places.find((p) => p.id === e.placeId);
-              return (
-                <button key={e.id} className="row" onClick={() => ui.go({ screen: 'event', id: e.id })}>
-                  <div className="grow"><div className="t">{place?.name ?? 'Без места'}</div><div className="s">{fdate(e.date)}</div></div>
-                  <span className="amt num">{money(stats(e, state.me).owed)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
+      <h3>Мои посиделки <small>во всех компаниях</small></h3>
+      <MyVisits />
 
       <h3>Валюта</h3>
       <label className="field" style={{ marginBottom: 0 }}>

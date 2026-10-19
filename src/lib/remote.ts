@@ -260,3 +260,39 @@ export async function removePerson(personId: string): Promise<'deleted' | 'archi
   if (error) throw error;
   return data as 'deleted' | 'archived';
 }
+
+// ---------- История посиделок по всем компаниям (для профиля) ----------
+
+export type Visit = {
+  eventId: string;
+  date: string;
+  crewId: string;
+  place: { id: string; name: string; address: string; hue: number; photo: string } | null;
+};
+
+type VisitRow = {
+  events: { id: string; date: string; crew_id: string; places: { id: string; name: string; address: string; hue: number; photo_path: string } | null } | null;
+};
+
+/** Все посиделки, где я участник, во всех моих компаниях */
+export async function fetchMyVisits(userId: string): Promise<Visit[]> {
+  const { data: me, error: e1 } = await supabase.from('people').select('id').eq('user_id', userId);
+  if (e1) throw e1;
+  const ids = (me ?? []).map((p: { id: string }) => p.id);
+  if (!ids.length) return [];
+  const { data, error } = await supabase
+    .from('event_members')
+    .select('events(id, date, crew_id, places(id, name, address, hue, photo_path))')
+    .in('person_id', ids);
+  if (error) throw error;
+  return ((data ?? []) as unknown as VisitRow[])
+    .map((r) => r.events)
+    .filter((e): e is NonNullable<VisitRow['events']> => !!e)
+    .map((e) => ({
+      eventId: e.id,
+      date: e.date,
+      crewId: e.crew_id,
+      place: e.places ? { id: e.places.id, name: e.places.name, address: e.places.address, hue: e.places.hue, photo: e.places.photo_path } : null,
+    }))
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
