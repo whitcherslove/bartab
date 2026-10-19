@@ -40,6 +40,8 @@ export type BarEvent = {
   settled: string[];
   /** статус распознавания чека */
   status: string;
+  /** путь к фото последнего чека в хранилище receipts ('' — нет) */
+  receiptPath?: string;
   items: Item[];
 };
 

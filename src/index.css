@@ -375,3 +375,17 @@ button.profile-avatar, button.crew-head-av { border: 0; background: none; paddin
 .visit-crew { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: var(--muted) }
 .place-thumb.sm { width: 40px; height: 40px; border-radius: 12px }
 .multi-pill { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px }
+
+/* ===== Чек в посиделке ===== */
+.receipt-cta { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; border: 2px dashed var(--amber); background: var(--amber-soft); border-radius: 18px; padding: 16px; margin-bottom: 4px; color: var(--ink) }
+.receipt-cta-ico { width: 48px; height: 48px; border-radius: 14px; background: var(--amber); color: var(--amber-ink); display: grid; place-items: center; flex: none }
+.receipt-cta-ico svg { width: 26px; height: 26px }
+.receipt-cta b { display: block; font: 600 17px/1.25 var(--display) }
+.receipt-cta span span, .receipt-cta .grow > span { display: block; color: var(--muted); font-size: 14px; margin-top: 2px }
+.receipt-card { display: flex; align-items: center; gap: 12px; background: var(--surface); border-radius: 18px; padding: 10px 12px; margin-bottom: 4px }
+.receipt-card .t { font-weight: 600 }
+.receipt-card .s { color: var(--muted); font-size: 13px; margin-top: 2px }
+.receipt-thumb { width: 60px; height: 76px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); padding: 0; background: var(--chip); flex: none }
+.receipt-thumb img { width: 100%; height: 100%; object-fit: cover; display: block }
+.receipt-thumb-ph { display: grid; place-items: center; height: 100%; color: var(--muted) }
+.receipt-full { width: 100%; max-height: 65vh; object-fit: contain; border-radius: 12px; background: var(--chip); display: block }

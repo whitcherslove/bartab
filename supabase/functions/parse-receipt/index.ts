@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     if (evErr || !ev) return json({ error: 'Посиделка не найдена или нет доступа' }, 404);
     if (!path.startsWith(`${ev.crew_id}/`)) return json({ error: 'Фото не из этой компании' }, 403);
 
-    await db.from('events').update({ status: '⏳ Распознаю чек…' }).eq('id', eventId);
+    await db.from('events').update({ status: '⏳ Распознаю чек…', receipt_path: path }).eq('id', eventId);
 
     const { data: file, error: fileErr } = await db.storage.from('receipts').download(path);
     if (fileErr || !file) throw new Error('Не удалось прочитать фото: ' + (fileErr?.message ?? 'нет файла'));

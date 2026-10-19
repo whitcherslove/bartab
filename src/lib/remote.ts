@@ -10,7 +10,7 @@ type ShareRow = { person_id: string; qty: number };
 type ItemRow = { id: string; name: string; price: number | string; qty: number; split_mode: 'equal' | 'qty'; created_at: string; item_shares: ShareRow[] };
 type EventRow = {
   id: string; place_id: string | null; date: string; tips: number | string; tips_mode: 'sum' | 'pct'; currency: string;
-  payer_id: string | null; status: string; event_members: { person_id: string; settled: boolean }[]; items: ItemRow[];
+  payer_id: string | null; status: string; receipt_path: string; event_members: { person_id: string; settled: boolean }[]; items: ItemRow[];
 };
 type ChatRow = { id: string; name: string; chat_id: string };
 
@@ -26,7 +26,7 @@ export async function fetchCrew(crewId: string, userId: string): Promise<State> 
     supabase.from('places').select('id, name, address, hue, photo_path, map_url, lat, lon').order('created_at'),
     supabase
       .from('events')
-      .select('id, place_id, date, tips, tips_mode, currency, payer_id, status, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, item_shares(person_id, qty))')
+      .select('id, place_id, date, tips, tips_mode, currency, payer_id, status, receipt_path, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, item_shares(person_id, qty))')
       .eq('crew_id', crewId)
       .order('date', { ascending: false }),
     supabase.from('tg_chats').select('id, name, chat_id').order('created_at'),
@@ -53,6 +53,7 @@ export async function fetchCrew(crewId: string, userId: string): Promise<State> 
       currency: e.currency || 'RUB',
       payer: e.payer_id ?? '',
       status: e.status,
+      receiptPath: e.receipt_path ?? '',
       members: e.event_members.map((m) => m.person_id).sort(byPeopleOrder),
       settled: e.event_members.filter((m) => m.settled).map((m) => m.person_id),
       items: [...e.items]
@@ -296,4 +297,11 @@ export async function fetchMyVisits(userId: string): Promise<Visit[]> {
       place: e.places ? { id: e.places.id, name: e.places.name, address: e.places.address, hue: e.places.hue, photo: e.places.photo_path } : null,
     }))
     .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/** Временная ссылка на фото чека (хранилище закрытое) */
+export async function receiptUrl(path: string): Promise<string> {
+  const { data, error } = await supabase.storage.from('receipts').createSignedUrl(path, 60 * 60);
+  if (error) throw error;
+  return data.signedUrl;
 }

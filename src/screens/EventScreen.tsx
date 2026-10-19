@@ -10,7 +10,7 @@ import { MapButtons } from '../components/MapButtons';
 import { EventSheet } from '../sheets/EventSheet';
 import { ItemSheet } from '../sheets/ItemSheet';
 import { MemberSheet } from '../sheets/MemberSheet';
-import { ReceiptSheet } from '../sheets/ReceiptSheet';
+import { ReceiptBlock } from '../components/ReceiptBlock';
 import { ChatSheet } from '../sheets/ChatSheet';
 
 export function EventScreen({ id }: { id: string }) {
@@ -76,11 +76,7 @@ export function EventScreen({ id }: { id: string }) {
       </div>
       <TipsCard key={ev.id} ev={ev} />
 
-      <div className="actions">
-        <button className="btn" onClick={() => ui.open(<ReceiptSheet eventId={id} />)}>{Icon.cam} Загрузить чек</button>
-        <button className="btn" onClick={() => ui.open(<ChatSheet eventId={id} />)}>{Icon.send} Отправить в чат</button>
-      </div>
-      {ev.status && <div className="status">{ev.status}</div>}
+      <ReceiptBlock ev={ev} />
 
       <h3>Кто оплатил счёт</h3>
       <div className="chips">
@@ -92,7 +88,10 @@ export function EventScreen({ id }: { id: string }) {
       </div>
       {!payer && <p className="hint">Отметь, кто заплатил бару, и посчитаем, сколько ему переводят остальные</p>}
 
-      <h3>Кто сколько <small>нажми на человека</small></h3>
+      <h3>
+        <span>Кто сколько <small>нажми на человека</small></span>
+        <button className="link-btn add-link" onClick={() => ui.open(<ChatSheet eventId={id} />)}>{Icon.send} В чат</button>
+      </h3>
       <div className="coasters">
         {ev.members.length === 0 && <div className="empty">Добавь участников через «Изменить»</div>}
         {ev.members.map((m) => {
