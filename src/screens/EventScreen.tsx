@@ -97,18 +97,21 @@ export function EventScreen({ id }: { id: string }) {
         {ev.members.length === 0 && <div className="empty">Добавь участников через «Изменить»</div>}
         {ev.members.map((m) => {
           const st = stats(ev, m);
-          let cls = 'zero';
-          let val = money(st.owed);
+          // подпись сверху и сумма снизу — вместо «+» и «−»
+          let cls = 'zero', cap = 'часть', val = money(st.owed);
           if (payer) {
-            if (Math.abs(st.balance) < 1) val = '✓';
-            else {
-              cls = st.balance > 0 ? 'pos' : 'neg';
-              val = (st.balance > 0 ? '+' : '−') + money(Math.abs(st.balance));
+            if (st.isPayer) {
+              if (st.balance > 1) { cls = 'pos'; cap = 'ждёт'; val = money(st.balance); }
+              else { cls = 'pos'; cap = 'оплатил'; val = '✓'; }
+            } else if (st.settled || st.owed < 1) {
+              cap = st.settled ? 'перевёл' : 'не должен'; val = '✓';
+            } else {
+              cls = 'neg'; cap = 'должен'; val = money(st.owed);
             }
           }
           return (
             <button key={m} className={'coaster ' + cls} onClick={() => ui.open(<MemberSheet eventId={id} pid={m} />)}>
-              <span className="mat num">{val}</span>
+              <span className="mat num"><small>{cap}</small>{val}</span>
               <span className="nm">{nameOf(m)}</span>
             </button>
           );

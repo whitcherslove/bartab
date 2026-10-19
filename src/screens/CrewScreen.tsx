@@ -139,7 +139,7 @@ export function CrewScreen() {
               <div className="t">{p.name}{p.id === state.me ? ' (это ты)' : ''}</div>
               <div className="s">{p.tg ? '@' + p.tg : 'нет Telegram'}{p.userId ? '' : ' · без аккаунта'}</div>
             </div>
-            <Pill b={totalBalance(state.events, p.id)} />
+            <Pill b={totalBalance(state.events, p.id)} me={p.id === state.me} />
           </button>
         ))}
       </div>

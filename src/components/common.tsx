@@ -13,9 +13,12 @@ export function Av({ id, sm, lg }: { id: string; sm?: boolean; lg?: boolean }) {
   return <img className={'av' + (sm ? ' sm' : '') + (lg ? ' lg' : '')} src={src} alt={name} title={name} loading="lazy" />;
 }
 
-export function Pill({ b }: { b: number }) {
+/** Баланс словами: «тебе должны 1 300 ₽» / «должен 700 ₽» / «в расчёте» */
+export function Pill({ b, me }: { b: number; me?: boolean }) {
   if (Math.abs(b) < 1) return <span className="pill zero">в расчёте</span>;
-  return b > 0 ? <span className="pill pos num">+{money(b)}</span> : <span className="pill neg num">−{money(-b)}</span>;
+  return b > 0
+    ? <span className="pill pos num">{me ? 'тебе должны' : 'ему должны'} {money(b)}</span>
+    : <span className="pill neg num">{me ? 'ты должен' : 'должен'} {money(-b)}</span>;
 }
 
 /** Фото бара или, если своего нет, иллюстрация (у каждого бара своя) */
