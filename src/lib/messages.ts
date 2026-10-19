@@ -1,0 +1,31 @@
+import type { BarEvent } from './types';
+import { evWithTips, stats } from './calc';
+import { fdate, money } from './format';
+
+type NameOf = (id: string) => string;
+
+/** Строка человека для итогов */
+export function lineFor(ev: BarEvent, pid: string, name: NameOf) {
+  const st = stats(ev, pid);
+  let tail = '';
+  if (ev.payer) {
+    if (st.isPayer) tail = ' — оплатил счёт' + (st.balance > 1 ? `, ждёт ${money(st.balance)}` : ', все перевели ✅');
+    else tail = st.settled ? ' — перевёл ✅' : ` — переводит ${name(ev.payer)}`;
+  }
+  return `${name(pid)}: ${money(st.owed)}${tail}`;
+}
+
+/** Итоги в общий чат */
+export function chatText(ev: BarEvent, placeName: string, name: NameOf) {
+  return `🍻 ${placeName}, ${fdate(ev.date)}\nИтого: ${money(evWithTips(ev))}\n\n${ev.members.map((m) => lineFor(ev, m, name)).join('\n')}`;
+}
+
+/** Личное сообщение человеку */
+export function personalText(ev: BarEvent, pid: string, placeName: string, name: NameOf) {
+  const st = stats(ev, pid);
+  const head = `🍻 ${placeName}, ${fdate(ev.date)}\n`;
+  if (ev.payer && !st.isPayer && !st.settled) {
+    return head + `С тебя ${money(st.owed)}, переведи, пожалуйста, ${name(ev.payer)} 🙏`;
+  }
+  return head + lineFor(ev, pid, name);
+}

@@ -1,0 +1,194 @@
+import { useState } from 'react';
+import type { BarEvent, TipsMode } from '../lib/types';
+import { useStore } from '../lib/store';
+import { useUI } from '../lib/ui';
+import { evTotal, evWithTips, itemTotal, stats, tipAmount } from '../lib/calc';
+import { fdate, money, parseNum } from '../lib/format';
+import { Icon } from '../components/Icons';
+import { Av, PlacePhoto } from '../components/common';
+import { EventSheet } from '../sheets/EventSheet';
+import { ItemSheet } from '../sheets/ItemSheet';
+import { MemberSheet } from '../sheets/MemberSheet';
+import { ReceiptSheet } from '../sheets/ReceiptSheet';
+import { ChatSheet } from '../sheets/ChatSheet';
+
+export function EventScreen({ id }: { id: string }) {
+  const { state, updateEvent, nameOf } = useStore();
+  const ui = useUI();
+  const ev = state.events.find((e) => e.id === id);
+
+  if (!ev) {
+    return (
+      <div className="empty">
+        Посиделка не найдена.<br /><br />
+        <button className="btn" onClick={() => ui.go({ screen: 'events' })}>К списку</button>
+      </div>
+    );
+  }
+
+  const place = state.places.find((p) => p.id === ev.placeId);
+  const payer = ev.payer;
+  const debtors = payer ? ev.members.filter((m) => m !== payer) : [];
+  const doneCount = debtors.filter((m) => ev.settled.includes(m)).length;
+  const unassigned = ev.items.filter((it) => !it.consumers.length).length;
+
+  const setPayer = (pid: string) =>
+    updateEvent(id, (e) => {
+      e.payer = e.payer === pid ? '' : pid;
+      e.settled = e.settled.filter((m) => m !== e.payer);
+    });
+
+  const toggleSettled = (pid: string) => {
+    const was = ev.settled.includes(pid);
+    updateEvent(id, (e) => {
+      e.settled = was ? e.settled.filter((m) => m !== pid) : [...e.settled, pid];
+    });
+    ui.toast(was ? `${nameOf(pid)}: отметка снята` : `${nameOf(pid)} перевёл ✅`);
+  };
+
+  return (
+    <>
+      <header className="top">
+        <button className="icon-btn" aria-label="Назад" onClick={() => ui.go({ screen: 'events' })}>{Icon.back}</button>
+        <div style={{ flex: 1 }} />
+        <button className="icon-btn" aria-label="Изменить посиделку" onClick={() => ui.open(<EventSheet id={id} />)}>{Icon.edit}</button>
+      </header>
+
+      <PlacePhoto place={place} className="hero">
+        <div className="hero-txt">
+          <h2>{place?.name ?? 'Без места'}</h2>
+          <div>{fdate(ev.date)}{place?.address ? ', ' + place.address : ''}</div>
+        </div>
+      </PlacePhoto>
+
+      <div className="totals">
+        <div><b className="num">{money(evTotal(ev))}</b><span>по чеку</span></div>
+        <div><b className="num">{money(tipAmount(ev))}</b><span>чаевые{ev.tipsMode === 'pct' ? ` ${ev.tips || 0}%` : ''}</span></div>
+        <div><b className="num">{money(evWithTips(ev))}</b><span>всего</span></div>
+      </div>
+      <TipsCard key={ev.id} ev={ev} />
+
+      <div className="actions">
+        <button className="btn" onClick={() => ui.open(<ReceiptSheet eventId={id} />)}>{Icon.cam} Загрузить чек</button>
+        <button className="btn" onClick={() => ui.open(<ChatSheet eventId={id} />)}>{Icon.send} Отправить в чат</button>
+      </div>
+      {ev.status && <div className="status">{ev.status}</div>}
+
+      <h3>Кто оплатил счёт</h3>
+      <div className="chips">
+        {ev.members.map((m) => (
+          <button key={m} type="button" className="chip" aria-pressed={m === payer} onClick={() => setPayer(m)}>
+            <Av id={m} sm />{nameOf(m)}
+          </button>
+        ))}
+      </div>
+      {!payer && <p className="hint">Отметь, кто заплатил бару, и посчитаем, сколько ему переводят остальные</p>}
+
+      <h3>Кто сколько <small>нажми на человека</small></h3>
+      <div className="coasters">
+        {ev.members.length === 0 && <div className="empty">Добавь участников через «Изменить»</div>}
+        {ev.members.map((m) => {
+          const st = stats(ev, m);
+          let cls = 'zero';
+          let val = money(st.owed);
+          if (payer) {
+            if (Math.abs(st.balance) < 1) val = '✓';
+            else {
+              cls = st.balance > 0 ? 'pos' : 'neg';
+              val = (st.balance > 0 ? '+' : '−') + money(Math.abs(st.balance));
+            }
+          }
+          return (
+            <button key={m} className={'coaster ' + cls} onClick={() => ui.open(<MemberSheet eventId={id} pid={m} />)}>
+              <span className="mat num">{val}</span>
+              <span className="nm">{nameOf(m)}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {payer && (
+        <>
+          <h3>Переводы для {nameOf(payer)} <small>{doneCount} из {debtors.length}</small></h3>
+          <div className="list">
+            {debtors.length === 0 && <div className="empty">Больше никого нет</div>}
+            {debtors.map((m) => {
+              const st = stats(ev, m);
+              return (
+                <div key={m} className={'row' + (st.settled ? ' done' : '')}>
+                  <Av id={m} /><span className="arrow" aria-hidden="true">→</span><Av id={payer} />
+                  <div className="grow"><div className="t">{nameOf(m)} {st.settled ? 'перевёл' : 'переводит'} {nameOf(payer)}</div></div>
+                  <span className="amt num">{money(st.owed)}</span>
+                  <button className={'btn sm ' + (st.settled ? 'undo' : 'ghost')} onClick={() => toggleSettled(m)}>
+                    {st.settled ? 'Отменить' : 'Готово'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      <h3>Позиции <small>{ev.items.length}</small></h3>
+      {unassigned > 0 && <div className="warn">{unassigned} поз. ни на кого не разбиты: они не попадают в долги</div>}
+      <div className="list">
+        {ev.items.length === 0 && <div className="empty">Добавь позиции вручную или загрузи чек</div>}
+        {ev.items.map((it) => (
+          <button key={it.id} className="row" onClick={() => ui.open(<ItemSheet eventId={id} itemId={it.id} />)}>
+            <div className="grow">
+              <div className="t">{it.name}</div>
+              <div className="s num">
+                {it.qty} × {money(it.price)}{' '}
+                {it.splitMode === 'qty' ? (
+                  <span>{it.consumers.map((c) => `${nameOf(c)} ${it.split[c] || 0}`).join(', ')}</span>
+                ) : (
+                  <span className="avs">{it.consumers.map((c) => <Av key={c} id={c} sm />)}</span>
+                )}
+                {!it.consumers.length && <span style={{ color: 'var(--amber)' }}>ни на кого</span>}
+              </div>
+            </div>
+            <span className="amt num">{money(itemTotal(it))}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="actbar">
+        <div className="actbar-in">
+          <button className="btn primary" onClick={() => ui.open(<ItemSheet eventId={id} />)}>{Icon.plus} Позиция</button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/** Чаевые прямо в карточке: сумма или процент */
+function TipsCard({ ev }: { ev: BarEvent }) {
+  const { updateEvent } = useStore();
+  const [text, setText] = useState(ev.tips ? String(ev.tips) : '');
+
+  const onChange = (v: string) => {
+    setText(v);
+    updateEvent(ev.id, (e) => { e.tips = parseNum(v); });
+  };
+
+  // При смене режима сумма чаевых сохраняется: 400 при счёте 4000 станет 10%
+  const onMode = (m: TipsMode) => {
+    if (m === ev.tipsMode) return;
+    const total = evTotal(ev);
+    const amount = tipAmount(ev);
+    const next = m === 'pct' ? (total > 0 ? Math.round((amount / total) * 1000) / 10 : 0) : Math.round(amount);
+    setText(next ? String(next) : '');
+    updateEvent(ev.id, (e) => { e.tips = next; e.tipsMode = m; });
+  };
+
+  return (
+    <div className="tips-card">
+      <span className="tips-lbl">Чаевые</span>
+      <div className="seg">
+        <button type="button" aria-pressed={ev.tipsMode !== 'pct'} onClick={() => onMode('sum')}>Сумма</button>
+        <button type="button" aria-pressed={ev.tipsMode === 'pct'} onClick={() => onMode('pct')}>%</button>
+      </div>
+      <input inputMode="decimal" placeholder="0" value={text} onChange={(e) => onChange(e.target.value)} aria-label="Чаевые" />
+    </div>
+  );
+}
