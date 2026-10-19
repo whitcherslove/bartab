@@ -6,6 +6,7 @@ import { evTotal, evWithTips, itemTotal, stats, tipAmount } from '../lib/calc';
 import { fdate, money, parseNum } from '../lib/format';
 import { Icon } from '../components/Icons';
 import { Av, PlacePhoto } from '../components/common';
+import { MapButtons } from '../components/MapButtons';
 import { EventSheet } from '../sheets/EventSheet';
 import { ItemSheet } from '../sheets/ItemSheet';
 import { MemberSheet } from '../sheets/MemberSheet';
@@ -60,6 +61,7 @@ export function EventScreen({ id }: { id: string }) {
           <div>{fdate(ev.date)}{place?.address ? ', ' + place.address : ''}</div>
         </div>
       </PlacePhoto>
+      {place && (place.address || place.mapUrl || place.lat != null) && <MapButtons place={place} compact />}
 
       <div className="totals">
         <div><b className="num">{money(evTotal(ev))}</b><span>по чеку</span></div>

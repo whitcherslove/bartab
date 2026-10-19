@@ -215,3 +215,15 @@ h3 small { font: 500 13px var(--text); color: var(--muted) }
 
 /* ===== Установка приложения ===== */
 .install-card .t { white-space: normal }
+
+/* ===== Карты ===== */
+.map-btns { display: flex; gap: 8px; flex-wrap: wrap }
+.map-btns.compact { margin: -6px 0 16px }
+.map-btns .btn svg { width: 16px; height: 16px }
+.found-list { background: var(--bg); border: 1px solid var(--line); margin: -6px 0 14px }
+.found-list .row { padding: 10px 12px }
+.found-list .row > svg { width: 18px; height: 18px; color: var(--amber); flex: none }
+.link-btn { border: 0; background: none; color: var(--amber); padding: 0; margin: -6px 0 14px; font-size: 14px; text-decoration: underline }
+.muted { color: var(--muted); font-weight: 400 }
+.found-foot { justify-content: space-between }
+.found-foot .link-btn { margin: 0 }

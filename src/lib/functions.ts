@@ -4,3 +4,4 @@
 
 export const RECEIPT_FN = 'dynamic-responder';
 export const TELEGRAM_FN = 'telegram';
+export const PLACES_FN = 'places';

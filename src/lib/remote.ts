@@ -5,7 +5,7 @@ import { RECEIPT_FN, TELEGRAM_FN } from './functions';
 // ---------- Загрузка всех данных компании ----------
 
 type PersonRow = { id: string; name: string; tg: string; user_id: string | null };
-type PlaceRow = { id: string; name: string; address: string; hue: number; photo_path: string };
+type PlaceRow = { id: string; name: string; address: string; hue: number; photo_path: string; map_url: string; lat: number | null; lon: number | null };
 type ShareRow = { person_id: string; qty: number };
 type ItemRow = { id: string; name: string; price: number | string; qty: number; split_mode: 'equal' | 'qty'; created_at: string; item_shares: ShareRow[] };
 type EventRow = {
@@ -22,7 +22,7 @@ function must<T>(res: { data: T | null; error: unknown }): T {
 export async function fetchCrew(crewId: string, userId: string): Promise<State> {
   const [peopleRes, placesRes, eventsRes, chatsRes] = await Promise.all([
     supabase.from('people').select('id, name, tg, user_id').eq('crew_id', crewId).order('created_at'),
-    supabase.from('places').select('id, name, address, hue, photo_path').eq('crew_id', crewId).order('created_at'),
+    supabase.from('places').select('id, name, address, hue, photo_path, map_url, lat, lon').eq('crew_id', crewId).order('created_at'),
     supabase
       .from('events')
       .select('id, place_id, date, tips, tips_mode, payer_id, status, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, item_shares(person_id, qty))')
@@ -41,7 +41,7 @@ export async function fetchCrew(crewId: string, userId: string): Promise<State> 
   return {
     me: people.find((p) => p.user_id === userId)?.id ?? '',
     people: people.map((p) => ({ id: p.id, name: p.name, tg: p.tg, userId: p.user_id })),
-    places: places.map((p) => ({ id: p.id, name: p.name, address: p.address, hue: p.hue, photo: p.photo_path })),
+    places: places.map((p) => ({ id: p.id, name: p.name, address: p.address, hue: p.hue, photo: p.photo_path, mapUrl: p.map_url ?? '', lat: p.lat, lon: p.lon })),
     chats: chats.map((c) => ({ id: c.id, name: c.name, chatId: c.chat_id })),
     events: events.map((e): BarEvent => ({
       id: e.id,
@@ -95,7 +95,7 @@ export async function pushDiff(prev: State, next: State, crewId: string) {
   const prevPlaces = byId(prev.places);
   const places = next.places.filter((p) => !same(prevPlaces.get(p.id), p));
   if (places.length) {
-    await run(supabase.from('places').upsert(places.map((p) => ({ id: p.id, crew_id: crewId, name: p.name, address: p.address, hue: p.hue, photo_path: p.photo }))));
+    await run(supabase.from('places').upsert(places.map((p) => ({ id: p.id, crew_id: crewId, name: p.name, address: p.address, hue: p.hue, photo_path: p.photo, map_url: p.mapUrl, lat: p.lat, lon: p.lon }))));
   }
 
   // 2. Посиделки
