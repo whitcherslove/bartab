@@ -39,6 +39,12 @@ export function EventScreen({ id }: { id: string }) {
       e.settled = e.settled.filter((m) => m !== e.payer);
     });
 
+  const clearItems = () => {
+    if (!confirm(`Удалить все позиции (${ev.items.length})? Отменить будет нельзя.`)) return;
+    updateEvent(id, (e) => { e.items = []; e.status = ''; });
+    ui.toast('Позиции удалены');
+  };
+
   const toggleSettled = (pid: string) => {
     const was = ev.settled.includes(pid);
     updateEvent(id, (e) => {
@@ -131,7 +137,10 @@ export function EventScreen({ id }: { id: string }) {
         </>
       )}
 
-      <h3>Позиции <small>{ev.items.length}</small></h3>
+      <h3>
+        <span>Позиции <small>{ev.items.length}</small></span>
+        {ev.items.length > 1 && <button className="link-btn danger-link" onClick={clearItems}>Удалить все</button>}
+      </h3>
       {unassigned > 0 && <div className="warn">{unassigned} поз. ни на кого не разбиты: они не попадают в долги</div>}
       <div className="list">
         {ev.items.length === 0 && <div className="empty">Добавь позиции вручную или загрузи чек</div>}

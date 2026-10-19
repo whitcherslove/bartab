@@ -268,3 +268,5 @@ img.av { object-fit: cover; padding: 0; background: var(--chip) }
 .member-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px }
 .member-head h4 { margin: 0 }
 .member-head .s { color: var(--muted); font-size: 14px; margin-top: 2px }
+.danger-link { color: var(--cherry); margin: 0; font: 500 13px var(--text) }
+h3 > span { display: inline-flex; gap: 8px; align-items: baseline }
