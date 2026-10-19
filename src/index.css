@@ -270,3 +270,5 @@ img.av { object-fit: cover; padding: 0; background: var(--chip) }
 .member-head .s { color: var(--muted); font-size: 14px; margin-top: 2px }
 .danger-link { color: var(--cherry); margin: 0; font: 500 13px var(--text) }
 h3 > span { display: inline-flex; gap: 8px; align-items: baseline }
+.chat-target { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-weight: 500 }
+.chat-target svg { width: 18px; height: 18px; color: var(--amber) }

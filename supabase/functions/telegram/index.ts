@@ -1,9 +1,10 @@
 // BarTab — Telegram-бот.
 // Действия (POST { action, ... }):
-//   info                       → { username } — имя бота для ссылки «добавить в чат»
-//   find_chat { code }         → находит чат, куда отправили /start@бот КОД или /connect@бот КОД,
-//                                сохраняет его в «Мои чаты» пользователя и пишет в чат «подключён»
-//   send { chatRowId, text }   → отправляет текст в один из чатов пользователя
+//   info                          → { username } — имя бота для ссылки «добавить в чат»
+//   find_chat { code, crewId }    → находит чат, куда отправили /start@бот КОД или /connect@бот КОД,
+//                                   делает его чатом компании и пишет в чат «подключён»
+//   send { crewId, text }         → отправляет текст в чат компании
+// У компании один чат, его видят и используют все участники.
 //
 // Секрет (Edge Functions → Secrets): TELEGRAM_BOT_TOKEN
 
@@ -63,7 +64,12 @@ Deno.serve(async (req) => {
 
     if (action === 'find_chat') {
       const code = String(body.code ?? '').trim();
+      const crewId = String(body.crewId ?? '');
       if (!/^[A-Za-z0-9_-]{6,64}$/.test(code)) return json({ error: 'Неверный код' }, 400);
+      // правила доступа вернут компанию, только если пользователь в ней состоит
+      const { data: crew } = await db.from('crews').select('id, name, tg_chat_id').eq('id', crewId).maybeSingle();
+      if (!crew) return json({ error: 'Компания не найдена' }, 404);
+
       const updates = await tg<TgUpdate[]>('getUpdates', { allowed_updates: ['message', 'channel_post'], limit: 100 });
       const re = new RegExp(`^/(start|connect)(@\\w+)?\\s+${code}\\s*$`);
       const hit = [...updates].reverse().map((u) => u.message ?? u.channel_post).find((m) => m?.text && re.test(m.text));
@@ -71,24 +77,24 @@ Deno.serve(async (req) => {
 
       const chatId = String(hit.chat.id);
       const name = hit.chat.title || (hit.chat.username ? '@' + hit.chat.username : hit.chat.first_name) || 'Чат';
-      const { data: existing } = await db.from('tg_chats').select('id').eq('chat_id', chatId).maybeSingle();
-      if (!existing) {
-        const { error } = await db.from('tg_chats').insert({ name, chat_id: chatId });
+      const { data: prof } = await db.from('profiles').select('name').eq('id', auth.user.id).maybeSingle();
+      if (crew.tg_chat_id !== chatId) {
+        const { error } = await db.from('crews').update({ tg_chat_id: chatId, tg_chat_name: name, tg_chat_by: prof?.name ?? '' }).eq('id', crewId);
         if (error) throw new Error('Не удалось сохранить чат: ' + error.message);
-        await tg('sendMessage', { chat_id: chatId, text: '✅ Чат подключён к BarTab. Сюда будут приходить итоги посиделок 🍻' }).catch(() => {});
+        await tg('sendMessage', { chat_id: chatId, text: `✅ Чат подключён к компании «${crew.name}» в BarTab. Сюда будут приходить итоги посиделок 🍻` }).catch(() => {});
       }
       return json({ found: true, name });
     }
 
     if (action === 'send') {
-      const chatRowId = String(body.chatRowId ?? '');
+      const crewId = String(body.crewId ?? '');
       const text = String(body.text ?? '').trim().slice(0, 4000);
-      if (!chatRowId || !text) return json({ error: 'Нет чата или текста' }, 400);
-      // только свои чаты: правила доступа вернут строку, лишь если она моя
-      const { data: chat } = await db.from('tg_chats').select('chat_id, name').eq('id', chatRowId).maybeSingle();
-      if (!chat) return json({ error: 'Чат не найден' }, 404);
-      await tg('sendMessage', { chat_id: chat.chat_id, text, disable_web_page_preview: true });
-      return json({ ok: true, name: chat.name });
+      if (!crewId || !text) return json({ error: 'Нет компании или текста' }, 400);
+      const { data: crew } = await db.from('crews').select('tg_chat_id, tg_chat_name').eq('id', crewId).maybeSingle();
+      if (!crew) return json({ error: 'Компания не найдена' }, 404);
+      if (!crew.tg_chat_id) return json({ error: 'У компании ещё нет Telegram-чата' }, 400);
+      await tg('sendMessage', { chat_id: crew.tg_chat_id, text, disable_web_page_preview: true });
+      return json({ ok: true, name: crew.tg_chat_name });
     }
 
     return json({ error: 'Неизвестное действие' }, 400);

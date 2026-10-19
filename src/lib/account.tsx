@@ -9,7 +9,7 @@ import { CrewSetup } from '../screens/auth/CrewSetup';
 import { Splash } from '../screens/auth/Splash';
 
 export type Profile = { id: string; name: string; tg: string; avatar_url: string; currency: string };
-export type Crew = { id: string; name: string; invite_code: string };
+export type Crew = { id: string; name: string; invite_code: string; tg_chat_id: string | null; tg_chat_name: string; tg_chat_by: string };
 
 type Account = {
   session: Session;
@@ -89,7 +89,7 @@ export function AccountGate({ children }: { children: ReactNode }) {
       }
       const [{ data: p, error: pErr }, { data: c, error: cErr }] = await Promise.all([
         supabase.from('profiles').select('id, name, tg, avatar_url, currency').eq('id', user.id).maybeSingle(),
-        supabase.from('crews').select('id, name, invite_code').order('created_at'),
+        supabase.from('crews').select('id, name, invite_code, tg_chat_id, tg_chat_name, tg_chat_by').order('created_at'),
       ]);
       if (pErr) throw pErr;
       if (cErr) throw cErr;
@@ -117,6 +117,13 @@ export function AccountGate({ children }: { children: ReactNode }) {
       return;
     }
     reload();
+  }, [userId, reload]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const onVis = () => { if (document.visibilityState === 'visible') reload(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
   }, [userId, reload]);
 
   const saveProfile = useCallback(async ({ name, tg, avatar_url }: { name: string; tg: string; avatar_url?: string }) => {

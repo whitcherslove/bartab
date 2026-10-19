@@ -210,11 +210,12 @@ async function telegram<T>(body: Record<string, unknown>): Promise<T> {
   return data as T;
 }
 export const tgBotName = () => telegram<{ username: string }>({ action: 'info' }).then((r) => r.username);
-export const tgFindChat = (code: string) => telegram<{ found: boolean; name?: string }>({ action: 'find_chat', code });
-export const tgSend = (chatRowId: string, text: string) => telegram<{ ok: boolean; name: string }>({ action: 'send', chatRowId, text });
+export const tgFindChat = (code: string, crewId: string) => telegram<{ found: boolean; name?: string }>({ action: 'find_chat', code, crewId });
+export const tgSend = (crewId: string, text: string) => telegram<{ ok: boolean; name: string }>({ action: 'send', crewId, text });
 
-export async function deleteTgChat(id: string) {
-  const { error } = await supabase.from('tg_chats').delete().eq('id', id);
+/** Отключить Telegram-чат компании */
+export async function disconnectCrewChat(crewId: string) {
+  const { error } = await supabase.from('crews').update({ tg_chat_id: null, tg_chat_name: '', tg_chat_by: '' }).eq('id', crewId);
   if (error) throw error;
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useStore } from '../lib/store';
+import { useAccount } from '../lib/account';
 import { useUI } from '../lib/ui';
 import { tgBotName, tgFindChat } from '../lib/remote';
 import { humanError } from '../lib/supabase';
@@ -9,7 +9,7 @@ import { Icon } from '../components/Icons';
 const makeCode = () => Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join('');
 
 export function ConnectChatSheet() {
-  const { refresh } = useStore();
+  const acc = useAccount();
   const ui = useUI();
   const [bot, setBot] = useState('');
   const [error, setError] = useState('');
@@ -26,13 +26,13 @@ export function ConnectChatSheet() {
     setChecking(true);
     setError('');
     try {
-      const res = await tgFindChat(code);
+      const res = await tgFindChat(code, acc.crew.id);
       if (!res.found) {
         setError('Пока не вижу. Убедись, что бот добавлен и в чате появилась команда с кодом, и проверь ещё раз через пару секунд.');
       } else {
-        await refresh();
+        await acc.reload();
         ui.close();
-        ui.toast(`Чат «${res.name}» подключён`);
+        ui.toast(`Чат «${res.name}» подключён к компании`);
         return;
       }
     } catch (e) {
@@ -47,9 +47,10 @@ export function ConnectChatSheet() {
 
   return (
     <>
-      <h4>Подключить чат</h4>
+      <h4>Чат компании «{acc.crew.name}»</h4>
       <ol className="steps">
         <li>Нажми кнопку и выбери групповой чат — бот добавится и сам отправит туда команду с кодом.</li>
+        <li>Чат станет общим: итоги туда сможет отправлять любой участник компании.</li>
         <li>Вернись сюда и нажми «Проверить».</li>
       </ol>
       <a

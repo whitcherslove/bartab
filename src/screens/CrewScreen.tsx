@@ -3,7 +3,7 @@ import { useAccount } from '../lib/account';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { totalBalance } from '../lib/calc';
-import { deleteTgChat } from '../lib/remote';
+import { disconnectCrewChat } from '../lib/remote';
 import { humanError, supabase } from '../lib/supabase';
 import { Icon } from '../components/Icons';
 import { Av, Pill } from '../components/common';
@@ -13,7 +13,7 @@ import { CrewSetup } from './auth/CrewSetup';
 
 export function CrewScreen() {
   const acc = useAccount();
-  const { state, refresh } = useStore();
+  const { state } = useStore();
   const ui = useUI();
   const [renaming, setRenaming] = useState(false);
   const [crewName, setCrewName] = useState(acc.crew.name);
@@ -53,9 +53,9 @@ export function CrewScreen() {
     try { await acc.leaveCrew(acc.crew.id); ui.toast('Ты вышел из компании'); } catch (e) { ui.toast(humanError(e)); }
   };
 
-  const removeChat = async (id: string, name: string) => {
-    if (!confirm(`Отключить чат «${name}»? Бот останется в группе, его можно удалить там вручную.`)) return;
-    try { await deleteTgChat(id); await refresh(); ui.toast('Чат отключён'); } catch (e) { ui.toast(humanError(e)); }
+  const removeChat = async () => {
+    if (!confirm(`Отключить чат «${acc.crew.tg_chat_name}» от компании? Бот останется в группе, его можно удалить там вручную.`)) return;
+    try { await disconnectCrewChat(acc.crew.id); await acc.reload(); ui.toast('Чат отключён'); } catch (e) { ui.toast(humanError(e)); }
   };
 
   return (
@@ -112,17 +112,23 @@ export function CrewScreen() {
         ))}
       </div>
 
-      <h3>Мои чаты для итогов <small>видны только тебе</small></h3>
+      <h3>Telegram-чат компании <small>общий для всех</small></h3>
       <div className="list">
-        {state.chats.length === 0 && <div className="empty">Подключи групповой чат, и бот будет присылать туда итоги посиделок</div>}
-        {state.chats.map((c) => (
-          <div key={c.id} className="row">
-            <div className="grow"><div className="t">{c.name}</div></div>
-            <button className="btn undo sm" onClick={() => removeChat(c.id, c.name)}>Отключить</button>
+        {acc.crew.tg_chat_id ? (
+          <div className="row">
+            <div className="grow">
+              <div className="t">{acc.crew.tg_chat_name}</div>
+              <div className="s">{acc.crew.tg_chat_by ? `подключил(а) ${acc.crew.tg_chat_by}` : 'итоги посиделок приходят сюда'}</div>
+            </div>
+            <button className="btn undo sm" onClick={removeChat}>Отключить</button>
           </div>
-        ))}
+        ) : (
+          <div className="empty">Подключи групповой чат компании — и любой участник сможет отправлять туда итоги посиделок</div>
+        )}
       </div>
-      <button className="btn block" style={{ marginTop: 10 }} onClick={() => ui.open(<ConnectChatSheet />)}>{Icon.plus} Подключить чат</button>
+      <button className="btn block" style={{ marginTop: 10 }} onClick={() => ui.open(<ConnectChatSheet />)}>
+        {Icon.plus} {acc.crew.tg_chat_id ? 'Подключить другой чат' : 'Подключить чат'}
+      </button>
 
       <div className="foot"><button onClick={leave}>Выйти из компании</button></div>
     </>
