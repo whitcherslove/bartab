@@ -1,60 +1,58 @@
 import { useEffect, useState } from 'react';
 import { useUI } from '../lib/ui';
+import { canPrompt, isInAppBrowser, isIOS, isStandalone, onInstallChange, promptInstall } from '../lib/install';
 
-type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
-
-const isStandalone = () =>
-  window.matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true;
-const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
-
-/** Кнопка «Установить приложение» (Android/Chrome) или подсказка для iPhone */
-export function InstallCard() {
+/** Как поставить BarTab на телефон: кнопка (Android), подсказка (iPhone) или совет открыть в браузере */
+export function InstallHelp({ compact }: { compact?: boolean }) {
   const ui = useUI();
-  const [evt, setEvt] = useState<InstallEvent | null>(null);
-  const [installed, setInstalled] = useState(isStandalone);
+  const [, force] = useState(0);
+  useEffect(() => onInstallChange(() => force((n) => n + 1)), []);
 
-  useEffect(() => {
-    const onPrompt = (e: Event) => { e.preventDefault(); setEvt(e as InstallEvent); };
-    const onInstalled = () => { setInstalled(true); setEvt(null); };
-    window.addEventListener('beforeinstallprompt', onPrompt);
-    window.addEventListener('appinstalled', onInstalled);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onPrompt);
-      window.removeEventListener('appinstalled', onInstalled);
-    };
-  }, []);
+  if (isStandalone()) return null;
 
-  if (installed) return null;
-
-  if (evt) {
-    const install = async () => {
-      await evt.prompt();
-      const { outcome } = await evt.userChoice;
-      if (outcome === 'accepted') ui.toast('BarTab появится на экране телефона');
-      setEvt(null);
-    };
+  if (isInAppBrowser()) {
     return (
-      <div className="list install-card" style={{ marginTop: 18 }}>
-        <div className="row">
-          <div className="grow"><div className="t">Поставь BarTab на экран телефона</div><div className="s">Откроется как обычное приложение, без браузера</div></div>
-          <button className="btn primary sm" onClick={install}>Установить</button>
-        </div>
+      <div className="install-help">
+        <b>Открой ссылку в браузере</b>
+        <span>Из Telegram или Instagram приложение не установить. Нажми «⋯» и выбери «Открыть в {isIOS() ? 'Safari' : 'Chrome'}».</span>
+      </div>
+    );
+  }
+
+  if (canPrompt()) {
+    const install = async () => { if (await promptInstall()) ui.toast('BarTab появится на экране телефона'); };
+    return (
+      <div className="install-help">
+        {!compact && <span>Откроется как обычное приложение, без браузера.</span>}
+        <button className="btn primary block" onClick={install}>Установить на телефон</button>
       </div>
     );
   }
 
   if (isIOS()) {
     return (
-      <div className="list install-card" style={{ marginTop: 18 }}>
-        <div className="row">
-          <div className="grow">
-            <div className="t">Поставь BarTab на экран iPhone</div>
-            <div className="s">В Safari нажми «Поделиться» (квадрат со стрелкой) → «На экран «Домой»»</div>
-          </div>
-        </div>
+      <div className="install-help">
+        <ol className="steps" style={{ margin: 0 }}>
+          <li>Нажми «Поделиться» внизу Safari (квадрат со стрелкой)</li>
+          <li>Выбери «На экран «Домой»» → «Добавить»</li>
+          <li>Открой BarTab с иконки и войди ещё раз — iPhone хранит данные приложения отдельно</li>
+        </ol>
       </div>
     );
   }
 
   return null;
+}
+
+/** Карточка в профиле */
+export function InstallCard() {
+  const [, force] = useState(0);
+  useEffect(() => onInstallChange(() => force((n) => n + 1)), []);
+  if (isStandalone() || (!canPrompt() && !isIOS() && !isInAppBrowser())) return null;
+  return (
+    <>
+      <h3>Приложение на телефоне</h3>
+      <div className="list form-card"><InstallHelp /></div>
+    </>
+  );
 }

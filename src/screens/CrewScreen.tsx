@@ -10,6 +10,7 @@ import { Av, CrewAvatar, Pill } from '../components/common';
 import { PersonSheet } from '../sheets/PersonSheet';
 import { ConnectChatSheet } from '../sheets/ConnectChatSheet';
 import { CrewSetup } from './auth/CrewSetup';
+import { QrSheet } from '../sheets/QrSheet';
 
 export function CrewScreen() {
   const acc = useAccount();
@@ -119,6 +120,7 @@ export function CrewScreen() {
         </div>
         <div className="row crew-actions">
           <button className="btn primary sm" onClick={share}>Поделиться</button>
+          <button className="btn ghost sm" onClick={() => ui.open(<QrSheet />)}>QR-код</button>
           <button className="btn ghost sm" onClick={copy}>Копировать</button>
         </div>
       </div>

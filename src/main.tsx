@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.tsx';
 import { applyTheme } from './lib/theme';
+import './lib/install'; // ловим «можно установить» как можно раньше
 
 applyTheme();
 

@@ -2,6 +2,8 @@ import { StoreProvider } from './lib/store';
 import { AccountGate, useAccount } from './lib/account';
 import { UIProvider, useUI, type View } from './lib/ui';
 import { Icon } from './components/Icons';
+import { useEffect } from 'react';
+import { WelcomeSheet } from './sheets/WelcomeSheet';
 import { EventsScreen } from './screens/EventsScreen';
 import { EventScreen } from './screens/EventScreen';
 import { CrewScreen } from './screens/CrewScreen';
@@ -21,8 +23,18 @@ export default function App() {
 }
 
 function Shell() {
-  const { view } = useUI();
+  const { view, open } = useUI();
   const { profile } = useAccount();
+
+  // только что вступил по приглашению — поздравляем и предлагаем установить
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('bartab-welcome')) {
+        localStorage.removeItem('bartab-welcome');
+        open(<WelcomeSheet />);
+      }
+    } catch { /* ignore */ }
+  }, [open]);
   return (
     <>
       <main className="app" key={profile.currency}>

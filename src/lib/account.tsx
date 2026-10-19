@@ -85,7 +85,10 @@ export function AccountGate({ children }: { children: ReactNode }) {
         const { data: joined, error: joinErr } = await supabase.rpc('join_crew', { code });
         clearJoinCode();
         if (joinErr) setError(humanError(joinErr));
-        else if (joined) setCrewId(joined as string);
+        else if (joined) {
+          setCrewId(joined as string);
+          try { localStorage.setItem('bartab-welcome', '1'); } catch { /* ignore */ }
+        }
       }
       const [{ data: p, error: pErr }, { data: c, error: cErr }] = await Promise.all([
         supabase.from('profiles').select('id, name, tg, avatar_url, currency').eq('id', user.id).maybeSingle(),
