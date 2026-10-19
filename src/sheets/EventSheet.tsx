@@ -36,7 +36,7 @@ export function EventSheet({ id }: { id?: string }) {
   const remove = () => {
     if (!id || !confirm('Удалить посиделку со всеми позициями?')) return;
     update((d) => { d.events = d.events.filter((e) => e.id !== id); });
-    ui.go({ screen: 'events' });
+    ui.closeAndBack();
     ui.toast('Посиделка удалена');
   };
 

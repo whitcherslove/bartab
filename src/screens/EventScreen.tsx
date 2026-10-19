@@ -22,7 +22,7 @@ export function EventScreen({ id }: { id: string }) {
     return (
       <div className="empty">
         Посиделка не найдена.<br /><br />
-        <button className="btn" onClick={() => ui.go({ screen: 'events' })}>К списку</button>
+        <button className="btn" onClick={() => ui.back()}>К списку</button>
       </div>
     );
   }
@@ -50,7 +50,7 @@ export function EventScreen({ id }: { id: string }) {
   return (
     <>
       <header className="top">
-        <button className="icon-btn" aria-label="Назад" onClick={() => ui.go({ screen: 'events' })}>{Icon.back}</button>
+        <button className="icon-btn" aria-label="Назад" onClick={() => ui.back()}>{Icon.back}</button>
         <div style={{ flex: 1 }} />
         <button className="icon-btn" aria-label="Изменить посиделку" onClick={() => ui.open(<EventSheet id={id} />)}>{Icon.edit}</button>
       </header>
