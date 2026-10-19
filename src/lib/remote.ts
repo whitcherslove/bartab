@@ -173,7 +173,23 @@ export async function pushDiff(prev: State, next: State, crewId: string) {
 export async function uploadPlacePhoto(crewId: string, placeId: string, dataUrl: string): Promise<string> {
   const blob = await (await fetch(dataUrl)).blob();
   const path = `${crewId}/${placeId}-${Date.now()}.jpg`;
-  const { error } = await supabase.storage.from('place-photos').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+  const { error } = await supabase.storage.from('place-photos').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
   if (error) throw error;
   return supabase.storage.from('place-photos').getPublicUrl(path).data.publicUrl;
+}
+
+/** Загрузка фото чека и запуск распознавания на сервере */
+export async function recognizeReceipt(crewId: string, eventId: string, blob: Blob) {
+  const path = `${crewId}/${eventId}-${Date.now()}.jpg`;
+  const up = await supabase.storage.from('receipts').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+  if (up.error) throw up.error;
+  const { data, error } = await supabase.functions.invoke('dynamic-responder', { body: { eventId, path } });
+  if (error) {
+    // достаём понятный текст ошибки из ответа функции
+    const ctx = (error as { context?: Response }).context;
+    let msg = error.message;
+    try { if (ctx) msg = (await ctx.json()).error ?? msg; } catch { /* оставляем как есть */ }
+    throw new Error(msg);
+  }
+  return data as { count: number; sum: number; total: number; status: string };
 }

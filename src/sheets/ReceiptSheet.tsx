@@ -1,42 +1,59 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
-import { money, uid } from '../lib/format';
+import { recognizeReceipt } from '../lib/remote';
+import { humanError } from '../lib/supabase';
 import { Icon } from '../components/Icons';
 
-// Пока имитация. На этапе 6 здесь будет вызов серверной функции parse-receipt.
-const DEMO = [
-  { name: 'IPA 0,5', price: 390, qty: 4 },
-  { name: 'Сидр яблочный', price: 360, qty: 2 },
-  { name: 'Гренки чесночные', price: 290, qty: 1 },
-  { name: 'Бургер классический', price: 640, qty: 1 },
-  { name: 'Вода', price: 120, qty: 2 },
-];
+/** Сжимаем фото чека: по длинной стороне до 1600 px — текст читается, а файл лёгкий */
+function compress(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      c.getContext('2d')?.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(img.src);
+      c.toBlob((b) => (b ? resolve(b) : reject(new Error('Не удалось обработать фото'))), 'image/jpeg', 0.85);
+    };
+    img.onerror = () => reject(new Error('Не удалось открыть фото'));
+    img.src = URL.createObjectURL(file);
+  });
+}
 
 export function ReceiptSheet({ eventId }: { eventId: string }) {
-  const { updateEvent } = useStore();
+  const { crewId, sync, refresh } = useStore();
   const ui = useUI();
-  const [scanning, setScanning] = useState(false);
+  const [stage, setStage] = useState<'pick' | 'upload' | 'scan'>('pick');
+  const alive = useRef(true); // шторку могли закрыть, пока идёт распознавание
+  useEffect(() => () => { alive.current = false; }, []);
 
-  const onFile = () => {
-    setScanning(true);
-    setTimeout(() => {
-      const sum = DEMO.reduce((s, r) => s + r.price * r.qty, 0);
-      updateEvent(eventId, (e) => {
-        DEMO.forEach((r) => e.items.push({ id: uid(), ...r, splitMode: 'equal', consumers: [...e.members], split: {} }));
-        e.status = `✅ Распознано позиций: ${DEMO.length}, итог по чеку: ${money(sum)}`;
-      });
-      ui.close();
-      ui.toast('Чек распознан');
-    }, 1600);
+  const onFile = async (file?: File) => {
+    if (!file) return;
+    try {
+      setStage('upload');
+      const blob = await compress(file);
+      await sync(); // посиделка и участники должны уже лежать в базе
+      setStage('scan');
+      const res = await recognizeReceipt(crewId, eventId, blob);
+      await refresh();
+      if (alive.current) ui.close();
+      ui.toast(res.status.startsWith('⚠️') ? 'Чек распознан, но сумма не сходится — проверь позиции' : `Чек распознан: ${res.count} поз.`);
+    } catch (e) {
+      await refresh();
+      if (alive.current) setStage('pick');
+      ui.toast(humanError(e));
+    }
   };
 
-  if (scanning) {
+  if (stage !== 'pick') {
     return (
       <div className="scan">
         <div className="spinner" role="status" aria-label="Распознаю" />
-        <b>Распознаю чек…</b>
-        <span style={{ color: 'var(--muted)', fontSize: 14 }}>Обычно это 5–15 секунд</span>
+        <b>{stage === 'upload' ? 'Загружаю фото…' : 'Распознаю чек…'}</b>
+        <span style={{ color: 'var(--muted)', fontSize: 14 }}>Обычно это 5–20 секунд. Шторку можно закрыть — позиции появятся сами.</span>
       </div>
     );
   }
@@ -45,13 +62,12 @@ export function ReceiptSheet({ eventId }: { eventId: string }) {
     <>
       <h4>Загрузить чек</h4>
       <p style={{ color: 'var(--muted)', margin: '-6px 0 16px', fontSize: 15 }}>
-        Сфотографируй чек целиком, позиции добавятся сами и разделятся на всех участников.
+        Сфотографируй чек целиком и ровно, при хорошем свете. Позиции добавятся сами и разделятся на всех участников, а дальше их можно поправить.
       </p>
       <label className="btn primary block" style={{ cursor: 'pointer' }}>
         {Icon.cam} Сфотографировать или выбрать
-        <input type="file" accept="image/*" capture="environment" hidden onChange={onFile} />
+        <input type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
       </label>
-      <p style={{ color: 'var(--muted)', fontSize: 13, margin: '12px 0 0' }}>Пока распознавание имитируется демо-позициями.</p>
     </>
   );
 }

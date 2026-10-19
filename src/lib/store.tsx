@@ -18,6 +18,8 @@ type Store = {
   updateEvent: (id: string, fn: (ev: BarEvent) => void) => void;
   nameOf: (id: string) => string;
   refresh: () => Promise<void>;
+  /** отправить всё накопленное в базу и дождаться */
+  sync: () => Promise<void>;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -143,13 +145,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
   }, [flush, refresh]);
 
+  const sync = useCallback(async () => {
+    flush();
+    await queue.current;
+  }, [flush]);
+
   const nameOf = useCallback((id: string) => stateRef.current?.people.find((p) => p.id === id)?.name ?? '?', []);
 
   if (!state) return <Splash message={loadError} onRetry={loadError ? refresh : undefined} />;
   if (!state.me) return <ClaimStep people={state.people} crewId={crewId} onDone={refresh} />;
 
   return (
-    <Ctx.Provider value={{ state, crewId, update, updateEvent, nameOf, refresh }}>
+    <Ctx.Provider value={{ state, crewId, update, updateEvent, nameOf, refresh, sync }}>
       {children}
       {syncError && (
         <div className="sync-err" role="alert">
