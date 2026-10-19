@@ -11,6 +11,7 @@ import { ACCENTS, getAccent, getTheme, setAccent, setTheme, type Accent, type Th
 import { Icon } from '../components/Icons';
 import { InstallCard } from '../components/InstallCard';
 import { PhotoChoiceSheet } from '../components/PhotoPick';
+import { getHome, getTabOrder, setHome, setTabOrder, TAB_ICONS, TAB_LABELS, type TabId } from '../lib/tabs';
 import { PlacePhoto } from '../components/common';
 
 export function ProfileScreen() {
@@ -22,6 +23,22 @@ export function ProfileScreen() {
   const [busy, setBusy] = useState(false);
   const [theme, setThemeState] = useState<Theme>(getTheme);
   const [accent, setAccentState] = useState<Accent>(getAccent);
+  const [order, setOrderState] = useState<TabId[]>(getTabOrder);
+  const [home, setHomeState] = useState<TabId>(getHome);
+
+  const move = (i: number, d: -1 | 1) => {
+    const next = [...order];
+    const j = i + d;
+    if (j < 0 || j >= next.length) return;
+    [next[i], next[j]] = [next[j], next[i]];
+    setOrderState(next);
+    setTabOrder(next);
+  };
+  const pickHome = (t: TabId) => {
+    setHomeState(t);
+    setHome(t);
+    ui.toast(`Главный экран — «${TAB_LABELS[t]}»`);
+  };
   const dirty = name.trim() !== acc.profile.name || tg.trim().replace(/^@/, '') !== acc.profile.tg;
 
   const save = async () => {
@@ -177,6 +194,19 @@ export function ProfileScreen() {
             </button>
           );
         })}
+      </div>
+
+      <h3>Вкладки <small>порядок и главный экран</small></h3>
+      <div className="list">
+        {order.map((t, i) => (
+          <div key={t} className="row tab-row">
+            <span className="tab-ico">{Icon[TAB_ICONS[t]]}</span>
+            <div className="grow"><div className="t">{TAB_LABELS[t]}</div>{home === t && <div className="s">открывается при запуске</div>}</div>
+            <button className={'icon-btn sm' + (home === t ? ' on' : '')} aria-label={`Сделать «${TAB_LABELS[t]}» главным экраном`} aria-pressed={home === t} onClick={() => pickHome(t)}>{Icon.star}</button>
+            <button className="icon-btn sm" aria-label="Выше" disabled={i === 0} onClick={() => move(i, -1)}>{Icon.up}</button>
+            <button className="icon-btn sm" aria-label="Ниже" disabled={i === order.length - 1} onClick={() => move(i, 1)}>{Icon.down}</button>
+          </div>
+        ))}
       </div>
 
       <InstallCard />

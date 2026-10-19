@@ -22,6 +22,15 @@ export const Icon = {
   check: (
     <svg viewBox="0 0 24 24" {...s} strokeWidth={2.2} aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
   ),
+  star: (
+    <svg viewBox="0 0 24 24" {...s} aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" /></svg>
+  ),
+  up: (
+    <svg viewBox="0 0 24 24" {...s} strokeWidth={2.2} aria-hidden="true"><path d="M6 15l6-6 6 6" /></svg>
+  ),
+  down: (
+    <svg viewBox="0 0 24 24" {...s} strokeWidth={2.2} aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+  ),
   back: (
     <svg viewBox="0 0 24 24" {...s} strokeWidth={2} aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
   ),

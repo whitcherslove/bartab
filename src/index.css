@@ -349,3 +349,13 @@ button.profile-avatar, button.crew-head-av { border: 0; background: none; paddin
 .coaster { width: 88px }
 .coaster .mat { width: 84px; height: 84px; font-size: 12px }
 .coaster .nm { max-width: 88px }
+
+/* ===== Настройка вкладок ===== */
+.tab-row { gap: 8px }
+.tab-ico { color: var(--muted); display: grid }
+.tab-ico svg { width: 22px; height: 22px }
+.icon-btn.sm { width: 34px; height: 34px }
+.icon-btn.sm svg { width: 18px; height: 18px }
+.icon-btn:disabled { opacity: .3 }
+.icon-btn.on { background: var(--amber); color: var(--amber-ink); border-color: transparent }
+.icon-btn.on svg { fill: currentColor }

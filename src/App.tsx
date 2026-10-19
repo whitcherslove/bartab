@@ -2,7 +2,8 @@ import { StoreProvider } from './lib/store';
 import { AccountGate, useAccount } from './lib/account';
 import { UIProvider, useUI, type View } from './lib/ui';
 import { Icon } from './components/Icons';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { getTabOrder, onTabsChange, TAB_ICONS, TAB_LABELS, type TabId } from './lib/tabs';
 import { WelcomeSheet } from './sheets/WelcomeSheet';
 import { EventsScreen } from './screens/EventsScreen';
 import { EventScreen } from './screens/EventScreen';
@@ -57,19 +58,17 @@ function Shell() {
 
 function TabBar({ current }: { current: View['screen'] }) {
   const { go } = useUI();
-  const tab = (screen: 'events' | 'places' | 'crew' | 'profile', icon: keyof typeof Icon, label: string) => (
-    <button className="tab" aria-current={current === screen ? 'page' : undefined} onClick={() => go({ screen })}>
-      {Icon[icon]}
-      {label}
-    </button>
-  );
+  const [order, setOrder] = useState<TabId[]>(getTabOrder);
+  useEffect(() => onTabsChange(() => setOrder(getTabOrder())), []);
   return (
     <nav className="tabbar" aria-label="Разделы">
       <div className="tabbar-in">
-        {tab('crew', 'people', 'Компания')}
-        {tab('events', 'glass', 'Посиделки')}
-        {tab('places', 'pin', 'Бары')}
-        {tab('profile', 'user', 'Профиль')}
+        {order.map((screen) => (
+          <button key={screen} className="tab" aria-current={current === screen ? 'page' : undefined} onClick={() => go({ screen })}>
+            {Icon[TAB_ICONS[screen]]}
+            {TAB_LABELS[screen]}
+          </button>
+        ))}
       </div>
     </nav>
   );

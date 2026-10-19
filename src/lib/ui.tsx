@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { getHome } from './tabs';
 
 export type View = { screen: 'events' | 'places' | 'crew' | 'profile' } | { screen: 'event'; id: string };
 
@@ -21,15 +22,16 @@ const Ctx = createContext<UI | null>(null);
 // шторку или возвращает на предыдущий экран, а не выходит из приложения.
 type HistState = { bartab: true; view: View; depth: number; sheet?: boolean };
 
-const ROOT: View = { screen: 'crew' };
+/** Главный экран — из настроек (вкладка, выбранная звёздочкой) */
+const rootView = (): View => ({ screen: getHome() });
 const sameView = (a: View, b: View) => a.screen === b.screen && (a.screen !== 'event' || (b.screen === 'event' && a.id === b.id));
 
 export function UIProvider({ children }: { children: ReactNode }) {
-  const [view, setView] = useState<View>(ROOT);
+  const [view, setView] = useState<View>(rootView);
   const [sheet, setSheet] = useState<{ node: ReactNode; key: number } | null>(null);
   const [toastMsg, setToastMsg] = useState<{ text: string; key: number } | null>(null);
   const counter = useRef(0);
-  const viewRef = useRef<View>(ROOT);
+  const viewRef = useRef<View>(rootView());
   const depthRef = useRef(0);
   const sheetOpen = useRef(false);
   const ignorePop = useRef(0); // сколько ближайших «назад» сделали мы сами
@@ -42,7 +44,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
 
   // Стартовая запись истории
   useEffect(() => {
-    const st: HistState = { bartab: true, view: ROOT, depth: 0 };
+    const st: HistState = { bartab: true, view: rootView(), depth: 0 };
     window.history.replaceState(st, '');
   }, []);
 
@@ -58,7 +60,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
         if (st?.bartab && !st.sheet) depthRef.current = st.depth;
         return;
       }
-      const v = st?.bartab ? st.view : ROOT;
+      const v = st?.bartab ? st.view : rootView();
       depthRef.current = st?.bartab ? st.depth : 0;
       showView(v);
     };
@@ -91,7 +93,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
 
   const back = useCallback(() => {
     if (depthRef.current > 0 || sheetOpen.current) window.history.back();
-    else showView(ROOT);
+    else showView(rootView());
   }, [showView]);
 
   const closeAndBack = useCallback(() => {
@@ -99,8 +101,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
     sheetOpen.current = false;
     setSheet(null);
     const steps = (hadSheet ? 1 : 0) + (depthRef.current > 0 ? 1 : 0);
-    if (steps === 0) return showView(ROOT);
-    if (depthRef.current === 0) { ignorePop.current++; window.history.back(); showView(ROOT); return; }
+    if (steps === 0) return showView(rootView());
+    if (depthRef.current === 0) { ignorePop.current++; window.history.back(); showView(rootView()); return; }
     window.history.go(-steps); // одно перемещение — обработчик «Назад» покажет нужный экран
   }, [showView]);
 
