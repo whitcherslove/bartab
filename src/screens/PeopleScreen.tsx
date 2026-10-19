@@ -7,14 +7,8 @@ import { PersonSheet } from '../sheets/PersonSheet';
 import { CrewCard } from '../components/CrewCard';
 
 export function PeopleScreen() {
-  const { state, reset } = useStore();
+  const { state } = useStore();
   const ui = useUI();
-
-  const onReset = () => {
-    if (!confirm('Вернуть демо-данные? Всё, что ты добавил, удалится.')) return;
-    reset();
-    ui.toast('Демо-данные восстановлены');
-  };
 
   return (
     <>
@@ -38,11 +32,11 @@ export function PeopleScreen() {
       </div>
       <h3>Мои чаты для итогов</h3>
       <div className="list">
+        {state.chats.length === 0 && <div className="empty">Подключим на этапе с Telegram</div>}
         {state.chats.map((c) => (
           <div key={c.id} className="row"><div className="grow"><div className="t">{c.name}</div></div></div>
         ))}
       </div>
-      <div className="foot"><button onClick={onReset}>Сбросить демо-данные</button></div>
     </>
   );
 }

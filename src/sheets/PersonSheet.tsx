@@ -17,7 +17,7 @@ export function PersonSheet({ id }: { id?: string }) {
     update((d) => {
       const p = id ? d.people.find((x) => x.id === id) : undefined;
       if (p) Object.assign(p, { name: n, tg: t });
-      else d.people.push({ id: uid(), name: n, tg: t });
+      else d.people.push({ id: uid(), name: n, tg: t, userId: null });
     });
     ui.close();
     ui.toast('Сохранено');

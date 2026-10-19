@@ -26,6 +26,7 @@ export function ChatSheet({ eventId }: { eventId: string }) {
       <h4>Отправить итоги в чат</h4>
       <div className="field">
         <span>Куда отправить</span>
+        {state.chats.length === 0 && <p className="hint" style={{ margin: 0 }}>Чатов пока нет: подключим их на этапе с Telegram.</p>}
         <div className="chips">
           {state.chats.map((c) => (
             <button key={c.id} type="button" className="chip plain" aria-pressed={c.id === chatId} onClick={() => setChatId(c.id)}>{c.name}</button>

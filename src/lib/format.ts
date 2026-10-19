@@ -18,7 +18,8 @@ export function hueOf(s: string) {
   return h;
 }
 
-export const uid = () => Math.random().toString(36).slice(2, 9);
+/** id новых записей — сразу в формате базы (uuid) */
+export const uid = () => crypto.randomUUID();
 
 /** Число из поля ввода: понимает и запятую, и точку */
 export const parseNum = (v: string) => Number(v.replace(',', '.').trim()) || 0;

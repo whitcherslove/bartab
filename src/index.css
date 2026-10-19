@@ -198,3 +198,7 @@ h3 small { font: 500 13px var(--text); color: var(--muted) }
 .or { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; margin: 14px 0 }
 .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line) }
 .auth-links { flex-wrap: wrap }
+
+/* ===== Ошибка сохранения ===== */
+.sync-err { position: fixed; left: 50%; top: calc(12px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 40; background: var(--cherry); color: #fff; padding: 10px 12px 10px 16px; border-radius: 14px; font-size: 14px; display: flex; align-items: center; gap: 10px; max-width: calc(100% - 24px) }
+.sync-err button { border: 0; background: none; color: inherit; font-size: 20px; line-height: 1 }
