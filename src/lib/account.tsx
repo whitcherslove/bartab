@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { configError, humanError, supabase } from './supabase';
+import { clearCache, readCache, writeCache } from './cache';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { ProfileStep } from '../screens/auth/ProfileStep';
 import { CrewSetup } from '../screens/auth/CrewSetup';
@@ -89,10 +90,19 @@ export function AccountGate({ children }: { children: ReactNode }) {
       ]);
       if (pErr) throw pErr;
       if (cErr) throw cErr;
-      setProfile(p ?? { id: user.id, name: '', tg: '' });
+      const prof = p ?? { id: user.id, name: '', tg: '' };
+      setProfile(prof);
       setCrews(c ?? []);
+      writeCache('account:' + user.id, { profile: prof, crews: c ?? [] });
     } catch (e) {
-      setError(humanError(e));
+      // нет связи — открываем с последними сохранёнными данными
+      const cached = readCache<{ profile: Profile; crews: Crew[] }>('account:' + user.id);
+      if (cached) {
+        setProfile(cached.profile);
+        setCrews(cached.crews);
+      } else {
+        setError(humanError(e));
+      }
     }
   }, [setCrewId]);
 
@@ -115,6 +125,7 @@ export function AccountGate({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
+    clearCache();
     try { localStorage.removeItem(CREW_KEY); } catch { /* ignore */ }
   }, []);
 

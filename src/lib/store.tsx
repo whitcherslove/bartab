@@ -3,6 +3,7 @@ import type { BarEvent, State } from './types';
 import { useAccount } from './account';
 import { fetchCrew, pushDiff } from './remote';
 import { humanError, supabase } from './supabase';
+import { readCache, writeCache } from './cache';
 import { Splash } from '../screens/auth/Splash';
 import { ClaimStep } from '../screens/auth/ClaimStep';
 
@@ -30,11 +31,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const crewId = crew.id;
   const userId = session.user.id;
 
-  const [state, setStateRaw] = useState<State | null>(null);
+  const cacheKey = `crew:${crewId}:${userId}`;
+  const [state, setStateRaw] = useState<State | null>(() => readCache<State>(cacheKey));
   const [loadError, setLoadError] = useState('');
+  const [offline, setOffline] = useState(!navigator.onLine);
   const [syncError, setSyncError] = useState('');
 
-  const stateRef = useRef<State | null>(null);
+  const stateRef = useRef<State | null>(state);
   const base = useRef<State | null>(null); // состояние до ещё не отправленных изменений
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const queue = useRef<Promise<void>>(Promise.resolve());
@@ -53,11 +56,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const fresh = await fetchCrew(crewId, userId);
       if (busy()) { remoteDirty.current = true; return; } // пока пишем — не затираем
       setState(fresh);
+      writeCache(cacheKey, fresh);
       setLoadError('');
+      setOffline(false);
     } catch (e) {
-      setLoadError(humanError(e));
+      if (stateRef.current) setOffline(true); // показываем сохранённое
+      else setLoadError(humanError(e));
     }
-  }, [crewId, userId, setState]);
+  }, [crewId, userId, cacheKey, setState]);
 
   // Отправка накопленных изменений
   const flush = useCallback(() => {
@@ -103,12 +109,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [update],
   );
 
-  // Первая загрузка и смена компании
+  // Первая загрузка и смена компании: сразу показываем сохранённое, потом подтягиваем свежее
   useEffect(() => {
-    setState(null);
+    setState(readCache<State>(cacheKey));
     base.current = null;
     refresh();
-  }, [crewId, refresh, setState]);
+  }, [cacheKey, refresh, setState]);
+
+  // Сеть пропала / появилась
+  useEffect(() => {
+    const on = () => { setOffline(false); refresh(); };
+    const off = () => setOffline(true);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => {
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
+    };
+  }, [refresh]);
 
   // Изменения от друзей в реальном времени
   useEffect(() => {
@@ -158,6 +176,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{ state, crewId, update, updateEvent, nameOf, refresh, sync }}>
       {children}
+      {offline && !syncError && <div className="offline-bar" role="status">Нет сети — показаны последние данные</div>}
       {syncError && (
         <div className="sync-err" role="alert">
           {syncError}

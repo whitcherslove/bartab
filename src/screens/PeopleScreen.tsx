@@ -5,6 +5,7 @@ import { Icon } from '../components/Icons';
 import { Av, Pill } from '../components/common';
 import { PersonSheet } from '../sheets/PersonSheet';
 import { CrewCard } from '../components/CrewCard';
+import { InstallCard } from '../components/InstallCard';
 import { ConnectChatSheet } from '../sheets/ConnectChatSheet';
 import { deleteTgChat } from '../lib/remote';
 import { humanError } from '../lib/supabase';
@@ -30,6 +31,7 @@ export function PeopleScreen() {
         <h1>Люди</h1>
         <button className="icon-btn" aria-label="Добавить человека" onClick={() => ui.open(<PersonSheet />)}>{Icon.plus}</button>
       </header>
+      <InstallCard />
       <CrewCard />
       <h3>Люди <small>баланс по всем посиделкам</small></h3>
       <div className="list">

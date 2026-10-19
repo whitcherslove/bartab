@@ -209,3 +209,9 @@ h3 small { font: 500 13px var(--text); color: var(--muted) }
 .btn.disabled { opacity: .5; pointer-events: none }
 .cmd-row { display: flex; gap: 8px; align-items: center }
 .cmd { flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; overflow-x: auto; white-space: nowrap; user-select: all }
+
+/* ===== Нет сети ===== */
+.offline-bar { position: fixed; left: 50%; top: calc(12px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 40; background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 999px; font-size: 13px; white-space: nowrap }
+
+/* ===== Установка приложения ===== */
+.install-card .t { white-space: normal }
