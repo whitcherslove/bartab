@@ -411,3 +411,22 @@ button.crew-head-name { border: 0; background: none; padding: 0; color: inherit;
 .place-title { margin: 0 0 4px !important; font: 700 21px/1.2 var(--display) }
 .place-cat { display: inline-block; font-size: 13px; color: var(--muted); background: var(--chip); border-radius: 999px; padding: 3px 10px }
 .place-addr { margin: 4px 2px 12px; color: var(--muted); font-size: 14px }
+
+/* ===== Шапка встречи: дата и итоги ===== */
+.event-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: -4px 0 16px }
+.event-meta .map-btns { display: contents }
+.date-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; font-size: 14px; font-weight: 500 }
+.date-chip svg { width: 16px; height: 16px; color: var(--amber) }
+.totals2 { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 0 2px 14px }
+.total-main b { display: block; font: 700 30px/1.1 var(--display) }
+.total-main span { color: var(--muted); font-size: 13px }
+.total-sub { color: var(--muted); font-size: 13px; text-align: right; line-height: 1.5 }
+
+/* ===== Карточка истории в профиле ===== */
+.history-card { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: 0; background: var(--surface); border-radius: 18px; padding: 14px 14px 14px 16px; color: inherit }
+.history-line { font-weight: 600 }
+.history-cats { display: flex; gap: 12px; color: var(--muted); font-size: 13px; margin-top: 4px }
+.history-thumbs { display: flex; gap: 8px; margin-top: 10px }
+.history-thumb { position: relative }
+.history-thumb i { position: absolute; right: -4px; bottom: -4px; font-style: normal; font-size: 11px; font-weight: 700; background: var(--amber); color: var(--amber-ink); border-radius: 999px; padding: 1px 6px }
+.history-more { font-size: 28px; color: var(--muted); line-height: 1 }

@@ -13,20 +13,10 @@ const plural = (n: number, one: string, few: string, many: string) => {
 };
 const asPlace = (p: NonNullable<Visit['place']>): Place => ({ ...p, mapUrl: '', lat: null, lon: null });
 
-/** «Мои встречи»: где и с кем бываешь, по всем компаниям, без денег */
-export function MyVisits() {
+/** Подробная история: где и с кем бываешь, по всем компаниям */
+export function HistorySheet({ visits }: { visits: Visit[] }) {
   const acc = useAccount();
   const ui = useUI();
-  const [visits, setVisits] = useState<Visit[] | null>(null);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    fetchMyVisits(acc.session.user.id).then(setVisits).catch(() => setError(true));
-  }, [acc.session.user.id]);
-
-  if (error) return <div className="list"><div className="empty">Не удалось загрузить историю. Проверь интернет.</div></div>;
-  if (!visits) return <div className="list"><div className="empty">Загружаю…</div></div>;
-  if (!visits.length) return <div className="list"><div className="empty">Пока ни одной встречи. Самое время позвать друзей 🍻</div></div>;
 
   const crewName = (id: string) => acc.crews.find((c) => c.id === id)?.name ?? 'Компания';
   const crewOf = (id: string) => acc.crews.find((c) => c.id === id) ?? { id, name: crewName(id), avatar_url: '' };
@@ -60,6 +50,7 @@ export function MyVisits() {
 
   return (
     <>
+      <h4>Моя история</h4>
       <div className="visits-summary">
         <div><b className="num">{visits.length}</b><span>{plural(visits.length, 'встреча', 'встречи', 'встреч')}</span></div>
         <div><b className="num">{bars.size}</b><span>{plural(bars.size, 'место', 'места', 'мест')}</span></div>
@@ -76,7 +67,7 @@ export function MyVisits() {
         <>
           <h3>Где бываешь</h3>
           <div className="list">
-            {topBars.slice(0, 5).map((b) => (
+            {topBars.slice(0, 10).map((b) => (
               <div key={b.place.id} className="row">
                 <PlacePhoto place={asPlace(b.place)} className="place-thumb" />
                 <div className="grow">
@@ -115,7 +106,7 @@ export function MyVisits() {
 
       <h3>Последние</h3>
       <div className="list">
-        {visits.slice(0, 5).map((v) => (
+        {visits.slice(0, 10).map((v) => (
           <button key={v.eventId} className="row" onClick={() => open(v)}>
             {v.place ? <PlacePhoto place={asPlace(v.place)} className="place-thumb sm" /> : <CrewAvatar crew={crewOf(v.crewId)} size={40} />}
             <div className="grow">
@@ -126,5 +117,47 @@ export function MyVisits() {
         ))}
       </div>
     </>
+  );
+}
+
+/** Компактная карточка в профиле: сводка и любимые места; тап — подробная история */
+export function MyVisits() {
+  const acc = useAccount();
+  const ui = useUI();
+  const [visits, setVisits] = useState<Visit[] | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    fetchMyVisits(acc.session.user.id).then(setVisits).catch(() => setError(true));
+  }, [acc.session.user.id]);
+
+  if (error) return <div className="list"><div className="empty">Не удалось загрузить историю. Проверь интернет.</div></div>;
+  if (!visits) return <div className="list"><div className="empty">Загружаю…</div></div>;
+  if (!visits.length) return <div className="list"><div className="empty">Пока ни одной встречи. Самое время позвать друзей 🍻</div></div>;
+
+  const places = new Map<string, { place: NonNullable<Visit['place']>; n: number }>();
+  for (const v of visits) if (v.place) places.set(v.place.id, { place: v.place, n: (places.get(v.place.id)?.n ?? 0) + 1 });
+  const top = [...places.values()].sort((a, b) => b.n - a.n).slice(0, 4);
+  const crews = new Set(visits.map((v) => v.crewId)).size;
+  const cats = CATEGORIES.map((c) => ({ c, n: visits.filter((v) => (v.place?.category ?? 'bar') === c.id).length })).filter((x) => x.n);
+
+  return (
+    <button className="history-card" onClick={() => ui.open(<HistorySheet visits={visits} />)}>
+      <div className="grow">
+        <div className="history-line">
+          {visits.length} {plural(visits.length, 'встреча', 'встречи', 'встреч')} · {places.size} {plural(places.size, 'место', 'места', 'мест')} · {crews} {plural(crews, 'компания', 'компании', 'компаний')}
+        </div>
+        <div className="history-cats">{cats.map(({ c, n }) => <span key={c.id}>{c.emoji} {n}</span>)}</div>
+        <div className="history-thumbs">
+          {top.map(({ place, n }) => (
+            <span key={place.id} className="history-thumb">
+              <PlacePhoto place={asPlace(place)} className="place-thumb sm" />
+              {n > 1 && <i>×{n}</i>}
+            </span>
+          ))}
+        </div>
+      </div>
+      <span className="history-more" aria-hidden="true">›</span>
+    </button>
   );
 }

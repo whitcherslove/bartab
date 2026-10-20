@@ -64,15 +64,20 @@ export function EventScreen({ id }: { id: string }) {
       <PlacePhoto place={place} className="hero">
         <div className="hero-txt">
           <h2>{place?.name ?? 'Без места'}</h2>
-          <div>{fdate(ev.date)}{place?.address ? ', ' + place.address : ''}</div>
+          {place?.address && <div>{place.address}</div>}
         </div>
       </PlacePhoto>
-      {place && (place.address || place.mapUrl || place.lat != null) && <MapButtons place={place} compact />}
+      <div className="event-meta">
+        <span className="date-chip">{Icon.calendar} {fdate(ev.date)}</span>
+        {place && (place.address || place.mapUrl || place.lat != null) && <MapButtons place={place} />}
+      </div>
 
-      <div className="totals">
-        <div><b className="num">{money(evTotal(ev), ev.currency)}</b><span>по чеку</span></div>
-        <div><b className="num">{money(tipAmount(ev), ev.currency)}</b><span>чаевые{ev.tipsMode === 'pct' ? ` ${ev.tips || 0}%` : ''}</span></div>
-        <div><b className="num">{money(evWithTips(ev), ev.currency)}</b><span>всего</span></div>
+      <div className="totals2">
+        <div className="total-main"><b className="num">{money(evWithTips(ev), ev.currency)}</b><span>всего</span></div>
+        <div className="total-sub num">
+          по чеку {money(evTotal(ev), ev.currency)}<br />
+          чаевые {money(tipAmount(ev), ev.currency)}{ev.tipsMode === 'pct' && ev.tips ? ` (${ev.tips}%)` : ''}
+        </div>
       </div>
       <TipsCard key={ev.id} ev={ev} />
 
