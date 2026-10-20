@@ -46,7 +46,7 @@ export function stats(ev: BarEvent, pid: string) {
   return { ...o, isPayer, settled, balance };
 }
 
-/** Баланс человека по всем посиделкам, отдельно по каждой валюте */
+/** Баланс человека по всем встречам, отдельно по каждой валюте */
 export function balancesByCurrency(events: BarEvent[], pid: string): Record<string, number> {
   const out: Record<string, number> = {};
   for (const e of events) {
@@ -57,7 +57,7 @@ export function balancesByCurrency(events: BarEvent[], pid: string): Record<stri
   return out;
 }
 
-/** Баланс человека по всем посиделкам (без учёта валют) */
+/** Баланс человека по всем встречам (без учёта валют) */
 export const totalBalance = (events: BarEvent[], pid: string) =>
   events.filter((e) => e.members.includes(pid)).reduce((s, e) => s + stats(e, pid).balance, 0);
 

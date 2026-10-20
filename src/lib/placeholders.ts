@@ -80,6 +80,58 @@ const scenes: ((h: number) => string)[] = [
     <path d="M200 44 V24 M182 50 L170 34 M218 50 L230 34" stroke="${C.foam}" stroke-width="5" stroke-linecap="round"/>`,
 ];
 
+// Магазины
+const shopScenes: ((h: number) => string)[] = [
+  // тележка с пакетами
+  (h) => `${bg(h)}
+    <rect x="0" y="168" width="400" height="32" fill="${C.ink}" opacity=".8"/>
+    <path d="M120 70 H140 L160 140 H270 L288 92 H150" stroke="${C.foam}" stroke-width="7" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="172" cy="158" r="10" fill="${C.foam}"/><circle cx="258" cy="158" r="10" fill="${C.foam}"/>
+    <rect x="172" y="60" width="40" height="52" rx="4" fill="${C.amber}"/><path d="M180 60 Q192 42 204 60" stroke="${C.amber}" stroke-width="4" fill="none"/>
+    <rect x="218" y="70" width="44" height="42" rx="4" fill="${C.cherry}"/><path d="M228 70 Q240 52 252 70" stroke="${C.cherry}" stroke-width="4" fill="none"/>
+    <circle cx="200" cy="56" r="9" fill="${C.lime}"/>`,
+  // витрина с маркизой
+  (h) => `${bg(h)}
+    <rect x="70" y="70" width="260" height="110" fill="${C.ink}" opacity=".85"/>
+    ${[0, 1, 2, 3, 4, 5, 6].map((i) => `<path d="M${70 + i * 37.1} 52 h37.1 v26 q-18.5 14 -37.1 0 z" fill="${i % 2 ? C.foam : C.cherry}"/>`).join('')}
+    <rect x="96" y="100" width="90" height="62" rx="4" fill="${C.glass}" stroke="${C.foam}" stroke-opacity=".5"/>
+    <rect x="214" y="100" width="90" height="80" rx="4" fill="${C.amber}" opacity=".9"/>
+    <circle cx="290" cy="142" r="4" fill="${C.ink}"/>
+    <circle cx="120" cy="140" r="9" fill="${C.lime}"/><rect x="138" y="128" width="16" height="22" rx="3" fill="${C.amber}"/><circle cx="168" cy="142" r="7" fill="${C.cherry}"/>`,
+  // три пакета
+  (h) => `${bg(h)}
+    ${[[110, C.amber, 0], [180, C.cherry, 1], [250, C.lime, 2]].map(([x, col, i]) => `
+      <path d="M${x} ${78 + Number(i) * 4} h60 l8 92 h-76 z" fill="${col}"/>
+      <path d="M${Number(x) + 14} ${78 + Number(i) * 4} q16 -34 32 0" stroke="${C.foam}" stroke-width="5" fill="none"/>`).join('')}
+    <rect x="0" y="170" width="400" height="30" fill="${C.ink}" opacity=".8"/>`,
+];
+
+// Кинотеатры
+const cinemaScenes: ((h: number) => string)[] = [
+  // экран и ряды кресел
+  (h) => `${bg(h)}
+    <rect x="70" y="26" width="260" height="96" rx="6" fill="${C.foam}" opacity=".92"/>
+    <path d="M70 122 Q200 136 330 122" stroke="${C.foam}" stroke-width="3" fill="none" opacity=".4"/>
+    ${[0, 1].map((r) => [0, 1, 2, 3, 4, 5, 6, 7].map((i) => `<rect x="${84 + i * 30 + r * 10}" y="${144 + r * 26}" width="22" height="20" rx="6" fill="${r ? C.cherry : C.amber}" opacity="${r ? 1 : 0.9}"/>`).join('')).join('')}`,
+  // попкорн и билеты
+  (h) => `${bg(h)}
+    <path d="M150 80 H230 L218 176 H162 Z" fill="${C.foam}"/>
+    ${[0, 1, 2, 3].map((i) => `<path d="M${156 + i * 20} 80 L${165 + i * 14} 176" stroke="${C.cherry}" stroke-width="8"/>`).join('')}
+    ${[[158, 70], [178, 60], [198, 64], [218, 72], [168, 52], [208, 50], [190, 44]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="13" fill="${C.amber}"/>`).join('')}
+    <g transform="rotate(-12 280 120)"><rect x="244" y="96" width="86" height="44" rx="6" fill="${C.lime}"/><path d="M272 96 v44" stroke="${C.ink}" stroke-width="2" stroke-dasharray="4 4"/></g>
+    <g transform="rotate(8 286 150)"><rect x="252" y="128" width="86" height="44" rx="6" fill="${C.amber}"/><path d="M280 128 v44" stroke="${C.ink}" stroke-width="2" stroke-dasharray="4 4"/></g>`,
+  // хлопушка и плёнка
+  (h) => `${bg(h)}
+    <rect x="130" y="86" width="140" height="84" rx="6" fill="${C.ink}"/>
+    <g transform="rotate(-14 130 86)"><rect x="130" y="62" width="140" height="22" rx="4" fill="${C.foam}"/>
+      ${[0, 1, 2, 3, 4].map((i) => `<path d="M${142 + i * 26} 62 l14 22" stroke="${C.ink}" stroke-width="9"/>`).join('')}</g>
+    <rect x="130" y="86" width="140" height="18" fill="${C.foam}"/>
+    ${[0, 1, 2, 3, 4].map((i) => `<path d="M${142 + i * 26} 86 l14 18" stroke="${C.ink}" stroke-width="9"/>`).join('')}
+    <circle cx="300" cy="150" r="30" fill="${C.amber}"/>${[0, 72, 144, 216, 288].map((a) => `<circle cx="${300 + Math.cos((a * Math.PI) / 180) * 16}" cy="${150 + Math.sin((a * Math.PI) / 180) * 16}" r="6" fill="${C.ink}"/>`).join('')}`,
+];
+
+const sceneSets: Record<string, ((h: number) => string)[]> = { bar: scenes, shop: shopScenes, cinema: cinemaScenes };
+
 const cache = new Map<string, string>();
 
 function seedOf(s: string) {
@@ -88,12 +140,13 @@ function seedOf(s: string) {
   return Math.abs(h);
 }
 
-/** Картинка-заглушка (data:image/svg+xml) для бара */
-export function placeholderFor(key: string, hue: number): string {
-  const k = `${key}|${hue}`;
+/** Картинка-заглушка (data:image/svg+xml) для места: сцена зависит от категории */
+export function placeholderFor(key: string, hue: number, category = 'bar'): string {
+  const k = `${key}|${hue}|${category}`;
   const hit = cache.get(k);
   if (hit) return hit;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice">${scenes[seedOf(key) % scenes.length](hue)}</svg>`;
+  const set = sceneSets[category] ?? scenes;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice">${set[seedOf(key) % set.length](hue)}</svg>`;
   const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.replace(/\s+/g, ' '))}`;
   cache.set(k, url);
   return url;
@@ -212,3 +265,6 @@ export function personPlaceholderFor(key: string): string {
 
 export const personIconSvg = (i: number, h: number) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${hex(h, 45, 42)}"/><stop offset="1" stop-color="${hex((h + 30) % 360, 40, 26)}"/></linearGradient></defs><circle cx="50" cy="50" r="50" fill="url(#g)"/>${personIcons[i]}</svg>`;
 export const PERSON_ICON_COUNT = personIcons.length;
+
+export const catSceneSvg = (cat: string, i: number, hue: number) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice">${sceneSets[cat][i](hue)}</svg>`;

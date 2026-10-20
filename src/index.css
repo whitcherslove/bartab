@@ -401,3 +401,7 @@ button.crew-head-name { border: 0; background: none; padding: 0; color: inherit;
 .crew-edit { display: grid; color: var(--muted) }
 .crew-edit svg { width: 16px; height: 16px }
 .crew-rename { display: flex; gap: 8px; width: 100%; max-width: 320px }
+
+/* ===== Категории мест ===== */
+.cat-seg button { white-space: nowrap; font-size: 14px; padding: 9px 4px }
+.cat-emoji { margin-right: 4px }

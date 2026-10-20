@@ -15,11 +15,11 @@ function formatter(code: string) {
   }
   return f;
 }
-/** Валюта по умолчанию — из профиля (для новых посиделок) */
+/** Валюта по умолчанию — из профиля (для новых встреч) */
 let defaultCurrency = 'RUB';
 export function setCurrency(code: string) { if (code) defaultCurrency = code; }
 export const getDefaultCurrency = () => defaultCurrency;
-/** Сумма с валютой. Для посиделки передавай её валюту: money(x, ev.currency) */
+/** Сумма с валютой. Для встречи передавай её валюту: money(x, ev.currency) */
 export const money = (n: number, code?: string) => formatter(code || defaultCurrency).format(Math.round(n));
 
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];

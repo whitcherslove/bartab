@@ -35,7 +35,7 @@ export function ClaimStep({ people, crewId, onDone }: { people: Person[]; crewId
   return (
     <main className="auth">
       <div className="brand">🍻 BarTab</div>
-      <p className="auth-sub">Ты в компании «{crew.name}». Кто ты в списке? Если тебя уже добавляли в посиделки, выбери себя — вся история сохранится.</p>
+      <p className="auth-sub">Ты в компании «{crew.name}». Кто ты в списке? Если тебя уже добавляли во встречи, выбери себя — вся история сохранится.</p>
       {free.length > 0 && (
         <div className="list">
           {free.map((p) => (

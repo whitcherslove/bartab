@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
       if (crew.tg_chat_id !== chatId) {
         const { error } = await db.from('crews').update({ tg_chat_id: chatId, tg_chat_name: name, tg_chat_by: prof?.name ?? '' }).eq('id', crewId);
         if (error) throw new Error('Не удалось сохранить чат: ' + error.message);
-        await tg('sendMessage', { chat_id: chatId, text: `✅ Чат подключён к компании «${crew.name}» в BarTab. Сюда будут приходить итоги посиделок 🍻` }).catch(() => {});
+        await tg('sendMessage', { chat_id: chatId, text: `✅ Чат подключён к компании «${crew.name}» в BarTab. Сюда будут приходить итоги встреч 🍻` }).catch(() => {});
       }
       return json({ found: true, name });
     }

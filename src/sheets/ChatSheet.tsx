@@ -17,7 +17,7 @@ export function ChatSheet({ eventId }: { eventId: string }) {
   const ev = state.events.find((e) => e.id === eventId);
   if (!ev) return null;
 
-  const placeName = state.places.find((p) => p.id === ev.placeId)?.name ?? 'Посиделка';
+  const placeName = state.places.find((p) => p.id === ev.placeId)?.name ?? 'Встреча';
   const preview = chatText(ev, placeName, nameOf);
 
   const send = async () => {

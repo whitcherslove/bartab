@@ -1,7 +1,7 @@
 // Порядок вкладок и главный экран — настройка устройства.
 
 export type TabId = 'crew' | 'events' | 'places' | 'profile';
-export const TAB_LABELS: Record<TabId, string> = { crew: 'Компания', events: 'Посиделки', places: 'Бары', profile: 'Профиль' };
+export const TAB_LABELS: Record<TabId, string> = { crew: 'Компания', events: 'Встречи', places: 'Места', profile: 'Профиль' };
 export const TAB_ICONS: Record<TabId, 'people' | 'glass' | 'pin' | 'user'> = { crew: 'people', events: 'glass', places: 'pin', profile: 'user' };
 
 /** По умолчанию (если человек ничего не менял в настройках) */

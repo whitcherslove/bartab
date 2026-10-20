@@ -64,7 +64,7 @@ export function CrewSetup({ myName, error: outerError, onDone, onSignOut, embedd
   return (
     <main className="auth">
       <div className="brand">🍻 BarTab</div>
-      <p className="auth-sub">Компания — это друзья, с которыми вы ходите в бары. Посиделки, бары и долги у неё общие.</p>
+      <p className="auth-sub">Компания — это друзья, с которыми вы ходите в бары. Встречи, бары и долги у неё общие.</p>
       {body}
       {onSignOut && <div className="auth-links"><button type="button" onClick={onSignOut}>Выйти из аккаунта</button></div>}
     </main>

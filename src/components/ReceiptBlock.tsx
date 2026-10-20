@@ -5,7 +5,7 @@ import { receiptUrl } from '../lib/remote';
 import { Icon } from './Icons';
 import { ReceiptSheet } from '../sheets/ReceiptSheet';
 
-/** Блок чека в посиделке: большая кнопка загрузки или миниатюра со статусом */
+/** Блок чека во встрече: большая кнопка загрузки или миниатюра со статусом */
 export function ReceiptBlock({ ev }: { ev: BarEvent }) {
   const ui = useUI();
   const [url, setUrl] = useState('');

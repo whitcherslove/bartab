@@ -5,6 +5,7 @@ import { fetchMyVisits, type Visit } from '../lib/remote';
 import { fdate } from '../lib/format';
 import type { Place } from '../lib/types';
 import { CrewAvatar, PlacePhoto } from './common';
+import { CATEGORIES, catOf } from '../lib/categories';
 
 const plural = (n: number, one: string, few: string, many: string) => {
   const m10 = n % 10, m100 = n % 100;
@@ -12,7 +13,7 @@ const plural = (n: number, one: string, few: string, many: string) => {
 };
 const asPlace = (p: NonNullable<Visit['place']>): Place => ({ ...p, mapUrl: '', lat: null, lon: null });
 
-/** «Мои посиделки»: где и с кем бываешь, по всем компаниям, без денег */
+/** «Мои встречи»: где и с кем бываешь, по всем компаниям, без денег */
 export function MyVisits() {
   const acc = useAccount();
   const ui = useUI();
@@ -25,7 +26,7 @@ export function MyVisits() {
 
   if (error) return <div className="list"><div className="empty">Не удалось загрузить историю. Проверь интернет.</div></div>;
   if (!visits) return <div className="list"><div className="empty">Загружаю…</div></div>;
-  if (!visits.length) return <div className="list"><div className="empty">Пока ни одной посиделки. Самое время позвать друзей 🍻</div></div>;
+  if (!visits.length) return <div className="list"><div className="empty">Пока ни одной встречи. Самое время позвать друзей 🍻</div></div>;
 
   const crewName = (id: string) => acc.crews.find((c) => c.id === id)?.name ?? 'Компания';
   const crewOf = (id: string) => acc.crews.find((c) => c.id === id) ?? { id, name: crewName(id), avatar_url: '' };
@@ -42,7 +43,7 @@ export function MyVisits() {
   }
   const topBars = [...bars.values()].sort((a, b) => b.n - a.n || b.last.localeCompare(a.last));
 
-  // компании: сколько посиделок и в скольких барах
+  // компании: сколько встреч и в скольких барах
   const crews = new Map<string, { n: number; bars: Set<string> }>();
   for (const v of visits) {
     const c = crews.get(v.crewId) ?? { n: 0, bars: new Set<string>() };
@@ -60,10 +61,16 @@ export function MyVisits() {
   return (
     <>
       <div className="visits-summary">
-        <div><b className="num">{visits.length}</b><span>{plural(visits.length, 'посиделка', 'посиделки', 'посиделок')}</span></div>
-        <div><b className="num">{bars.size}</b><span>{plural(bars.size, 'бар', 'бара', 'баров')}</span></div>
+        <div><b className="num">{visits.length}</b><span>{plural(visits.length, 'встреча', 'встречи', 'встреч')}</span></div>
+        <div><b className="num">{bars.size}</b><span>{plural(bars.size, 'место', 'места', 'мест')}</span></div>
         <div><b className="num">{crews.size}</b><span>{plural(crews.size, 'компания', 'компании', 'компаний')}</span></div>
       </div>
+      <p className="hint visits-cats">
+        {CATEGORIES.map((c) => {
+          const n = visits.filter((v) => (v.place?.category ?? 'bar') === c.id).length;
+          return n ? <span key={c.id}>{c.emoji} {c.many.toLowerCase()} — {n}</span> : null;
+        })}
+      </p>
 
       {topBars.length > 0 && (
         <>
@@ -73,7 +80,7 @@ export function MyVisits() {
               <div key={b.place.id} className="row">
                 <PlacePhoto place={asPlace(b.place)} className="place-thumb" />
                 <div className="grow">
-                  <div className="t">{b.place.name}</div>
+                  <div className="t"><span className="cat-emoji" aria-hidden="true">{catOf(b.place.category).emoji}</span>{b.place.name}</div>
                   <div className="s">{b.n} {plural(b.n, 'раз', 'раза', 'раз')} · последний раз {fdate(b.last)}</div>
                   <div className="visit-crews">
                     {[...b.crews.entries()].map(([cid, n]) => (
@@ -98,7 +105,7 @@ export function MyVisits() {
                 <CrewAvatar crew={crewOf(cid)} size={40} />
                 <div className="grow">
                   <div className="t">{crewName(cid)}</div>
-                  <div className="s">{c.n} {plural(c.n, 'посиделка', 'посиделки', 'посиделок')} · {c.bars.size} {plural(c.bars.size, 'бар', 'бара', 'баров')}</div>
+                  <div className="s">{c.n} {plural(c.n, 'встреча', 'встречи', 'встреч')} · {c.bars.size} {plural(c.bars.size, 'место', 'места', 'мест')}</div>
                 </div>
               </div>
             ))}
@@ -112,7 +119,7 @@ export function MyVisits() {
           <button key={v.eventId} className="row" onClick={() => open(v)}>
             {v.place ? <PlacePhoto place={asPlace(v.place)} className="place-thumb sm" /> : <CrewAvatar crew={crewOf(v.crewId)} size={40} />}
             <div className="grow">
-              <div className="t">{v.place?.name ?? 'Без бара'}</div>
+              <div className="t"><span className="cat-emoji" aria-hidden="true">{catOf(v.place?.category).emoji}</span>{v.place?.name ?? 'Без места'}</div>
               <div className="s">{crewName(v.crewId)} · {fdate(v.date)}</div>
             </div>
           </button>

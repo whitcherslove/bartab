@@ -3,6 +3,7 @@ import type { Place } from '../lib/types';
 import { hueOf, money } from '../lib/format';
 import { useStore } from '../lib/store';
 import { crewPlaceholderFor, personPlaceholderFor, placeholderFor } from '../lib/placeholders';
+import { CATEGORIES, type Category } from '../lib/categories';
 
 export function Av({ id, sm, lg }: { id: string; sm?: boolean; lg?: boolean }) {
   const { nameOf, state } = useStore();
@@ -35,10 +36,10 @@ export function MultiPill({ balances, me }: { balances: Record<string, number>; 
 }
 
 /** Фото бара или, если своего нет, иллюстрация (у каждого бара своя) */
-export function photoStyle(place?: Partial<Pick<Place, 'id' | 'name' | 'hue' | 'photo'>>): CSSProperties {
+export function photoStyle(place?: Partial<Pick<Place, 'id' | 'name' | 'hue' | 'photo' | 'category'>>): CSSProperties {
   if (place?.photo) return { backgroundImage: `url(${place.photo})` };
   const name = place?.name ?? '?';
-  return { backgroundImage: `url("${placeholderFor(place?.id || name, place?.hue ?? hueOf(name))}")` };
+  return { backgroundImage: `url("${placeholderFor(place?.id || name, place?.hue ?? hueOf(name), place?.category ?? 'bar')}")` };
 }
 
 export function PlacePhoto({ place, className = '', children }: { place?: Place; className?: string; children?: ReactNode }) {
@@ -83,5 +84,18 @@ export function Fab({ label, onClick }: { label: string; onClick: () => void }) 
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
       {label}
     </button>
+  );
+}
+
+/** Переключатель категорий мест: Бары · Магазины · Кинотеатры */
+export function CategorySeg({ value, onChange, one }: { value: Category; onChange: (c: Category) => void; one?: boolean }) {
+  return (
+    <div className="seg cat-seg">
+      {CATEGORIES.map((c) => (
+        <button key={c.id} type="button" aria-pressed={value === c.id} onClick={() => onChange(c.id)}>
+          <span aria-hidden="true">{c.emoji}</span> {one ? c.one : c.many}
+        </button>
+      ))}
+    </div>
   );
 }

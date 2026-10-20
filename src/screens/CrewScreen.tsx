@@ -34,7 +34,7 @@ export function CrewScreen() {
   };
 
   const share = async () => {
-    const text = `Залетай в нашу компанию «${acc.crew.name}» в BarTab, там делим счёт за посиделки 🍻`;
+    const text = `Залетай в нашу компанию «${acc.crew.name}» в BarTab, там делим счёт за встречи 🍻`;
     if (navigator.share) {
       try { await navigator.share({ title: 'BarTab', text, url: acc.inviteLink }); } catch { /* отменили */ }
       return;
@@ -64,7 +64,7 @@ export function CrewScreen() {
     );
 
   const leave = async () => {
-    if (!confirm(`Выйти из компании «${acc.crew.name}»? Посиделки с тобой останутся у друзей, а у тебя пропадут. Вернуться можно по приглашению.`)) return;
+    if (!confirm(`Выйти из компании «${acc.crew.name}»? Встречи с тобой останутся у друзей, а у тебя пропадут. Вернуться можно по приглашению.`)) return;
     try { await acc.leaveCrew(acc.crew.id); ui.toast('Ты вышел из компании'); } catch (e) { ui.toast(humanError(e)); }
   };
 
@@ -102,7 +102,7 @@ export function CrewScreen() {
       </div>
 
       <h3>
-        <span>Люди <small>баланс по всем посиделкам</small></span>
+        <span>Люди <small>баланс по всем встречам</small></span>
         <button className="link-btn add-link" onClick={() => ui.open(<PersonSheet />)}>{Icon.plus} Добавить</button>
       </h3>
       <div className="list">
@@ -136,12 +136,12 @@ export function CrewScreen() {
           <div className="row">
             <div className="grow">
               <div className="t">{acc.crew.tg_chat_name}</div>
-              <div className="s">{acc.crew.tg_chat_by ? `подключил(а) ${acc.crew.tg_chat_by}` : 'итоги посиделок приходят сюда'}</div>
+              <div className="s">{acc.crew.tg_chat_by ? `подключил(а) ${acc.crew.tg_chat_by}` : 'итоги встреч приходят сюда'}</div>
             </div>
             <button className="btn undo sm" onClick={removeChat}>Отключить</button>
           </div>
         ) : (
-          <div className="empty">Подключи групповой чат компании — и любой участник сможет отправлять туда итоги посиделок</div>
+          <div className="empty">Подключи групповой чат компании — и любой участник сможет отправлять туда итоги встреч</div>
         )}
       </div>
       <button className="btn block" style={{ marginTop: 10 }} onClick={() => ui.open(<ConnectChatSheet />)}>

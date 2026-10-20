@@ -109,7 +109,7 @@ async function searchHere(q: string, near: Near): Promise<Found[]> {
 
 // ---------- OpenStreetMap (Photon) ----------
 
-const OSM_KINDS: Record<string, string> = { bar: 'бар', pub: 'паб', biergarten: 'пивной сад', nightclub: 'клуб', restaurant: 'ресторан', cafe: 'кафе', fast_food: 'еда' };
+const OSM_KINDS: Record<string, string> = { bar: 'бар', pub: 'паб', biergarten: 'пивной сад', nightclub: 'клуб', restaurant: 'ресторан', cafe: 'кафе', fast_food: 'еда', cinema: 'кинотеатр' };
 type PFeature = { geometry: { coordinates: [number, number] }; properties: { name?: string; osm_key?: string; osm_value?: string; street?: string; housenumber?: string; city?: string; locality?: string; district?: string } };
 
 async function searchOsm(q: string, near: Near): Promise<Found[]> {
@@ -123,7 +123,7 @@ async function searchOsm(q: string, near: Near): Promise<Found[]> {
     return {
       name: p.name!,
       address: [[p.street, p.housenumber].filter(Boolean).join(', '), p.city || p.locality || p.district].filter(Boolean).join(', '),
-      kind: p.osm_key === 'amenity' ? OSM_KINDS[p.osm_value ?? ''] ?? '' : '',
+      kind: p.osm_key === 'amenity' ? OSM_KINDS[p.osm_value ?? ''] ?? '' : p.osm_key === 'shop' ? 'магазин' : '',
       mapUrl: '',
       lat: f.geometry.coordinates[1],
       lon: f.geometry.coordinates[0],

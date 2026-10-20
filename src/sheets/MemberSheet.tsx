@@ -16,7 +16,7 @@ export function MemberSheet({ eventId, pid }: { eventId: string; pid: string }) 
 
   const st = stats(ev, pid);
   const items = personItems(ev, pid);
-  const placeName = state.places.find((p) => p.id === ev.placeId)?.name ?? 'Посиделка';
+  const placeName = state.places.find((p) => p.id === ev.placeId)?.name ?? 'Встреча';
   const payerName = ev.payer ? nameOf(ev.payer) : '';
   const link = person.tg
     ? `https://t.me/${encodeURIComponent(person.tg)}?text=${encodeURIComponent(personalText(ev, pid, placeName, nameOf))}`

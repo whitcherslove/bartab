@@ -21,7 +21,7 @@ export function EventScreen({ id }: { id: string }) {
   if (!ev) {
     return (
       <div className="empty">
-        Посиделка не найдена.<br /><br />
+        Встреча не найдена.<br /><br />
         <button className="btn" onClick={() => ui.back()}>К списку</button>
       </div>
     );
@@ -58,7 +58,7 @@ export function EventScreen({ id }: { id: string }) {
       <header className="top">
         <button className="icon-btn" aria-label="Назад" onClick={() => ui.back()}>{Icon.back}</button>
         <div style={{ flex: 1 }} />
-        <button className="icon-btn" aria-label="Изменить посиделку" onClick={() => ui.open(<EventSheet id={id} />)}>{Icon.edit}</button>
+        <button className="icon-btn" aria-label="Изменить встречу" onClick={() => ui.open(<EventSheet id={id} />)}>{Icon.edit}</button>
       </header>
 
       <PlacePhoto place={place} className="hero">

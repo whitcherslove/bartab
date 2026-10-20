@@ -5,6 +5,8 @@ import { hueOf, uid } from '../lib/format';
 import { Icon } from '../components/Icons';
 import { photoStyle } from '../components/common';
 import { MapButtons } from '../components/MapButtons';
+import { CategorySeg } from '../components/common';
+import { catOf, DEFAULT_CATEGORY, type Category } from '../lib/categories';
 import { PhotoButtons } from '../components/PhotoPick';
 import { uploadPlacePhoto } from '../lib/remote';
 import { humanError } from '../lib/supabase';
@@ -28,11 +30,12 @@ function resize(file: File): Promise<string> {
   });
 }
 
-export function PlaceSheet({ id }: { id?: string }) {
+export function PlaceSheet({ id, category: initialCat }: { id?: string; category?: Category }) {
   const { state, update, crewId } = useStore();
   const ui = useUI();
   const place = id ? state.places.find((p) => p.id === id) : undefined;
   const [name, setName] = useState(place?.name ?? '');
+  const [category, setCategory] = useState<Category>(place?.category ?? initialCat ?? DEFAULT_CATEGORY);
   const [address, setAddress] = useState(place?.address ?? '');
   const [photo, setPhoto] = useState(place?.photo ?? '');
   const [mapUrl, setMapUrl] = useState(place?.mapUrl ?? '');
@@ -59,7 +62,7 @@ export function PlaceSheet({ id }: { id?: string }) {
       setSearchErr('');
       try {
         const near = await locate();
-        const res = await searchPlaces(q, near, ctrl.signal);
+        const res = await searchPlaces(q, near, ctrl.signal, category);
         if (!ctrl.signal.aborted) {
           setFound(res.results);
           setProvider(res.provider);
@@ -71,7 +74,7 @@ export function PlaceSheet({ id }: { id?: string }) {
       if (!ctrl.signal.aborted) setSearching(false);
     }, 450);
     return () => clearTimeout(t);
-  }, [name, searchOn]);
+  }, [name, searchOn, category]);
 
   const pick = (f: FoundPlace) => {
     setName(f.name);
@@ -102,44 +105,45 @@ export function PlaceSheet({ id }: { id?: string }) {
         return ui.toast('Фото не загрузилось: ' + humanError(e));
       }
     }
-    const data = { name: n, address: address.trim(), photo: url, mapUrl: link, lat: coords?.lat ?? null, lon: coords?.lon ?? null };
+    const data = { name: n, address: address.trim(), photo: url, mapUrl: link, lat: coords?.lat ?? null, lon: coords?.lon ?? null, category };
     update((d) => {
       const p = d.places.find((x) => x.id === placeId);
       if (p) Object.assign(p, data);
       else d.places.push({ id: placeId, hue: hueOf(n), ...data });
     });
     ui.close();
-    ui.toast('Бар сохранён');
+    ui.toast('Место сохранено');
   };
 
   const remove = () => {
     if (!id) return;
     const used = state.events.filter((e) => e.placeId === id).length;
-    const msg = used ? `Удалить бар? В ${used} посиделк${used === 1 ? 'е' : 'ах'} пропадёт привязка к нему, остальное сохранится.` : 'Удалить бар?';
+    const msg = used ? `Удалить место? В ${used} встреч${used === 1 ? 'е' : 'ах'} пропадёт привязка к нему, остальное сохранится.` : 'Удалить место?';
     if (!confirm(msg)) return;
     update((d) => {
       d.places = d.places.filter((p) => p.id !== id);
       d.events.forEach((e) => { if (e.placeId === id) e.placeId = ''; });
     });
     ui.close();
-    ui.toast('Бар удалён');
+    ui.toast('Место удалено');
   };
 
-  const preview = { name: name || 'Б', address, mapUrl: mapUrl.trim(), lat: coords?.lat ?? null, lon: coords?.lon ?? null };
+  const preview = { name: name || 'Б', address, mapUrl: mapUrl.trim(), lat: coords?.lat ?? null, lon: coords?.lon ?? null, category };
 
   return (
     <>
-      <div className="photo hero place-cover" style={{ height: 190, ...photoStyle({ id: id ?? draftId, name: name || 'Б', hue: place?.hue ?? hueOf(name || 'Б'), photo }) }}>
+      <div className="photo hero place-cover" style={{ height: 190, ...photoStyle({ id: id ?? draftId, name: name || 'Б', hue: place?.hue ?? hueOf(name || 'Б'), photo, category }) }}>
         <div className="cover-actions">
           <PhotoButtons className="btn sm cover-btn" cameraLabel="Камера" galleryLabel="Галерея" onFile={onFile} />
           {photo && <button type="button" className="btn sm cover-btn" onClick={() => setPhoto('')}>Убрать</button>}
         </div>
       </div>
-      <h4>{id ? 'Бар' : 'Новый бар'}</h4>
+      <h4>{id ? catOf(category).one : `${catOf(category).one === 'Бар' ? 'Новый бар' : catOf(category).one === 'Магазин' ? 'Новый магазин' : 'Новый кинотеатр'}`}</h4>
+      <CategorySeg value={category} onChange={setCategory} one />
 
       <label className="field">
         <span>Название {searchOn && <small className="muted">— начни вводить, поищем рядом</small>}</span>
-        <input value={name} onChange={(e) => { setName(e.target.value); if (!id) setSearchOn(true); }} placeholder="Например, Хмель и Солод" autoComplete="off" />
+        <input value={name} onChange={(e) => { setName(e.target.value); if (!id) setSearchOn(true); }} placeholder={category === 'bar' ? 'Например, Хмель и Солод' : category === 'shop' ? 'Например, Перекрёсток' : 'Например, Аврора'} autoComplete="off" />
       </label>
       {searchOn && (searching || found.length > 0 || searchErr) && (
         <div className="list found-list">

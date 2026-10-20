@@ -11,7 +11,7 @@ export function WelcomeSheet() {
     <div className="qr-sheet">
       <CrewAvatar crew={acc.crew} size={72} />
       <h4>Ты в компании «{acc.crew.name}» 🎉</h4>
-      <p className="hint" style={{ textAlign: 'center', margin: '0 0 16px' }}>Поставь BarTab на экран телефона — так быстрее открывать посиделки и делить счёт.</p>
+      <p className="hint" style={{ textAlign: 'center', margin: '0 0 16px' }}>Поставь BarTab на экран телефона — так быстрее открывать встречи и делить счёт.</p>
       <InstallHelp compact />
       <button className="btn block" style={{ marginTop: 10 }} onClick={() => ui.close()}>Позже</button>
     </div>

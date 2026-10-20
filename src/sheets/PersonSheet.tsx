@@ -31,7 +31,7 @@ export function PersonSheet({ id }: { id?: string }) {
     const used = state.events.filter((e) => e.members.includes(id)).length;
     const account = person.userId ? ' У него есть аккаунт — он будет исключён из компании и перестанет её видеть.' : '';
     const msg = used
-      ? `Удалить ${person.name} из компании? Он пропадёт из списка людей, но останется в ${used} старых посиделк${used === 1 ? 'е' : 'ах'} — долги в них не пересчитаются.${account}`
+      ? `Удалить ${person.name} из компании? Он пропадёт из списка людей, но останется в ${used} старых встреч${used === 1 ? 'е' : 'ах'} — долги в них не пересчитаются.${account}`
       : `Удалить ${person.name} из компании?${account}`;
     if (!confirm(msg)) return;
     try {
@@ -58,7 +58,7 @@ export function PersonSheet({ id }: { id?: string }) {
         </div>
         <p className="hint" style={{ margin: '0 0 14px' }}>
           {isMe
-            ? 'Это ты. Имя, Telegram и фото меняются в профиле — и сразу обновляются во всех компаниях и посиделках.'
+            ? 'Это ты. Имя, Telegram и фото меняются в профиле — и сразу обновляются во всех компаниях и встречах.'
             : 'Имя, Telegram и фото берутся из профиля этого человека и обновляются сами.'}
         </p>
         <div className="sheet-btns">

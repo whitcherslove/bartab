@@ -3,6 +3,7 @@ import { useAccount } from '../lib/account';
 import { useUI } from '../lib/ui';
 import { fetchMyDebts, type OpenDebt } from '../lib/remote';
 import { fdate, money } from '../lib/format';
+import { catOf } from '../lib/categories';
 
 /** Итог по валютам: «1 300 ₽ · 20 $» */
 const totals = (list: OpenDebt[]) => {
@@ -11,7 +12,7 @@ const totals = (list: OpenDebt[]) => {
   return Object.entries(t).map(([c, n]) => money(n, c)).join(' · ');
 };
 
-/** «Ждёшь» и «От тебя ждут» — по всем компаниям, по посиделкам */
+/** «Ждёшь» и «От тебя ждут» — по всем компаниям, по встречам */
 export function MyDebts() {
   const acc = useAccount();
   const ui = useUI();
@@ -45,7 +46,7 @@ export function MyDebts() {
           {list.map((d) => (
             <button key={d.eventId} className="row" onClick={() => open(d)}>
               <div className="grow">
-                <div className="t">{d.placeName}</div>
+                <div className="t"><span className="cat-emoji" aria-hidden="true">{catOf(d.placeCategory).emoji}</span>{d.placeName}</div>
                 <div className="s">{crewName(d.crewId)} · {fdate(d.date)}</div>
                 <div className="s debt-people">
                   {kind === 'pos'

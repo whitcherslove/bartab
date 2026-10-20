@@ -1,6 +1,7 @@
 import type { Place } from './types';
 import { supabase } from './supabase';
 import { PLACES_FN } from './functions';
+import { catOf } from './categories';
 
 // ---------- Ссылки на карты ----------
 
@@ -29,7 +30,7 @@ export const isMapUrl = (s: string) => /^https?:\/\/\S*(yandex\.|ya\.ru|google\.
 export type FoundPlace = { key: string; name: string; address: string; kind: string; lat: number | null; lon: number | null; mapUrl: string };
 
 const KINDS: Record<string, string> = {
-  bar: 'бар', pub: 'паб', biergarten: 'пивной сад', nightclub: 'клуб', restaurant: 'ресторан', cafe: 'кафе', fast_food: 'еда',
+  bar: 'бар', pub: 'паб', biergarten: 'пивной сад', nightclub: 'клуб', restaurant: 'ресторан', cafe: 'кафе', fast_food: 'еда', cinema: 'кинотеатр',
 };
 
 let myPos: { lat: number; lon: number } | null | undefined;
@@ -56,7 +57,16 @@ export type SearchResult = { provider: string; results: FoundPlace[] };
 
 /** Поиск через нашу функцию (Россия — Яндекс, за границей — HERE или OpenStreetMap).
  *  Если функция недоступна — ищем в OpenStreetMap прямо с телефона. */
-export async function searchPlaces(q: string, near: { lat: number; lon: number } | null, signal?: AbortSignal): Promise<SearchResult> {
+export async function searchPlaces(q: string, near: { lat: number; lon: number } | null, signal?: AbortSignal, category?: string): Promise<SearchResult> {
+  const res = await searchAny(q, near, signal);
+  if (!category) return res;
+  // сначала места нужной категории (по рубрике), остальные — ниже
+  const m = catOf(category).match;
+  const score = (f: FoundPlace) => (m.test(f.kind) || m.test(f.name) ? 0 : 1);
+  return { ...res, results: [...res.results].sort((a, b) => score(a) - score(b)) };
+}
+
+async function searchAny(q: string, near: { lat: number; lon: number } | null, signal?: AbortSignal): Promise<SearchResult> {
   try {
     const { data, error } = await supabase.functions.invoke(PLACES_FN, { body: { q, lat: near?.lat, lon: near?.lon } });
     if (error) throw error;
@@ -88,7 +98,7 @@ async function searchPhoton(q: string, near: { lat: number; lon: number } | null
         key: `${pr.osm_id ?? ''}-${f.geometry.coordinates.join(',')}`,
         name: pr.name!,
         address: [street, pr.city || pr.locality || pr.district].filter(Boolean).join(', '),
-        kind: pr.osm_key === 'amenity' ? KINDS[pr.osm_value ?? ''] ?? '' : '',
+        kind: pr.osm_key === 'amenity' ? KINDS[pr.osm_value ?? ''] ?? '' : pr.osm_key === 'shop' ? 'магазин' : '',
         lat: f.geometry.coordinates[1],
         lon: f.geometry.coordinates[0],
         mapUrl: '',

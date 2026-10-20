@@ -35,7 +35,7 @@ export function ReceiptSheet({ eventId }: { eventId: string }) {
     try {
       setStage('upload');
       const blob = await compress(file);
-      await sync(); // посиделка и участники должны уже лежать в базе
+      await sync(); // встреча и участники должны уже лежать в базе
       setStage('scan');
       const res = await recognizeReceipt(crewId, eventId, blob);
       await refresh();

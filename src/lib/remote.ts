@@ -6,7 +6,7 @@ import { stats } from './calc';
 // ---------- Загрузка всех данных компании ----------
 
 type PersonRow = { id: string; name: string; tg: string; user_id: string | null; avatar_url: string; archived: boolean };
-type PlaceRow = { id: string; name: string; address: string; hue: number; photo_path: string; map_url: string; lat: number | null; lon: number | null };
+type PlaceRow = { id: string; name: string; address: string; hue: number; photo_path: string; map_url: string; lat: number | null; lon: number | null; category: 'bar' | 'shop' | 'cinema' };
 type ShareRow = { person_id: string; qty: number };
 type ItemRow = { id: string; name: string; price: number | string; qty: number; split_mode: 'equal' | 'qty'; created_at: string; item_shares: ShareRow[] };
 type EventRow = {
@@ -52,8 +52,8 @@ function must<T>(res: { data: T | null; error: unknown }): T {
 export async function fetchCrew(crewId: string, userId: string): Promise<State> {
   const [peopleRes, placesRes, eventsRes, chatsRes] = await Promise.all([
     supabase.from('people').select('id, name, tg, user_id, avatar_url, archived').eq('crew_id', crewId).order('created_at'),
-    // бары всех моих компаний и посиделок — правила доступа в базе решают, что видно
-    supabase.from('places').select('id, name, address, hue, photo_path, map_url, lat, lon').order('created_at'),
+    // бары всех моих компаний и встреч — правила доступа в базе решают, что видно
+    supabase.from('places').select('id, name, address, hue, photo_path, map_url, lat, lon, category').order('created_at'),
     supabase
       .from('events')
       .select(EVENT_SELECT)
@@ -72,7 +72,7 @@ export async function fetchCrew(crewId: string, userId: string): Promise<State> 
   return {
     me: people.find((p) => p.user_id === userId)?.id ?? '',
     people: people.map((p) => ({ id: p.id, name: p.name, tg: p.tg, userId: p.user_id, avatar: p.avatar_url ?? '', archived: !!p.archived })),
-    places: places.map((p) => ({ id: p.id, name: p.name, address: p.address, hue: p.hue, photo: p.photo_path, mapUrl: p.map_url ?? '', lat: p.lat, lon: p.lon })),
+    places: places.map((p) => ({ id: p.id, name: p.name, address: p.address, hue: p.hue, photo: p.photo_path, mapUrl: p.map_url ?? '', lat: p.lat, lon: p.lon, category: p.category ?? 'bar' })),
     chats: chats.map((c) => ({ id: c.id, name: c.name, chatId: c.chat_id })),
     events: events.map((e) => mapEvent(e, byPeopleOrder)),
   };
@@ -104,7 +104,7 @@ export async function pushDiff(prev: State, next: State, crewId: string) {
 
   // Бары: новые создаём в текущей компании, существующие меняем, не трогая их компанию
   const prevPlaces = byId(prev.places);
-  const placeRow = (p: State['places'][number]) => ({ name: p.name, address: p.address, hue: p.hue, photo_path: p.photo, map_url: p.mapUrl, lat: p.lat, lon: p.lon });
+  const placeRow = (p: State['places'][number]) => ({ name: p.name, address: p.address, hue: p.hue, photo_path: p.photo, map_url: p.mapUrl, lat: p.lat, lon: p.lon, category: p.category || 'bar' });
   const newPlaces = next.places.filter((p) => !prevPlaces.has(p.id));
   if (newPlaces.length) await run(supabase.from('places').insert(newPlaces.map((p) => ({ id: p.id, crew_id: crewId, ...placeRow(p) }))));
   for (const p of next.places) {
@@ -112,7 +112,7 @@ export async function pushDiff(prev: State, next: State, crewId: string) {
     if (o && !same(o, p)) await run(supabase.from('places').update(placeRow(p)).eq('id', p.id));
   }
 
-  // 2. Посиделки
+  // 2. Встречи
   const prevEvents = byId(prev.events);
   const evRow = (e: BarEvent) => ({
     id: e.id, crew_id: crewId, place_id: e.placeId || null, date: e.date, tips: e.tips,
@@ -124,7 +124,7 @@ export async function pushDiff(prev: State, next: State, crewId: string) {
   });
   if (events.length) await run(supabase.from('events').upsert(events.map(evRow)));
 
-  // 3. Участники посиделок и позиции
+  // 3. Участники встреч и позиции
   const memberUpserts: { event_id: string; person_id: string; settled: boolean }[] = [];
   const memberDeletes: { event: string; people: string[] }[] = [];
   const itemUpserts: Item[] = [];
@@ -270,20 +270,20 @@ export async function removePerson(personId: string): Promise<'deleted' | 'archi
   return data as 'deleted' | 'archived';
 }
 
-// ---------- История посиделок по всем компаниям (для профиля) ----------
+// ---------- История встреч по всем компаниям (для профиля) ----------
 
 export type Visit = {
   eventId: string;
   date: string;
   crewId: string;
-  place: { id: string; name: string; address: string; hue: number; photo: string } | null;
+  place: { id: string; name: string; address: string; hue: number; photo: string; category: 'bar' | 'shop' | 'cinema' } | null;
 };
 
 type VisitRow = {
-  events: { id: string; date: string; crew_id: string; places: { id: string; name: string; address: string; hue: number; photo_path: string } | null } | null;
+  events: { id: string; date: string; crew_id: string; places: { id: string; name: string; address: string; hue: number; photo_path: string; category: 'bar' | 'shop' | 'cinema' } | null } | null;
 };
 
-/** Все посиделки, где я участник, во всех моих компаниях */
+/** Все встречи, где я участник, во всех моих компаниях */
 export async function fetchMyVisits(userId: string): Promise<Visit[]> {
   const { data: me, error: e1 } = await supabase.from('people').select('id').eq('user_id', userId);
   if (e1) throw e1;
@@ -291,7 +291,7 @@ export async function fetchMyVisits(userId: string): Promise<Visit[]> {
   if (!ids.length) return [];
   const { data, error } = await supabase
     .from('event_members')
-    .select('events(id, date, crew_id, places(id, name, address, hue, photo_path))')
+    .select('events(id, date, crew_id, places(id, name, address, hue, photo_path, category))')
     .in('person_id', ids);
   if (error) throw error;
   return ((data ?? []) as unknown as VisitRow[])
@@ -301,7 +301,7 @@ export async function fetchMyVisits(userId: string): Promise<Visit[]> {
       eventId: e.id,
       date: e.date,
       crewId: e.crew_id,
-      place: e.places ? { id: e.places.id, name: e.places.name, address: e.places.address, hue: e.places.hue, photo: e.places.photo_path } : null,
+      place: e.places ? { id: e.places.id, name: e.places.name, address: e.places.address, hue: e.places.hue, photo: e.places.photo_path, category: e.places.category ?? 'bar' } : null,
     }))
     .sort((a, b) => b.date.localeCompare(a.date));
 }
@@ -320,6 +320,7 @@ export type OpenDebt = {
   crewId: string;
   date: string;
   placeName: string;
+  placeCategory: string;
   currency: string;
   amount: number;
   /** для «Ждёшь»: кто сколько должен; для «От тебя ждут»: кому переводить */
@@ -339,10 +340,10 @@ export async function fetchMyDebts(userId: string): Promise<{ waiting: OpenDebt[
   if (!eventIds.length) return { waiting: [], owing: [] };
 
   const [evRes, peopleRes] = await Promise.all([
-    supabase.from('events').select(EVENT_SELECT + ', crew_id, places(name)').in('id', eventIds),
+    supabase.from('events').select(EVENT_SELECT + ', crew_id, places(name, category)').in('id', eventIds),
     supabase.from('people').select('id, name').in('crew_id', [...myByCrew.keys()]),
   ]);
-  const rows = must(evRes) as unknown as (EventRow & { crew_id: string; places: { name: string } | null })[];
+  const rows = must(evRes) as unknown as (EventRow & { crew_id: string; places: { name: string; category: string } | null })[];
   const names = new Map(((must(peopleRes) ?? []) as { id: string; name: string }[]).map((p) => [p.id, p.name]));
   const nameOf = (id: string) => names.get(id) ?? '?';
 
@@ -352,7 +353,7 @@ export async function fetchMyDebts(userId: string): Promise<{ waiting: OpenDebt[
     const meId = myByCrew.get(r.crew_id);
     if (!meId || !ev.payer) continue;
     const st = stats(ev, meId);
-    const base = { eventId: ev.id, crewId: r.crew_id, date: ev.date, placeName: r.places?.name ?? 'Без бара', currency: ev.currency };
+    const base = { eventId: ev.id, crewId: r.crew_id, date: ev.date, placeName: r.places?.name ?? 'Без места', placeCategory: r.places?.category ?? 'bar', currency: ev.currency };
     if (st.isPayer && st.balance > 1) {
       const people = ev.members
         .filter((m) => m !== meId && !ev.settled.includes(m))

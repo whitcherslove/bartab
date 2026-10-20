@@ -131,7 +131,7 @@ export function ProfileScreen() {
 
       <MyDebts />
 
-      <h3>Мои посиделки <small>во всех компаниях</small></h3>
+      <h3>Мои встречи <small>во всех компаниях</small></h3>
       <MyVisits />
 
       <h3>Валюта по умолчанию</h3>
@@ -143,7 +143,7 @@ export function ProfileScreen() {
           {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.label} ({c.code})</option>)}
         </select>
       </label>
-      <p className="hint">Подставляется в новые посиделки. У каждой посиделки валюту можно поменять в «Изменить». Курсы не пересчитываются.</p>
+      <p className="hint">Подставляется в новые встречи. У каждой встречи валюту можно поменять в «Изменить». Курсы не пересчитываются.</p>
 
       <h3>Тема</h3>
       <div className="seg">

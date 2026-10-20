@@ -23,7 +23,7 @@ export function ProfileStep({ profile, email, onSave }: { profile: Profile; emai
   return (
     <main className="auth">
       <div className="brand">🍻 BarTab</div>
-      <p className="auth-sub">Познакомимся. Так тебя увидят друзья в посиделках.</p>
+      <p className="auth-sub">Познакомимся. Так тебя увидят друзья во встречах.</p>
       <form className="auth-card" onSubmit={(e) => { e.preventDefault(); save(); }}>
         <label className="field"><span>Имя</span><input value={name} onChange={(e) => setName(e.target.value)} autoComplete="given-name" /></label>
         <label className="field">
