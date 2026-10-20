@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { humanError, supabase } from '../../lib/supabase';
+import { Brand } from '../../components/common';
 
 /** Создать компанию или вступить по коду. Используется при первом входе и из раздела «Компания». */
 export function CrewSetup({ myName, error: outerError, onDone, onSignOut, embedded, mode = 'both' }: {
@@ -64,8 +65,8 @@ export function CrewSetup({ myName, error: outerError, onDone, onSignOut, embedd
 
   return (
     <main className="auth">
-      <div className="brand">🍻 BarTab</div>
-      <p className="auth-sub">Компания — это друзья, с которыми вы ходите в бары. Встречи, бары и долги у неё общие.</p>
+      <Brand />
+      <p className="auth-sub">Компания — это друзья, с которыми вы ходите в бары, кино и магазины. Встречи, места и переводы у неё общие.</p>
       {body}
       {onSignOut && <div className="auth-links"><button type="button" onClick={onSignOut}>Выйти из аккаунта</button></div>}
     </main>

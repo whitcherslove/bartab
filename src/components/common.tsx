@@ -18,8 +18,8 @@ export function Av({ id, sm, lg }: { id: string; sm?: boolean; lg?: boolean }) {
 export function Pill({ b, me, cur }: { b: number; me?: boolean; cur?: string }) {
   if (Math.abs(b) < 1) return <span className="pill zero">в расчёте</span>;
   return b > 0
-    ? <span className="pill pos num">{me ? 'тебе должны' : 'ему должны'} {money(b, cur)}</span>
-    : <span className="pill neg num">{me ? 'ты должен' : 'должен'} {money(-b, cur)}</span>;
+    ? <span className="pill pos num">{me ? 'тебе должны' : 'ждёт'} {money(b, cur)}</span>
+    : <span className="pill neg num">{me ? 'от тебя ждут' : 'к переводу'} {money(-b, cur)}</span>;
 }
 
 /** Балансы в нескольких валютах: «должен 700 ₽ · 20 $» */
@@ -29,8 +29,8 @@ export function MultiPill({ balances, me }: { balances: Record<string, number>; 
   const pos = entries.filter(([, b]) => b > 0), neg = entries.filter(([, b]) => b < 0);
   return (
     <span className="multi-pill">
-      {pos.length > 0 && <span className="pill pos num">{me ? 'тебе должны' : 'ему должны'} {pos.map(([c, b]) => money(b, c)).join(' · ')}</span>}
-      {neg.length > 0 && <span className="pill neg num">{me ? 'ты должен' : 'должен'} {neg.map(([c, b]) => money(-b, c)).join(' · ')}</span>}
+      {pos.length > 0 && <span className="pill pos num">{me ? 'тебе должны' : 'ждёт'} {pos.map(([c, b]) => money(b, c)).join(' · ')}</span>}
+      {neg.length > 0 && <span className="pill neg num">{me ? 'от тебя ждут' : 'к переводу'} {neg.map(([c, b]) => money(-b, c)).join(' · ')}</span>}
     </span>
   );
 }
@@ -96,6 +96,16 @@ export function CategorySeg({ value, onChange, one }: { value: Category; onChang
           <span aria-hidden="true">{c.emoji}</span> {one ? c.one : c.many}
         </button>
       ))}
+    </div>
+  );
+}
+
+/** Логотип с названием — на экранах загрузки и входа */
+export function Brand() {
+  return (
+    <div className="brand">
+      <img src="/icon-192.png" alt="" width={44} height={44} />
+      <span>BarTab</span>
     </div>
   );
 }

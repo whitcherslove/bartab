@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Profile } from '../../lib/account';
 import { humanError } from '../../lib/supabase';
+import { Brand } from '../../components/common';
 
 export function ProfileStep({ profile, email, onSave }: { profile: Profile; email: string; onSave: (p: { name: string; tg: string; avatar_url?: string }) => Promise<void> }) {
   const [name, setName] = useState(profile.name || email.split('@')[0]);
@@ -22,7 +23,7 @@ export function ProfileStep({ profile, email, onSave }: { profile: Profile; emai
 
   return (
     <main className="auth">
-      <div className="brand">🍻 BarTab</div>
+      <Brand />
       <p className="auth-sub">Познакомимся. Так тебя увидят друзья во встречах.</p>
       <form className="auth-card" onSubmit={(e) => { e.preventDefault(); save(); }}>
         <label className="field"><span>Имя</span><input value={name} onChange={(e) => setName(e.target.value)} autoComplete="given-name" /></label>

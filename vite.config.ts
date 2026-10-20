@@ -13,7 +13,7 @@ export default defineConfig({
       manifest: {
         name: 'BarTab',
         short_name: 'BarTab',
-        description: 'Делим счёт в баре без калькулятора',
+        description: 'Делим счёт за встречи без калькулятора',
         lang: 'ru',
         start_url: '/',
         scope: '/',

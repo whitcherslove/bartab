@@ -84,7 +84,7 @@ export function ProfileScreen() {
 
   const appLink = `${window.location.origin}/?install=1`;
   const shareApp = async () => {
-    const text = 'BarTab — делим счёт в баре без калькулятора 🍻 Поставь приложение:';
+    const text = 'BarTab — делим счёт за встречи без калькулятора 🍻 Поставь приложение:';
     if (navigator.share) { try { await navigator.share({ title: 'BarTab', text, url: appLink }); } catch { /* отменили */ } return; }
     copyApp();
   };

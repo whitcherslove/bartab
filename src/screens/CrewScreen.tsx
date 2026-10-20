@@ -58,7 +58,7 @@ export function CrewScreen() {
 
   const leave = async () => {
     if (!confirm(`Выйти из компании «${acc.crew.name}»? Встречи с тобой останутся у друзей, а у тебя пропадут. Вернуться можно по приглашению.`)) return;
-    try { await acc.leaveCrew(acc.crew.id); ui.toast('Ты вышел из компании'); } catch (e) { ui.toast(humanError(e)); }
+    try { await acc.leaveCrew(acc.crew.id); ui.toast('Выход из компании выполнен'); } catch (e) { ui.toast(humanError(e)); }
   };
 
   const removeChat = async () => {
@@ -133,7 +133,7 @@ export function CrewScreen() {
           <div className="row">
             <div className="grow">
               <div className="t">{acc.crew.tg_chat_name}</div>
-              <div className="s">{acc.crew.tg_chat_by ? `подключил(а) ${acc.crew.tg_chat_by}` : 'итоги встреч приходят сюда'}</div>
+              <div className="s">{acc.crew.tg_chat_by ? `подключение: ${acc.crew.tg_chat_by}` : 'итоги встреч приходят сюда'}</div>
             </div>
             <button className="btn ghost sm" onClick={() => ui.open(<ConnectChatSheet />)}>Сменить</button>
             <button className="btn undo sm" onClick={removeChat}>Отключить</button>

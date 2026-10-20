@@ -26,7 +26,7 @@ export function MyDebts() {
   if (!data.waiting.length && !data.owing.length) {
     return (
       <>
-        <h3>Долги</h3>
+        <h3>Переводы</h3>
         <div className="list"><div className="empty">Ты со всеми в расчёте ✅</div></div>
       </>
     );
@@ -51,7 +51,7 @@ export function MyDebts() {
                 <div className="s debt-people">
                   {kind === 'pos'
                     ? d.people.map((p) => `${p.name} ${money(p.amount, d.currency)}`).join(', ')
-                    : `переведи ${d.people[0]?.name ?? ''}`}
+                    : `перевод → ${d.people[0]?.name ?? ''}`}
                 </div>
               </div>
               <span className={'amt num debt-amt ' + kind}>{money(d.amount, d.currency)}</span>

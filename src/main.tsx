@@ -17,7 +17,7 @@ class Crash extends Component<{ children: ReactNode }, { error: Error | null }> 
     const reset = (window as unknown as { __bartabReset?: () => void }).__bartabReset;
     return (
       <main className="auth">
-        <div className="brand">🍻 BarTab</div>
+        <div className="brand"><img src="/icon-192.png" alt="" width={44} height={44} /><span>BarTab</span></div>
         <p className="auth-sub">Что-то пошло не так. Попробуй перезагрузить, а если не поможет — сбросить кэш (данные не пропадут).</p>
         <button className="btn primary block" onClick={() => location.reload()}>Перезагрузить</button>
         <button className="btn block" onClick={() => (reset ? reset() : location.reload())}>Сбросить кэш и перезагрузить</button>

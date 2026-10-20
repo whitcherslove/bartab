@@ -29,16 +29,16 @@ export function PersonSheet({ id }: { id?: string }) {
   const remove = async () => {
     if (!id || !person) return;
     const used = state.events.filter((e) => e.members.includes(id)).length;
-    const account = person.userId ? ' У него есть аккаунт — он будет исключён из компании и перестанет её видеть.' : '';
+    const account = person.userId ? ' У человека есть аккаунт — доступ к компании закроется.' : '';
     const msg = used
-      ? `Удалить ${person.name} из компании? Он пропадёт из списка людей, но останется в ${used} старых встреч${used === 1 ? 'е' : 'ах'} — долги в них не пересчитаются.${account}`
+      ? `Удалить ${person.name} из компании? Человек пропадёт из списка людей, но останется в ${used} старых встреч${used === 1 ? 'е' : 'ах'} — суммы в них не пересчитаются.${account}`
       : `Удалить ${person.name} из компании?${account}`;
     if (!confirm(msg)) return;
     try {
       await removePerson(id);
       await refresh();
       ui.close();
-      ui.toast(`${person.name} удалён из компании`);
+      ui.toast(`${person.name}: удаление из компании выполнено`);
     } catch (e) {
       ui.toast(humanError(e));
     }

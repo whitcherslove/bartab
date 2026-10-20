@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Person } from '../../lib/types';
 import { useAccount } from '../../lib/account';
 import { humanError, supabase } from '../../lib/supabase';
+import { Brand } from '../../components/common';
 
 /** После вступления в компанию: кто ты в списке людей? */
 export function ClaimStep({ people, crewId, onDone }: { people: Person[]; crewId: string; onDone: () => Promise<void> }) {
@@ -34,7 +35,7 @@ export function ClaimStep({ people, crewId, onDone }: { people: Person[]; crewId
 
   return (
     <main className="auth">
-      <div className="brand">🍻 BarTab</div>
+      <Brand />
       <p className="auth-sub">Ты в компании «{crew.name}». Кто ты в списке? Если тебя уже добавляли во встречи, выбери себя — вся история сохранится.</p>
       {free.length > 0 && (
         <div className="list">

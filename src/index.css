@@ -451,3 +451,8 @@ button.crew-head-name { border: 0; background: none; padding: 0; color: inherit;
 .crew-caret { display: grid; color: var(--amber) }
 .crew-caret svg { width: 20px; height: 20px }
 .picker-new { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line) }
+
+/* ===== Логотип ===== */
+.brand { display: flex; align-items: center; justify-content: center; gap: 12px }
+.brand img { border-radius: 12px; display: block }
+html { background: var(--bg) }

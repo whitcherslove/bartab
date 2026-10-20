@@ -77,7 +77,7 @@ export function EventSheet({ id }: { id?: string }) {
         </label>
       </div>
       <div className="field">
-        <span>Кто был</span>
+        <span>Участники</span>
         <PeopleChips ids={state.people.filter((p) => !p.archived || members.includes(p.id)).map((p) => p.id)} selected={members} onToggle={(pid) => setMembers(toggleIn(members, pid))} />
       </div>
       <div className="sheet-btns">

@@ -50,7 +50,7 @@ export function EventScreen({ id }: { id: string }) {
     updateEvent(id, (e) => {
       e.settled = was ? e.settled.filter((m) => m !== pid) : [...e.settled, pid];
     });
-    ui.toast(was ? `${nameOf(pid)}: отметка снята` : `${nameOf(pid)} перевёл ✅`);
+    ui.toast(was ? `${nameOf(pid)}: отметка снята` : `${nameOf(pid)}: перевод отмечен ✅`);
   };
 
   return (
@@ -83,7 +83,7 @@ export function EventScreen({ id }: { id: string }) {
 
       <ReceiptBlock ev={ev} />
 
-      <h3>Кто оплатил счёт</h3>
+      <h3>Плательщик <small>кто заплатил по счёту</small></h3>
       <div className="chips">
         {ev.members.map((m) => (
           <button key={m} type="button" className="chip" aria-pressed={m === payer} onClick={() => setPayer(m)}>
@@ -91,7 +91,7 @@ export function EventScreen({ id }: { id: string }) {
           </button>
         ))}
       </div>
-      {!payer && <p className="hint">Отметь, кто заплатил бару, и посчитаем, сколько ему переводят остальные</p>}
+      {!payer && <p className="hint">Отметь, кто заплатил по счёту, — и посчитаем, сколько переводят остальные</p>}
 
       <h3>
         <span>Кто сколько <small>нажми на человека</small></span>
@@ -106,11 +106,11 @@ export function EventScreen({ id }: { id: string }) {
           if (payer) {
             if (st.isPayer) {
               if (st.balance > 1) { cls = 'pos'; cap = 'ждёт'; val = money(st.balance, ev.currency); }
-              else { cls = 'pos'; cap = 'оплатил'; val = '✓'; }
+              else { cls = 'pos'; cap = 'оплачено'; val = '✓'; }
             } else if (st.settled || st.owed < 1) {
-              cap = st.settled ? 'перевёл' : 'не должен'; val = '✓';
+              cap = st.settled ? 'переведено' : 'в расчёте'; val = '✓';
             } else {
-              cls = 'neg'; cap = 'должен'; val = money(st.owed, ev.currency);
+              cls = 'neg'; cap = 'к переводу'; val = money(st.owed, ev.currency);
             }
           }
           return (
@@ -132,7 +132,7 @@ export function EventScreen({ id }: { id: string }) {
               return (
                 <div key={m} className={'row' + (st.settled ? ' done' : '')}>
                   <Av id={m} /><span className="arrow" aria-hidden="true">→</span><Av id={payer} />
-                  <div className="grow"><div className="t">{nameOf(m)} {st.settled ? 'перевёл' : 'переводит'} {nameOf(payer)}</div></div>
+                  <div className="grow"><div className="t">{nameOf(m)} → {nameOf(payer)}</div><div className="s">{st.settled ? 'переведено' : 'ещё не переведено'}</div></div>
                   <span className="amt num">{money(st.owed, ev.currency)}</span>
                   <button className={'btn sm ' + (st.settled ? 'undo' : 'ghost')} onClick={() => toggleSettled(m)}>
                     {st.settled ? 'Отменить' : 'Готово'}
@@ -148,7 +148,7 @@ export function EventScreen({ id }: { id: string }) {
         <span>Позиции <small>{ev.items.length}</small></span>
         {ev.items.length > 1 && <button className="link-btn danger-link" onClick={clearItems}>Удалить все</button>}
       </h3>
-      {unassigned > 0 && <div className="warn">{unassigned} поз. ни на кого не разбиты: они не попадают в долги</div>}
+      {unassigned > 0 && <div className="warn">{unassigned} поз. ни на кого не разбиты: они не попадают в расчёт</div>}
       <div className="list">
         {ev.items.length === 0 && <div className="empty">Добавь позиции вручную или загрузи чек</div>}
         {ev.items.map((it) => (

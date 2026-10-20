@@ -3,6 +3,7 @@ import { humanError, supabase } from '../../lib/supabase';
 import { pendingJoinCode } from '../../lib/account';
 import { InstallHelp } from '../../components/InstallCard';
 import { isStandalone } from '../../lib/install';
+import { Brand } from '../../components/common';
 
 export function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -57,8 +58,8 @@ export function LoginScreen() {
 
   return (
     <main className="auth">
-      <div className="brand">🍻 BarTab</div>
-      <p className="auth-sub">{invited ? 'Тебя позвали в компанию. Войди, чтобы присоединиться.' : 'Делим счёт в баре без калькулятора.'}</p>
+      <Brand />
+      <p className="auth-sub">{invited ? 'Тебя позвали в компанию. Войди, чтобы присоединиться.' : 'Делим счёт за встречи без калькулятора.'}</p>
       {installIntro && (
         <div className="auth-card">
           <h4>Сначала поставь приложение</h4>

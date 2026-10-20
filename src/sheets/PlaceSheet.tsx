@@ -206,7 +206,7 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
           {!searching && searchErr && <div className="row"><div className="s">{searchErr}</div></div>}
           {!searching && (
             <div className="row found-foot">
-              <span className="s">{found.length && provider ? `Нашёл: ${provider}` : ''}</span>
+              <span className="s">{found.length && provider ? `Найдено: ${provider}` : ''}</span>
               <button type="button" className="link-btn" onClick={() => { setSearchOn(false); setFound([]); }}>Добавить вручную</button>
             </div>
           )}

@@ -1,7 +1,9 @@
+import { Brand } from '../../components/common';
+
 export function Splash({ message, onRetry }: { message?: string; onRetry?: () => void }) {
   return (
     <main className="auth">
-      <div className="brand">🍻 BarTab</div>
+      <Brand />
       {message ? (
         <>
           <p className="auth-err">{message}</p>
