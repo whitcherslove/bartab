@@ -277,10 +277,16 @@ export type Visit = {
   date: string;
   crewId: string;
   place: { id: string; name: string; address: string; hue: number; photo: string; category: 'bar' | 'shop' | 'cinema' } | null;
+  /** участники встречи — для аватарок в истории */
+  people: { id: string; name: string; avatar: string; userId: string | null }[];
 };
 
 type VisitRow = {
-  events: { id: string; date: string; crew_id: string; places: { id: string; name: string; address: string; hue: number; photo_path: string; category: 'bar' | 'shop' | 'cinema' } | null } | null;
+  events: {
+    id: string; date: string; crew_id: string;
+    places: { id: string; name: string; address: string; hue: number; photo_path: string; category: 'bar' | 'shop' | 'cinema' } | null;
+    event_members: { people: { id: string; name: string; avatar_url: string; user_id: string | null } | null }[];
+  } | null;
 };
 
 /** Все встречи, где я участник, во всех моих компаниях */
@@ -291,7 +297,7 @@ export async function fetchMyVisits(userId: string): Promise<Visit[]> {
   if (!ids.length) return [];
   const { data, error } = await supabase
     .from('event_members')
-    .select('events(id, date, crew_id, places(id, name, address, hue, photo_path, category))')
+    .select('events(id, date, crew_id, places(id, name, address, hue, photo_path, category), event_members(people(id, name, avatar_url, user_id)))')
     .in('person_id', ids);
   if (error) throw error;
   return ((data ?? []) as unknown as VisitRow[])
@@ -302,6 +308,8 @@ export async function fetchMyVisits(userId: string): Promise<Visit[]> {
       date: e.date,
       crewId: e.crew_id,
       place: e.places ? { id: e.places.id, name: e.places.name, address: e.places.address, hue: e.places.hue, photo: e.places.photo_path, category: e.places.category ?? 'bar' } : null,
+      people: (e.event_members ?? []).map((m) => m.people).filter((p): p is NonNullable<typeof p> => !!p)
+        .map((p) => ({ id: p.id, name: p.name, avatar: p.avatar_url ?? '', userId: p.user_id })),
     }))
     .sort((a, b) => b.date.localeCompare(a.date));
 }

@@ -3,124 +3,78 @@ import { useAccount } from '../lib/account';
 import { useUI } from '../lib/ui';
 import { fetchMyVisits, type Visit } from '../lib/remote';
 import { fdate } from '../lib/format';
+import { catOf } from '../lib/categories';
+import { personPlaceholderFor } from '../lib/placeholders';
 import type { Place } from '../lib/types';
 import { CrewAvatar, PlacePhoto } from './common';
-import { CATEGORIES, catOf } from '../lib/categories';
 
 const plural = (n: number, one: string, few: string, many: string) => {
   const m10 = n % 10, m100 = n % 100;
   return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many;
 };
+const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 const asPlace = (p: NonNullable<Visit['place']>): Place => ({ ...p, mapUrl: '', lat: null, lon: null });
+const shortDate = (iso: string) => { const [, m, d] = iso.split('-'); return `${d}.${m}`; };
 
-/** Подробная история: где и с кем бываешь, по всем компаниям */
-export function HistorySheet({ visits }: { visits: Visit[] }) {
+/** Лог встреч по месяцам: фото места, компания, дата, участники */
+function HistoryLog({ visits }: { visits: Visit[] }) {
   const acc = useAccount();
   const ui = useUI();
-
-  const crewName = (id: string) => acc.crews.find((c) => c.id === id)?.name ?? 'Компания';
-  const crewOf = (id: string) => acc.crews.find((c) => c.id === id) ?? { id, name: crewName(id), avatar_url: '' };
-
-  // бары: сколько раз, когда последний, с какими компаниями
-  const bars = new Map<string, { place: NonNullable<Visit['place']>; n: number; last: string; crews: Map<string, number> }>();
-  for (const v of visits) {
-    if (!v.place) continue;
-    const b = bars.get(v.place.id) ?? { place: v.place, n: 0, last: v.date, crews: new Map() };
-    b.n++;
-    if (v.date > b.last) b.last = v.date;
-    b.crews.set(v.crewId, (b.crews.get(v.crewId) ?? 0) + 1);
-    bars.set(v.place.id, b);
-  }
-  const topBars = [...bars.values()].sort((a, b) => b.n - a.n || b.last.localeCompare(a.last));
-
-  // компании: сколько встреч и в скольких барах
-  const crews = new Map<string, { n: number; bars: Set<string> }>();
-  for (const v of visits) {
-    const c = crews.get(v.crewId) ?? { n: 0, bars: new Set<string>() };
-    c.n++;
-    if (v.place) c.bars.add(v.place.id);
-    crews.set(v.crewId, c);
-  }
-  const topCrews = [...crews.entries()].sort((a, b) => b[1].n - a[1].n);
+  const [limit, setLimit] = useState(30);
+  const crewOf = (id: string) => acc.crews.find((c) => c.id === id) ?? { id, name: 'Компания', avatar_url: '' };
 
   const open = (v: Visit) => {
     if (v.crewId !== acc.crew.id) acc.setCrewId(v.crewId);
     ui.go({ screen: 'event', id: v.eventId });
   };
 
+  // группируем по месяцам
+  const shown = visits.slice(0, limit);
+  const groups: { key: string; title: string; total: number; list: Visit[] }[] = [];
+  for (const v of shown) {
+    const key = v.date.slice(0, 7);
+    let g = groups.find((x) => x.key === key);
+    if (!g) {
+      const [y, m] = key.split('-');
+      g = { key, title: `${MONTHS[Number(m) - 1]} ${y}`, total: visits.filter((x) => x.date.startsWith(key)).length, list: [] };
+      groups.push(g);
+    }
+    g.list.push(v);
+  }
+
   return (
     <>
-      <h4>Моя история</h4>
-      <div className="visits-summary">
-        <div><b className="num">{visits.length}</b><span>{plural(visits.length, 'встреча', 'встречи', 'встреч')}</span></div>
-        <div><b className="num">{bars.size}</b><span>{plural(bars.size, 'место', 'места', 'мест')}</span></div>
-        <div><b className="num">{crews.size}</b><span>{plural(crews.size, 'компания', 'компании', 'компаний')}</span></div>
-      </div>
-      <p className="hint visits-cats">
-        {CATEGORIES.map((c) => {
-          const n = visits.filter((v) => (v.place?.category ?? 'bar') === c.id).length;
-          return n ? <span key={c.id}>{c.emoji} {c.many.toLowerCase()} — {n}</span> : null;
-        })}
-      </p>
-
-      {topBars.length > 0 && (
-        <>
-          <h3>Где бываешь</h3>
+      <h4>История встреч</h4>
+      {groups.map((g) => (
+        <div key={g.key}>
+          <h3 className="log-month">{g.title} <small>{g.total} {plural(g.total, 'встреча', 'встречи', 'встреч')}</small></h3>
           <div className="list">
-            {topBars.slice(0, 10).map((b) => (
-              <div key={b.place.id} className="row">
-                <PlacePhoto place={asPlace(b.place)} className="place-thumb" />
+            {g.list.map((v) => (
+              <button key={v.eventId} className="row log-row" onClick={() => open(v)}>
+                {v.place ? <PlacePhoto place={asPlace(v.place)} className="place-thumb" /> : <CrewAvatar crew={crewOf(v.crewId)} size={52} />}
                 <div className="grow">
-                  <div className="t"><span className="cat-emoji" aria-hidden="true">{catOf(b.place.category).emoji}</span>{b.place.name}</div>
-                  <div className="s">{b.n} {plural(b.n, 'раз', 'раза', 'раз')} · последний раз {fdate(b.last)}</div>
-                  <div className="visit-crews">
-                    {[...b.crews.entries()].map(([cid, n]) => (
-                      <span key={cid} className="visit-crew" title={crewName(cid)}>
-                        <CrewAvatar crew={crewOf(cid)} size={18} />{n > 1 ? `×${n}` : ''}
-                      </span>
+                  <div className="t"><span className="cat-emoji" aria-hidden="true">{catOf(v.place?.category).emoji}</span>{v.place?.name ?? 'Без места'}</div>
+                  <div className="s">{crewOf(v.crewId).name} · {fdate(v.date)}</div>
+                  <div className="log-people">
+                    {v.people.slice(0, 5).map((p) => (
+                      <img key={p.id} className="av sm" src={p.avatar || personPlaceholderFor(p.userId || p.id)} alt={p.name} title={p.name} loading="lazy" />
                     ))}
+                    {v.people.length > 5 && <span className="log-more">+{v.people.length - 5}</span>}
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
-        </>
+        </div>
+      ))}
+      {visits.length > limit && (
+        <button className="btn block" style={{ marginTop: 14 }} onClick={() => setLimit(limit + 30)}>Показать ещё</button>
       )}
-
-      {topCrews.length > 1 && (
-        <>
-          <h3>С кем</h3>
-          <div className="list">
-            {topCrews.map(([cid, c]) => (
-              <div key={cid} className="row">
-                <CrewAvatar crew={crewOf(cid)} size={40} />
-                <div className="grow">
-                  <div className="t">{crewName(cid)}</div>
-                  <div className="s">{c.n} {plural(c.n, 'встреча', 'встречи', 'встреч')} · {c.bars.size} {plural(c.bars.size, 'место', 'места', 'мест')}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      <h3>Последние</h3>
-      <div className="list">
-        {visits.slice(0, 10).map((v) => (
-          <button key={v.eventId} className="row" onClick={() => open(v)}>
-            {v.place ? <PlacePhoto place={asPlace(v.place)} className="place-thumb sm" /> : <CrewAvatar crew={crewOf(v.crewId)} size={40} />}
-            <div className="grow">
-              <div className="t"><span className="cat-emoji" aria-hidden="true">{catOf(v.place?.category).emoji}</span>{v.place?.name ?? 'Без места'}</div>
-              <div className="s">{crewName(v.crewId)} · {fdate(v.date)}</div>
-            </div>
-          </button>
-        ))}
-      </div>
     </>
   );
 }
 
-/** Компактная карточка в профиле: сводка и любимые места; тап — подробная история */
+/** Карточка в профиле: цифры и лента последних встреч; тап — лог */
 export function MyVisits() {
   const acc = useAccount();
   const ui = useUI();
@@ -135,24 +89,23 @@ export function MyVisits() {
   if (!visits) return <div className="list"><div className="empty">Загружаю…</div></div>;
   if (!visits.length) return <div className="list"><div className="empty">Пока ни одной встречи. Самое время позвать друзей 🍻</div></div>;
 
-  const places = new Map<string, { place: NonNullable<Visit['place']>; n: number }>();
-  for (const v of visits) if (v.place) places.set(v.place.id, { place: v.place, n: (places.get(v.place.id)?.n ?? 0) + 1 });
-  const top = [...places.values()].sort((a, b) => b.n - a.n).slice(0, 4);
+  const places = new Set(visits.filter((v) => v.place).map((v) => v.place!.id)).size;
   const crews = new Set(visits.map((v) => v.crewId)).size;
-  const cats = CATEGORIES.map((c) => ({ c, n: visits.filter((v) => (v.place?.category ?? 'bar') === c.id).length })).filter((x) => x.n);
+  const crewOf = (id: string) => acc.crews.find((c) => c.id === id) ?? { id, name: 'Компания', avatar_url: '' };
 
   return (
-    <button className="history-card" onClick={() => ui.open(<HistorySheet visits={visits} />)}>
+    <button className="history-card" onClick={() => ui.open(<HistoryLog visits={visits} />)} aria-label="Открыть историю встреч">
       <div className="grow">
-        <div className="history-line">
-          {visits.length} {plural(visits.length, 'встреча', 'встречи', 'встреч')} · {places.size} {plural(places.size, 'место', 'места', 'мест')} · {crews} {plural(crews, 'компания', 'компании', 'компаний')}
+        <div className="history-nums">
+          <div><b className="num">{visits.length}</b><span>{plural(visits.length, 'встреча', 'встречи', 'встреч')}</span></div>
+          <div><b className="num">{places}</b><span>{plural(places, 'место', 'места', 'мест')}</span></div>
+          <div><b className="num">{crews}</b><span>{plural(crews, 'компания', 'компании', 'компаний')}</span></div>
         </div>
-        <div className="history-cats">{cats.map(({ c, n }) => <span key={c.id}>{c.emoji} {n}</span>)}</div>
-        <div className="history-thumbs">
-          {top.map(({ place, n }) => (
-            <span key={place.id} className="history-thumb">
-              <PlacePhoto place={asPlace(place)} className="place-thumb sm" />
-              {n > 1 && <i>×{n}</i>}
+        <div className="history-strip">
+          {visits.slice(0, 5).map((v) => (
+            <span key={v.eventId} className="strip-item">
+              {v.place ? <PlacePhoto place={asPlace(v.place)} className="strip-photo" /> : <CrewAvatar crew={crewOf(v.crewId)} size={52} />}
+              <span className="strip-date">{shortDate(v.date)}</span>
             </span>
           ))}
         </div>
