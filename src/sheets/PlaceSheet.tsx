@@ -42,6 +42,7 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(place?.lat != null && place?.lon != null ? { lat: place.lat, lon: place.lon } : null);
   const [busy, setBusy] = useState(false);
   const [draftId] = useState(() => uid());
+  const [editing, setEditing] = useState(!id);
 
   // Поиск: включается, пока вводишь название нового бара
   const [searchOn, setSearchOn] = useState(!id);
@@ -87,7 +88,33 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
 
   const onFile = async (file?: File) => {
     if (!file) return;
-    try { setPhoto(await resize(file)); } catch { ui.toast('Не удалось прочитать фото'); }
+    let data: string;
+    try { data = await resize(file); } catch { return ui.toast('Не удалось прочитать фото'); }
+    if (editing || !id) { setPhoto(data); return; }
+    // просмотр: сразу загружаем и сохраняем
+    setBusy(true);
+    try {
+      const url = await uploadPlacePhoto(crewId, id, data);
+      setPhoto(url);
+      update((d) => { const p = d.places.find((x) => x.id === id); if (p) p.photo = url; });
+      ui.toast('Фото обновлено');
+    } catch (e) {
+      ui.toast('Фото не загрузилось: ' + humanError(e));
+    }
+    setBusy(false);
+  };
+
+  const removePhoto = () => {
+    setPhoto('');
+    if (!editing && id) update((d) => { const p = d.places.find((x) => x.id === id); if (p) p.photo = ''; });
+  };
+
+  const cancelEdit = () => {
+    if (!place) return;
+    setName(place.name); setAddress(place.address); setCategory(place.category ?? DEFAULT_CATEGORY);
+    setMapUrl(place.mapUrl ?? ''); setCoords(place.lat != null && place.lon != null ? { lat: place.lat, lon: place.lon } : null);
+    setPhoto(place.photo ?? ''); setSearchOn(false); setFound([]);
+    setEditing(false);
   };
 
   const save = async () => {
@@ -111,6 +138,8 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
       if (p) Object.assign(p, data);
       else d.places.push({ id: placeId, hue: hueOf(n), ...data });
     });
+    setBusy(false);
+    if (id) { setEditing(false); setSearchOn(false); ui.toast('Сохранено'); return; }
     ui.close();
     ui.toast('Место сохранено');
   };
@@ -135,10 +164,27 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
       <div className="photo hero place-cover" style={{ height: 190, ...photoStyle({ id: id ?? draftId, name: name || 'Б', hue: place?.hue ?? hueOf(name || 'Б'), photo, category }) }}>
         <div className="cover-actions">
           <PhotoButtons className="btn sm cover-btn" cameraLabel="Камера" galleryLabel="Галерея" onFile={onFile} />
-          {photo && <button type="button" className="btn sm cover-btn" onClick={() => setPhoto('')}>Убрать</button>}
+          {photo && <button type="button" className="btn sm cover-btn" onClick={removePhoto} disabled={busy}>Убрать</button>}
         </div>
       </div>
-      <h4>{id ? catOf(category).one : `${catOf(category).one === 'Бар' ? 'Новый бар' : catOf(category).one === 'Магазин' ? 'Новый магазин' : 'Новый кинотеатр'}`}</h4>
+      {id && !editing ? (
+        <>
+          <div className="place-head">
+            <div className="grow">
+              <h4 className="place-title">{name}</h4>
+              <span className="place-cat">{catOf(category).emoji} {catOf(category).one}</span>
+            </div>
+            <button className="icon-btn" aria-label="Редактировать" onClick={() => setEditing(true)}>{Icon.edit}</button>
+          </div>
+          {address && <p className="place-addr">{address}</p>}
+          {(coords || mapUrl.trim() || address.trim()) && <MapButtons place={{ id: '', hue: 0, photo: '', ...preview }} />}
+          <p className="hint" style={{ margin: '14px 2px 0' }}>
+            {(() => { const n = state.events.filter((e) => e.placeId === id).length; return n ? `Встреч здесь: ${n}` : 'Встреч здесь пока не было'; })()}
+          </p>
+        </>
+      ) : (
+        <>
+      <h4>{id ? 'Редактирование' : category === 'bar' ? 'Новый бар' : category === 'shop' ? 'Новый магазин' : 'Новый кинотеатр'}</h4>
       <CategorySeg value={category} onChange={setCategory} one />
 
       <label className="field">
@@ -178,9 +224,12 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
 
 
       <div className="sheet-btns">
-        {id && <button className="btn danger" onClick={remove} disabled={busy}>Удалить</button>}
-        <button className="btn primary" onClick={save} disabled={busy}>{busy ? 'Загружаю фото…' : 'Сохранить'}</button>
+        {id && <button className="btn" onClick={cancelEdit} disabled={busy}>Отмена</button>}
+        <button className="btn primary" onClick={save} disabled={busy}>{busy ? 'Сохраняю…' : 'Сохранить'}</button>
       </div>
+      {id && <button className="btn block danger" style={{ marginTop: 10 }} onClick={remove} disabled={busy}>Удалить место</button>}
+        </>
+      )}
     </>
   );
 }
