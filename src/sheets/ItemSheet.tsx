@@ -12,6 +12,12 @@ export function ItemSheet({ eventId, itemId }: { eventId: string; itemId?: strin
   const ev = state.events.find((e) => e.id === eventId);
   const existing = itemId ? ev?.items.find((i) => i.id === itemId) : undefined;
   const members = ev?.members ?? [];
+  const category = state.places.find((p) => p.id === ev?.placeId)?.category ?? 'bar';
+  const texts = {
+    bar: { ph: 'Например, IPA 0,5', who: 'Отметь, кто пил или ел' },
+    shop: { ph: 'Например, Сыр', who: 'Отметь, для кого покупка' },
+    cinema: { ph: 'Например, Билет', who: 'Отметь, для кого это' },
+  }[category];
 
   const [name, setName] = useState(existing?.name ?? '');
   const [price, setPrice] = useState(existing ? String(existing.price) : '');
@@ -79,7 +85,7 @@ export function ItemSheet({ eventId, itemId }: { eventId: string; itemId?: strin
       <h4>{itemId ? 'Позиция' : 'Новая позиция'}</h4>
       <label className="field">
         <span>Название</span>
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Например, IPA 0,5" />
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder={texts.ph} />
       </label>
       <div className="two">
         <label className="field">
@@ -102,7 +108,7 @@ export function ItemSheet({ eventId, itemId }: { eventId: string; itemId?: strin
         )}
         {mode === 'equal' ? (
           <>
-            <p className="hint" style={{ margin: '0 0 10px' }}>Отметь, кто пил или ел: сумма разделится поровну</p>
+            <p className="hint" style={{ margin: '0 0 10px' }}>{texts.who}: сумма разделится поровну</p>
             <PeopleChips ids={members} selected={consumers} onToggle={(pid) => setConsumers(toggleIn(consumers, pid))} />
           </>
         ) : (

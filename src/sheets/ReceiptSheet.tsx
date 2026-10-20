@@ -62,7 +62,7 @@ export function ReceiptSheet({ eventId }: { eventId: string }) {
     <>
       <h4>Загрузить чек</h4>
       <p style={{ color: 'var(--muted)', margin: '-6px 0 16px', fontSize: 15 }}>
-        Сфотографируй чек целиком и ровно, при хорошем свете. Позиции добавятся сами, останется отметить, кто что пил.
+        Сфотографируй чек целиком и ровно, при хорошем свете. Позиции добавятся сами, останется отметить, кто что брал.
       </p>
       <div className="photo-choice">
         <PhotoButtons className="btn block" galleryLabel="Выбрать из галереи" onFile={onFile} />

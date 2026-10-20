@@ -456,3 +456,7 @@ button.crew-head-name { border: 0; background: none; padding: 0; color: inherit;
 .brand { display: flex; align-items: center; justify-content: center; gap: 12px }
 .brand img { border-radius: 12px; display: block }
 html { background: var(--bg) }
+
+/* ===== Меню карточки встречи ===== */
+.ev-card { cursor: pointer }
+.card-menu { position: absolute; top: 8px; right: 8px; z-index: 1; width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(0,0,0,.45); color: #fff; font-size: 20px; line-height: 1; display: grid; place-items: center; backdrop-filter: blur(6px) }
