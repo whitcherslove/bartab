@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useUI } from '../lib/ui';
+import { useOptionalUI } from '../lib/ui';
 import { canPrompt, isInAppBrowser, isIOS, isStandalone, onInstallChange, promptInstall } from '../lib/install';
 
 /** Как поставить BarTab на телефон: кнопка (Android), подсказка (iPhone) или совет открыть в браузере */
 export function InstallHelp({ compact }: { compact?: boolean }) {
-  const ui = useUI();
+  const ui = useOptionalUI();
   const [, force] = useState(0);
   useEffect(() => onInstallChange(() => force((n) => n + 1)), []);
 
@@ -20,7 +20,7 @@ export function InstallHelp({ compact }: { compact?: boolean }) {
   }
 
   if (canPrompt()) {
-    const install = async () => { if (await promptInstall()) ui.toast('BarTab появится на экране телефона'); };
+    const install = async () => { if (await promptInstall()) ui?.toast('BarTab появится на экране телефона'); };
     return (
       <div className="install-help">
         {!compact && <span>Откроется как обычное приложение, без браузера.</span>}

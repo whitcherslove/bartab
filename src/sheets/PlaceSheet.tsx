@@ -129,6 +129,12 @@ export function PlaceSheet({ id }: { id?: string }) {
 
   return (
     <>
+      <div className="photo hero place-cover" style={{ height: 190, ...photoStyle({ id: id ?? draftId, name: name || 'Б', hue: place?.hue ?? hueOf(name || 'Б'), photo }) }}>
+        <div className="cover-actions">
+          <PhotoButtons className="btn sm cover-btn" cameraLabel="Камера" galleryLabel="Галерея" onFile={onFile} />
+          {photo && <button type="button" className="btn sm cover-btn" onClick={() => setPhoto('')}>Убрать</button>}
+        </div>
+      </div>
       <h4>{id ? 'Бар' : 'Новый бар'}</h4>
 
       <label className="field">
@@ -166,12 +172,6 @@ export function PlaceSheet({ id }: { id?: string }) {
         <div className="field"><span>Показать на карте</span><MapButtons place={{ id: '', hue: 0, photo: '', ...preview }} /></div>
       )}
 
-      <div className="photo hero place-cover" style={{ height: 140, ...photoStyle({ id: id ?? draftId, name: name || 'Б', hue: place?.hue ?? hueOf(name || 'Б'), photo }) }}>
-        <div className="cover-actions">
-          <PhotoButtons className="btn sm cover-btn" cameraLabel="Камера" galleryLabel="Галерея" onFile={onFile} />
-          {photo && <button type="button" className="btn sm cover-btn" onClick={() => setPhoto('')}>Убрать</button>}
-        </div>
-      </div>
 
       <div className="sheet-btns">
         {id && <button className="btn danger" onClick={remove} disabled={busy}>Удалить</button>}

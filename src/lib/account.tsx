@@ -33,6 +33,13 @@ const JOIN_KEY = 'bartab-join';
 /** Код из ссылки-приглашения ?join=... запоминаем до входа и убираем из адреса */
 function takeJoinCodeFromUrl() {
   const params = new URLSearchParams(window.location.search);
+  // ссылка «Позвать в BarTab»: сначала предложим установить приложение
+  if (params.has('install')) {
+    try { localStorage.setItem('bartab-install-intro', '1'); } catch { /* ignore */ }
+    params.delete('install');
+    const rest = params.toString();
+    window.history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : '') + window.location.hash);
+  }
   const code = params.get('join');
   if (code) {
     try { localStorage.setItem(JOIN_KEY, code.trim().toLowerCase()); } catch { /* ignore */ }

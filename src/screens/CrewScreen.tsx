@@ -88,43 +88,17 @@ export function CrewScreen() {
           <CrewAvatar crew={acc.crew} size={96} />
           <span className="profile-avatar-btn">{Icon.cam}</span>
         </button>
-        <div className="crew-head-name">{acc.crew.name}</div>
-        <div className="s">{state.people.filter((p) => p.userId && !p.archived).length} в приложении · {state.people.filter((p) => !p.archived).length} всего</div>
-      </div>
-
-      <h3 style={{ marginTop: 4 }}>Мои компании</h3>
-      <div className="list">
-        {acc.crews.map((c) => (
-          <button key={c.id} className="row" onClick={() => { if (c.id !== acc.crew.id) { acc.setCrewId(c.id); ui.toast(`Компания «${c.name}»`); } }}>
-            <CrewAvatar crew={c} size={36} />
-            <div className="grow"><div className="t">{c.name}</div></div>
-            {c.id === acc.crew.id && <span className="crew-check">{Icon.check}</span>}
-          </button>
-        ))}
-      </div>
-      <button className="btn block" style={{ marginTop: 10 }} onClick={addCrew}>{Icon.plus} Создать или вступить</button>
-
-      <h3>«{acc.crew.name}»</h3>
-      <div className="list crew-card">
         {renaming ? (
-          <div className="row" style={{ gap: 8 }}>
-            <input className="inline-input" value={crewName} onChange={(e) => setCrewName(e.target.value)} autoFocus />
+          <div className="crew-rename">
+            <input className="inline-input" value={crewName} onChange={(e) => setCrewName(e.target.value)} autoFocus onKeyDown={(e) => e.key === 'Enter' && rename()} />
             <button className="btn primary sm" onClick={rename}>Ок</button>
           </div>
         ) : (
-          <button className="row" onClick={() => { setCrewName(acc.crew.name); setRenaming(true); }}>
-            <div className="grow"><div className="s">Название</div><div className="t">{acc.crew.name}</div></div>
-            {Icon.edit}
+          <button className="crew-head-name" onClick={() => { setCrewName(acc.crew.name); setRenaming(true); }} aria-label="Переименовать компанию">
+            {acc.crew.name} <span className="crew-edit">{Icon.edit}</span>
           </button>
         )}
-        <div className="row invite">
-          <div className="grow"><div className="s">Ссылка-приглашение для друзей</div><div className="invite-link">{acc.inviteLink}</div></div>
-        </div>
-        <div className="row crew-actions">
-          <button className="btn primary sm" onClick={share}>Поделиться</button>
-          <button className="btn ghost sm" onClick={() => ui.open(<QrSheet />)}>QR-код</button>
-          <button className="btn ghost sm" onClick={copy}>Копировать</button>
-        </div>
+        <div className="s">{state.people.filter((p) => p.userId && !p.archived).length} в приложении · {state.people.filter((p) => !p.archived).length} всего</div>
       </div>
 
       <h3>
@@ -144,6 +118,18 @@ export function CrewScreen() {
         ))}
       </div>
 
+      <h3>Пригласить друзей</h3>
+      <div className="list crew-card">
+        <div className="row invite">
+          <div className="grow"><div className="s">Ссылка-приглашение в «{acc.crew.name}»</div><div className="invite-link">{acc.inviteLink}</div></div>
+        </div>
+        <div className="row crew-actions">
+          <button className="btn primary sm" onClick={share}>Поделиться</button>
+          <button className="btn ghost sm" onClick={() => ui.open(<QrSheet />)}>QR-код</button>
+          <button className="btn ghost sm" onClick={copy}>Копировать</button>
+        </div>
+      </div>
+
       <h3>Telegram-чат компании <small>общий для всех</small></h3>
       <div className="list">
         {acc.crew.tg_chat_id ? (
@@ -161,6 +147,18 @@ export function CrewScreen() {
       <button className="btn block" style={{ marginTop: 10 }} onClick={() => ui.open(<ConnectChatSheet />)}>
         {Icon.plus} {acc.crew.tg_chat_id ? 'Подключить другой чат' : 'Подключить чат'}
       </button>
+
+      <h3>Мои компании</h3>
+      <div className="list">
+        {acc.crews.map((c) => (
+          <button key={c.id} className="row" onClick={() => { if (c.id !== acc.crew.id) { acc.setCrewId(c.id); ui.toast(`Компания «${c.name}»`); } }}>
+            <CrewAvatar crew={c} size={36} />
+            <div className="grow"><div className="t">{c.name}</div></div>
+            {c.id === acc.crew.id && <span className="crew-check">{Icon.check}</span>}
+          </button>
+        ))}
+      </div>
+      <button className="btn block" style={{ marginTop: 10 }} onClick={addCrew}>{Icon.plus} Создать или вступить</button>
 
       <div className="foot"><button onClick={leave}>Выйти из компании</button></div>
     </>

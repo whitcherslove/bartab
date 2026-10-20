@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 import { getTabOrder, onTabsChange, TAB_ICONS, TAB_LABELS, type TabId } from './lib/tabs';
 import { WelcomeSheet } from './sheets/WelcomeSheet';
 import { InstallBanner } from './components/InstallBanner';
+import { InstallSheet } from './sheets/InstallSheet';
+import { isStandalone } from './lib/install';
 import { EventsScreen } from './screens/EventsScreen';
 import { EventScreen } from './screens/EventScreen';
 import { CrewScreen } from './screens/CrewScreen';
@@ -33,7 +35,11 @@ function Shell() {
     try {
       if (localStorage.getItem('bartab-welcome')) {
         localStorage.removeItem('bartab-welcome');
+        localStorage.removeItem('bartab-install-intro');
         open(<WelcomeSheet />);
+      } else if (localStorage.getItem('bartab-install-intro')) {
+        localStorage.removeItem('bartab-install-intro');
+        if (!isStandalone()) open(<InstallSheet />);
       }
     } catch { /* ignore */ }
   }, [open]);

@@ -222,3 +222,9 @@ export function useUI() {
   if (!c) throw new Error('useUI вне UIProvider');
   return c;
 }
+
+/** То же, что useUI, но без ошибки вне провайдера (например, на экране входа) */
+// eslint-disable-next-line react-refresh/only-export-components
+export function useOptionalUI() {
+  return useContext(Ctx);
+}

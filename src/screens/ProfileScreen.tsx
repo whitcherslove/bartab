@@ -10,6 +10,8 @@ import { ACCENTS, getAccent, getTheme, setAccent, setTheme, type Accent, type Th
 import { Icon } from '../components/Icons';
 import { InstallCard } from '../components/InstallCard';
 import { MyVisits } from '../components/MyVisits';
+import { MyDebts } from '../components/MyDebts';
+import { QrSheet } from '../sheets/QrSheet';
 import { PhotoChoiceSheet } from '../components/PhotoPick';
 import { getHome, getTabOrder, setHome, setTabOrder, TAB_ICONS, TAB_LABELS, type TabId } from '../lib/tabs';
 
@@ -80,6 +82,16 @@ export function ProfileScreen() {
 
   const pickTheme = (t: Theme) => { setTheme(t); setThemeState(t); };
 
+  const appLink = `${window.location.origin}/?install=1`;
+  const shareApp = async () => {
+    const text = 'BarTab — делим счёт в баре без калькулятора 🍻 Поставь приложение:';
+    if (navigator.share) { try { await navigator.share({ title: 'BarTab', text, url: appLink }); } catch { /* отменили */ } return; }
+    copyApp();
+  };
+  const copyApp = async () => {
+    try { await navigator.clipboard.writeText(appLink); ui.toast('Ссылка скопирована'); } catch { ui.toast('Выдели ссылку и скопируй вручную'); }
+  };
+
   const signOut = async () => {
     if (!confirm('Выйти из аккаунта?')) return;
     await acc.signOut();
@@ -116,6 +128,8 @@ export function ProfileScreen() {
         {dirty && <button className="btn primary block" onClick={save} disabled={busy}>{busy ? 'Сохраняю…' : 'Сохранить'}</button>}
         <p className="hint" style={{ margin: dirty ? '10px 2px 0' : 0 }}>Telegram и фото увидят друзья во всех твоих компаниях.</p>
       </div>
+
+      <MyDebts />
 
       <h3>Мои посиделки <small>во всех компаниях</small></h3>
       <MyVisits />
@@ -165,6 +179,18 @@ export function ProfileScreen() {
       </div>
 
       <InstallCard />
+
+      <h3>Позвать в BarTab <small>без привязки к компании</small></h3>
+      <div className="list crew-card">
+        <div className="row invite">
+          <div className="grow"><div className="s">Ссылка сразу предлагает установить приложение</div><div className="invite-link">{appLink}</div></div>
+        </div>
+        <div className="row crew-actions">
+          <button className="btn primary sm" onClick={shareApp}>Поделиться</button>
+          <button className="btn ghost sm" onClick={() => ui.open(<QrSheet link={appLink} title="BarTab" top={<img src="/icon-192.png" alt="" width={56} height={56} style={{ borderRadius: 14 }} />} hint="Наведи камеру телефона на код — откроется установка BarTab." />)}>QR-код</button>
+          <button className="btn ghost sm" onClick={copyApp}>Копировать</button>
+        </div>
+      </div>
 
       <div className="foot"><button onClick={signOut}>Выйти из аккаунта</button></div>
     </>

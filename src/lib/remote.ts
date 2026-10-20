@@ -1,6 +1,7 @@
 import type { BarEvent, Item, State } from './types';
 import { supabase } from './supabase';
 import { RECEIPT_FN, TELEGRAM_FN } from './functions';
+import { stats } from './calc';
 
 // ---------- Загрузка всех данных компании ----------
 
@@ -14,6 +15,35 @@ type EventRow = {
 };
 type ChatRow = { id: string; name: string; chat_id: string };
 
+const EVENT_SELECT = 'id, place_id, date, tips, tips_mode, currency, payer_id, status, receipt_path, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, item_shares(person_id, qty))';
+
+function mapEvent(e: EventRow, byPeopleOrder: (a: string, b: string) => number = () => 0): BarEvent {
+  return {
+    id: e.id,
+    date: e.date,
+    placeId: e.place_id ?? '',
+    tips: Number(e.tips) || 0,
+    tipsMode: e.tips_mode,
+    currency: e.currency || 'RUB',
+    payer: e.payer_id ?? '',
+    status: e.status,
+    receiptPath: e.receipt_path ?? '',
+    members: e.event_members.map((m) => m.person_id).sort(byPeopleOrder),
+    settled: e.event_members.filter((m) => m.settled).map((m) => m.person_id),
+    items: [...e.items]
+      .sort((a, b) => a.created_at.localeCompare(b.created_at))
+      .map((it): Item => ({
+        id: it.id,
+        name: it.name,
+        price: Number(it.price) || 0,
+        qty: it.qty,
+        splitMode: it.split_mode,
+        consumers: it.item_shares.map((s) => s.person_id).sort(byPeopleOrder),
+        split: it.split_mode === 'qty' ? Object.fromEntries(it.item_shares.map((s) => [s.person_id, s.qty])) : {},
+      })),
+  };
+}
+
 function must<T>(res: { data: T | null; error: unknown }): T {
   if (res.error) throw res.error;
   return res.data as T;
@@ -26,7 +56,7 @@ export async function fetchCrew(crewId: string, userId: string): Promise<State> 
     supabase.from('places').select('id, name, address, hue, photo_path, map_url, lat, lon').order('created_at'),
     supabase
       .from('events')
-      .select('id, place_id, date, tips, tips_mode, currency, payer_id, status, receipt_path, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, item_shares(person_id, qty))')
+      .select(EVENT_SELECT)
       .eq('crew_id', crewId)
       .order('date', { ascending: false }),
     supabase.from('tg_chats').select('id, name, chat_id').order('created_at'),
@@ -44,30 +74,7 @@ export async function fetchCrew(crewId: string, userId: string): Promise<State> 
     people: people.map((p) => ({ id: p.id, name: p.name, tg: p.tg, userId: p.user_id, avatar: p.avatar_url ?? '', archived: !!p.archived })),
     places: places.map((p) => ({ id: p.id, name: p.name, address: p.address, hue: p.hue, photo: p.photo_path, mapUrl: p.map_url ?? '', lat: p.lat, lon: p.lon })),
     chats: chats.map((c) => ({ id: c.id, name: c.name, chatId: c.chat_id })),
-    events: events.map((e): BarEvent => ({
-      id: e.id,
-      date: e.date,
-      placeId: e.place_id ?? '',
-      tips: Number(e.tips) || 0,
-      tipsMode: e.tips_mode,
-      currency: e.currency || 'RUB',
-      payer: e.payer_id ?? '',
-      status: e.status,
-      receiptPath: e.receipt_path ?? '',
-      members: e.event_members.map((m) => m.person_id).sort(byPeopleOrder),
-      settled: e.event_members.filter((m) => m.settled).map((m) => m.person_id),
-      items: [...e.items]
-        .sort((a, b) => a.created_at.localeCompare(b.created_at))
-        .map((it): Item => ({
-          id: it.id,
-          name: it.name,
-          price: Number(it.price) || 0,
-          qty: it.qty,
-          splitMode: it.split_mode,
-          consumers: it.item_shares.map((s) => s.person_id).sort(byPeopleOrder),
-          split: it.split_mode === 'qty' ? Object.fromEntries(it.item_shares.map((s) => [s.person_id, s.qty])) : {},
-        })),
-    })),
+    events: events.map((e) => mapEvent(e, byPeopleOrder)),
   };
 }
 
@@ -304,4 +311,58 @@ export async function receiptUrl(path: string): Promise<string> {
   const { data, error } = await supabase.storage.from('receipts').createSignedUrl(path, 60 * 60);
   if (error) throw error;
   return data.signedUrl;
+}
+
+// ---------- Долги по всем компаниям (для профиля) ----------
+
+export type OpenDebt = {
+  eventId: string;
+  crewId: string;
+  date: string;
+  placeName: string;
+  currency: string;
+  amount: number;
+  /** для «Ждёшь»: кто сколько должен; для «От тебя ждут»: кому переводить */
+  people: { name: string; amount: number }[];
+};
+
+export async function fetchMyDebts(userId: string): Promise<{ waiting: OpenDebt[]; owing: OpenDebt[] }> {
+  const { data: me, error: e1 } = await supabase.from('people').select('id, crew_id').eq('user_id', userId);
+  if (e1) throw e1;
+  const mine = (me ?? []) as { id: string; crew_id: string }[];
+  if (!mine.length) return { waiting: [], owing: [] };
+  const myByCrew = new Map(mine.map((p) => [p.crew_id, p.id]));
+
+  const { data: em, error: e2 } = await supabase.from('event_members').select('event_id').in('person_id', mine.map((p) => p.id));
+  if (e2) throw e2;
+  const eventIds = [...new Set(((em ?? []) as { event_id: string }[]).map((r) => r.event_id))];
+  if (!eventIds.length) return { waiting: [], owing: [] };
+
+  const [evRes, peopleRes] = await Promise.all([
+    supabase.from('events').select(EVENT_SELECT + ', crew_id, places(name)').in('id', eventIds),
+    supabase.from('people').select('id, name').in('crew_id', [...myByCrew.keys()]),
+  ]);
+  const rows = must(evRes) as unknown as (EventRow & { crew_id: string; places: { name: string } | null })[];
+  const names = new Map(((must(peopleRes) ?? []) as { id: string; name: string }[]).map((p) => [p.id, p.name]));
+  const nameOf = (id: string) => names.get(id) ?? '?';
+
+  const waiting: OpenDebt[] = [], owing: OpenDebt[] = [];
+  for (const r of rows) {
+    const ev = mapEvent(r);
+    const meId = myByCrew.get(r.crew_id);
+    if (!meId || !ev.payer) continue;
+    const st = stats(ev, meId);
+    const base = { eventId: ev.id, crewId: r.crew_id, date: ev.date, placeName: r.places?.name ?? 'Без бара', currency: ev.currency };
+    if (st.isPayer && st.balance > 1) {
+      const people = ev.members
+        .filter((m) => m !== meId && !ev.settled.includes(m))
+        .map((m) => ({ name: nameOf(m), amount: stats(ev, m).owed }))
+        .filter((p) => p.amount >= 1);
+      waiting.push({ ...base, amount: st.balance, people });
+    } else if (!st.isPayer && !st.settled && st.owed >= 1) {
+      owing.push({ ...base, amount: st.owed, people: [{ name: nameOf(ev.payer), amount: st.owed }] });
+    }
+  }
+  const byDate = (a: OpenDebt, b: OpenDebt) => b.date.localeCompare(a.date);
+  return { waiting: waiting.sort(byDate), owing: owing.sort(byDate) };
 }
