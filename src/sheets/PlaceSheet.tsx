@@ -162,10 +162,10 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
   return (
     <>
       <div className="photo hero place-cover" style={{ height: 190, ...photoStyle({ id: id ?? draftId, name: name || 'Б', hue: place?.hue ?? hueOf(name || 'Б'), photo, category }) }}>
-        <div className="cover-actions">
+        {(editing || !id) && <div className="cover-actions">
           <PhotoButtons className="btn sm cover-btn" cameraLabel="Камера" galleryLabel="Галерея" onFile={onFile} />
           {photo && <button type="button" className="btn sm cover-btn" onClick={removePhoto} disabled={busy}>Убрать</button>}
-        </div>
+        </div>}
       </div>
       {id && !editing ? (
         <>
