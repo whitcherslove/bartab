@@ -4,7 +4,7 @@ import { useUI } from '../lib/ui';
 import { hueOf, uid } from '../lib/format';
 import { Icon } from '../components/Icons';
 import { photoStyle } from '../components/common';
-import { MapButtons } from '../components/MapButtons';
+import { MapButtons, mapSource } from '../components/MapButtons';
 import { CategorySeg } from '../components/common';
 import { catOf, DEFAULT_CATEGORY, type Category } from '../lib/categories';
 import { PhotoButtons } from '../components/PhotoPick';
@@ -177,7 +177,7 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
             <button className="icon-btn" aria-label="Редактировать" onClick={() => setEditing(true)}>{Icon.edit}</button>
           </div>
           {address && <p className="place-addr">{address}</p>}
-          {(coords || mapUrl.trim() || address.trim()) && <MapButtons place={{ id: '', hue: 0, photo: '', ...preview }} />}
+          {mapSource(preview) && <MapButtons place={preview} />}
           <p className="hint" style={{ margin: '14px 2px 0' }}>
             {(() => { const n = state.events.filter((e) => e.placeId === id).length; return n ? `Встреч здесь: ${n}` : 'Встреч здесь пока не было'; })()}
           </p>
@@ -218,8 +218,8 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
 
       <label className="field"><span>Адрес</span><input value={address} onChange={(e) => { setAddress(e.target.value); setMapUrl(''); setCoords(null); }} /></label>
 
-      {(coords || mapUrl.trim() || address.trim()) && name.trim() && (
-        <div className="field"><span>Показать на карте</span><MapButtons place={{ id: '', hue: 0, photo: '', ...preview }} /></div>
+      {mapSource(preview) && name.trim() && (
+        <div className="field"><span>Показать на карте</span><MapButtons place={preview} /></div>
       )}
 
 

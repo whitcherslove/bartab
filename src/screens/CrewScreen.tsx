@@ -9,9 +9,9 @@ import { Icon } from '../components/Icons';
 import { Av, CrewAvatar, MultiPill } from '../components/common';
 import { PersonSheet } from '../sheets/PersonSheet';
 import { ConnectChatSheet } from '../sheets/ConnectChatSheet';
-import { CrewSetup } from './auth/CrewSetup';
 import { QrSheet } from '../sheets/QrSheet';
 import { PhotoChoiceSheet } from '../components/PhotoPick';
+import { CrewPickerSheet } from '../sheets/CrewPickerSheet';
 
 export function CrewScreen() {
   const acc = useAccount();
@@ -55,13 +55,6 @@ export function CrewScreen() {
     ui.toast('Название обновлено');
   };
 
-  const addCrew = () =>
-    ui.open(
-      <>
-        <h4>Ещё одна компания</h4>
-        <CrewSetup embedded myName={acc.profile.name} onDone={async (id) => { acc.setCrewId(id); await acc.reload(); ui.close(); ui.toast('Готово'); }} />
-      </>,
-    );
 
   const leave = async () => {
     if (!confirm(`Выйти из компании «${acc.crew.name}»? Встречи с тобой останутся у друзей, а у тебя пропадут. Вернуться можно по приглашению.`)) return;
@@ -76,6 +69,7 @@ export function CrewScreen() {
   return (
     <>
       <header className="top"><h1>Компания</h1></header>
+
 
       <div className="crew-head">
         <button
@@ -94,11 +88,14 @@ export function CrewScreen() {
             <button className="btn primary sm" onClick={rename}>Ок</button>
           </div>
         ) : (
-          <button className="crew-head-name" onClick={() => { setCrewName(acc.crew.name); setRenaming(true); }} aria-label="Переименовать компанию">
-            {acc.crew.name} <span className="crew-edit">{Icon.edit}</span>
-          </button>
+          <div className="crew-head-row">
+            <button className="crew-head-name" onClick={() => ui.open(<CrewPickerSheet />)} aria-label="Сменить компанию">
+              {acc.crew.name} <span className="crew-caret">{Icon.down}</span>
+            </button>
+            <button className="icon-btn sm" onClick={() => { setCrewName(acc.crew.name); setRenaming(true); }} aria-label="Переименовать компанию">{Icon.edit}</button>
+          </div>
         )}
-        <div className="s">{state.people.filter((p) => p.userId && !p.archived).length} в приложении · {state.people.filter((p) => !p.archived).length} всего</div>
+        <div className="s">{(() => { const n = state.people.filter((p) => !p.archived).length; const m10 = n % 10, m100 = n % 100; return `${n} ${m10 === 1 && m100 !== 11 ? 'участник' : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 'участника' : 'участников'}`; })()}</div>
       </div>
 
       <h3>
@@ -138,27 +135,16 @@ export function CrewScreen() {
               <div className="t">{acc.crew.tg_chat_name}</div>
               <div className="s">{acc.crew.tg_chat_by ? `подключил(а) ${acc.crew.tg_chat_by}` : 'итоги встреч приходят сюда'}</div>
             </div>
+            <button className="btn ghost sm" onClick={() => ui.open(<ConnectChatSheet />)}>Сменить</button>
             <button className="btn undo sm" onClick={removeChat}>Отключить</button>
           </div>
         ) : (
           <div className="empty">Подключи групповой чат компании — и любой участник сможет отправлять туда итоги встреч</div>
         )}
       </div>
-      <button className="btn block" style={{ marginTop: 10 }} onClick={() => ui.open(<ConnectChatSheet />)}>
-        {Icon.plus} {acc.crew.tg_chat_id ? 'Подключить другой чат' : 'Подключить чат'}
-      </button>
-
-      <h3>Мои компании</h3>
-      <div className="list">
-        {acc.crews.map((c) => (
-          <button key={c.id} className="row" onClick={() => { if (c.id !== acc.crew.id) { acc.setCrewId(c.id); ui.toast(`Компания «${c.name}»`); } }}>
-            <CrewAvatar crew={c} size={36} />
-            <div className="grow"><div className="t">{c.name}</div></div>
-            {c.id === acc.crew.id && <span className="crew-check">{Icon.check}</span>}
-          </button>
-        ))}
-      </div>
-      <button className="btn block" style={{ marginTop: 10 }} onClick={addCrew}>{Icon.plus} Создать или вступить</button>
+      {!acc.crew.tg_chat_id && (
+        <button className="btn block" style={{ marginTop: 10 }} onClick={() => ui.open(<ConnectChatSheet />)}>{Icon.plus} Подключить чат</button>
+      )}
 
       <div className="foot"><button onClick={leave}>Выйти из компании</button></div>
     </>

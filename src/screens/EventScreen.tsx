@@ -69,7 +69,7 @@ export function EventScreen({ id }: { id: string }) {
       </PlacePhoto>
       <div className="event-meta">
         <span className="date-chip">{Icon.calendar} {fdate(ev.date)}</span>
-        {place && (place.address || place.mapUrl || place.lat != null) && <MapButtons place={place} />}
+        {place && <MapButtons place={place} />}
       </div>
 
       <div className="totals2">

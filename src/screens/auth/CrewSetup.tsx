@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { humanError, supabase } from '../../lib/supabase';
 
 /** Создать компанию или вступить по коду. Используется при первом входе и из раздела «Компания». */
-export function CrewSetup({ myName, error: outerError, onDone, onSignOut, embedded }: {
+export function CrewSetup({ myName, error: outerError, onDone, onSignOut, embedded, mode = 'both' }: {
   myName: string;
   error?: string;
   onDone: (crewId: string) => Promise<void> | void;
   onSignOut?: () => void;
   embedded?: boolean;
+  mode?: 'both' | 'create' | 'join';
 }) {
   const [crewName, setCrewName] = useState('');
   const [code, setCode] = useState('');
@@ -45,16 +46,16 @@ export function CrewSetup({ myName, error: outerError, onDone, onSignOut, embedd
 
   const body = (
     <>
-      <form className="auth-card" onSubmit={(e) => { e.preventDefault(); create(); }}>
+      {mode !== 'join' && <form className="auth-card" onSubmit={(e) => { e.preventDefault(); create(); }}>
         <h4>Новая компания</h4>
         <label className="field"><span>Название</span><input value={crewName} onChange={(e) => setCrewName(e.target.value)} placeholder="Пятничные" /></label>
         <button className="btn primary block" disabled={busy}>Создать</button>
-      </form>
-      <form className="auth-card" onSubmit={(e) => { e.preventDefault(); join(); }}>
+      </form>}
+      {mode !== 'create' && <form className="auth-card" onSubmit={(e) => { e.preventDefault(); join(); }}>
         <h4>Меня позвали</h4>
         <label className="field"><span>Код или ссылка-приглашение</span><input value={code} onChange={(e) => setCode(e.target.value)} placeholder="a1b2c3d4" autoCapitalize="off" /></label>
         <button className="btn block" disabled={busy}>Вступить</button>
-      </form>
+      </form>}
       {error && <p className="auth-err">{error}</p>}
     </>
   );
