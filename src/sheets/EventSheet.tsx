@@ -19,7 +19,7 @@ export function EventSheet({ id }: { id?: string }) {
     if (!placesIn(c).some((p) => p.id === placeId)) setPlaceId(placesIn(c)[0]?.id ?? '');
   };
   const [date, setDate] = useState(ev?.date ?? todayIso());
-  const [members, setMembers] = useState<string[]>(ev?.members ?? [state.me]);
+  const [members, setMembers] = useState<string[]>(ev?.members ?? state.people.filter((p) => !p.archived).map((p) => p.id));
   const [currency, setCurrency] = useState(ev?.currency ?? getDefaultCurrency());
 
   const save = () => {

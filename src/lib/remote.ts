@@ -31,7 +31,7 @@ function mapEvent(e: EventRow, byPeopleOrder: (a: string, b: string) => number =
     members: e.event_members.map((m) => m.person_id).sort(byPeopleOrder),
     settled: e.event_members.filter((m) => m.settled).map((m) => m.person_id),
     items: [...e.items]
-      .sort((a, b) => a.created_at.localeCompare(b.created_at))
+      .sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))
       .map((it): Item => ({
         id: it.id,
         name: it.name,

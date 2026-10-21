@@ -107,7 +107,11 @@ export function EventScreen({ id }: { id: string }) {
       </h3>
       <div className="coasters">
         {ev.members.length === 0 && <div className="empty">Добавь участников через «Изменить»</div>}
-        {ev.members.map((m) => {
+        {[...ev.members].sort((a, b) => {
+          // плательщик первым, потом те, кому нужно перевести, «переведено» и «в расчёте» — вправо
+          const rank = (m: string) => { if (!payer) return 0; const st = stats(ev, m); if (st.isPayer) return 0; return !st.settled && st.owed >= 1 ? 1 : 2; };
+          return rank(a) - rank(b);
+        }).map((m) => {
           const st = stats(ev, m);
           // подпись сверху и сумма снизу — вместо «+» и «−»
           let cls = 'zero', cap = 'часть', val = money(st.owed, ev.currency);
@@ -156,14 +160,24 @@ export function EventScreen({ id }: { id: string }) {
       )}
 
       <h3>
-        <span>Позиции <small>{ev.items.length}</small></span>
+        <span>Позиции <small>{ev.items.length}{unassigned > 0 && <span className="unassigned"> · без людей: {unassigned}</span>}</small></span>
         {ev.items.length > 1 && <button className="link-btn danger-link" onClick={clearItems}>Удалить все</button>}
       </h3>
-      {unassigned > 0 && <div className="warn">{unassigned} поз. ни на кого не разбиты: они не попадают в расчёт</div>}
       <div className="list">
         {ev.items.length === 0 && <div className="empty">Добавь позиции вручную или загрузи чек</div>}
-        {ev.items.map((it) => (
-          <button key={it.id} className="row" onClick={() => ui.open(<ItemSheet eventId={id} itemId={it.id} />)}>
+        {ev.items.map((it) => {
+          const mine = it.splitMode === 'qty' ? (it.split[state.me] || 0) > 0 : it.consumers.includes(state.me);
+          const toggleMine = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            if (it.splitMode === 'qty') return ui.open(<ItemSheet eventId={id} itemId={it.id} />); // сколько штук — в позиции
+            updateEvent(id, (ev2) => {
+              const x = ev2.items.find((i) => i.id === it.id);
+              if (!x) return;
+              x.consumers = x.consumers.includes(state.me) ? x.consumers.filter((c) => c !== state.me) : [...x.consumers, state.me];
+            });
+          };
+          return (
+          <div key={it.id} className={'row item-row' + (it.consumers.length ? '' : ' no-people')} role="button" tabIndex={0} onClick={() => ui.open(<ItemSheet eventId={id} itemId={it.id} />)}>
             <div className="grow">
               <div className="t">{it.name}</div>
               <div className="s num">
@@ -173,12 +187,18 @@ export function EventScreen({ id }: { id: string }) {
                 ) : (
                   <span className="avs">{it.consumers.map((c) => <Av key={c} id={c} sm />)}</span>
                 )}
-                {!it.consumers.length && <span style={{ color: 'var(--amber)' }}>ни на кого</span>}
+                {!it.consumers.length && <span className="unassigned">ни на кого</span>}
               </div>
             </div>
             <span className="amt num">{money(itemTotal(it), ev.currency)}</span>
-          </button>
-        ))}
+            {ev.members.includes(state.me) && (
+              <button className={'mine-btn' + (mine ? ' on' : '')} aria-pressed={mine} onClick={toggleMine} aria-label={mine ? 'Убрать себя из позиции' : 'Это моё'}>
+                {mine ? '✓ Моё' : 'Моё'}
+              </button>
+            )}
+          </div>
+          );
+        })}
       </div>
 
       <div className="actbar">

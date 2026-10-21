@@ -70,7 +70,9 @@ Deno.serve(async (req) => {
     if (!rows.length) throw new Error('Позиции на фото не найдены. Попробуй сфотографировать чек ровнее и ближе.');
 
     // Позиции добавляются без людей — кто что пил, отмечают в приложении
-    const items = rows.map((r) => ({ id: crypto.randomUUID(), event_id: eventId, name: r.name, price: r.price, qty: r.qty, split_mode: 'equal' }));
+    // время с шагом в 1 мс — чтобы позиции всегда шли в порядке чека
+    const t0 = Date.now();
+    const items = rows.map((r, i) => ({ id: crypto.randomUUID(), event_id: eventId, name: r.name, price: r.price, qty: r.qty, split_mode: 'equal', created_at: new Date(t0 + i).toISOString() }));
     const { error: itemsErr } = await db.from('items').insert(items);
     if (itemsErr) throw new Error('Не удалось сохранить позиции: ' + itemsErr.message);
 
@@ -119,7 +121,9 @@ async function handleTickets(db: any, eventId: string, bytes: Uint8Array, mime: 
   // общая цена без цен на билеты — делим поровну
   if (list.every((x) => !x.price) && Number(t.total) > 0) list.forEach((x) => { x.price = Number(t.total) / list.length; });
 
-  const items = list.map((x) => ({
+  const t0 = Date.now();
+  const items = list.map((x, i) => ({
+    created_at: new Date(t0 + i).toISOString(),
     id: crypto.randomUUID(),
     event_id: eventId,
     name: x.row || x.seat ? `Билет · ${[x.row && `ряд ${x.row}`, x.seat && `место ${x.seat}`].filter(Boolean).join(', ')}` : 'Билет',
