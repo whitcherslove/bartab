@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { isAdmin } from '../lib/admin';
 import { useAccount } from '../lib/account';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
@@ -24,6 +25,8 @@ export function ProfileScreen() {
   const [busy, setBusy] = useState(false);
   const [theme, setThemeState] = useState<Theme>(getTheme);
   const [accent, setAccentState] = useState<Accent>(getAccent);
+  const [admin, setAdmin] = useState(false);
+  useEffect(() => { isAdmin().then(setAdmin); }, []);
   const [order, setOrderState] = useState<TabId[]>(getTabOrder);
   const [home, setHomeState] = useState<TabId>(getHome);
 
@@ -191,6 +194,15 @@ export function ProfileScreen() {
           <button className="btn ghost sm" onClick={copyApp}>Копировать</button>
         </div>
       </div>
+
+      {admin && (
+        <div className="list" style={{ marginTop: 24 }}>
+          <button className="row" onClick={() => ui.go({ screen: 'admin' })}>
+            <div className="grow"><div className="t">Админка</div><div className="s">пользователи, компании, статистика</div></div>
+            <span className="history-more" aria-hidden="true">›</span>
+          </button>
+        </div>
+      )}
 
       <div className="foot"><button onClick={signOut}>Выйти из аккаунта</button></div>
     </>

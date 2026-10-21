@@ -12,6 +12,7 @@ import { EventsScreen } from './screens/EventsScreen';
 import { EventScreen } from './screens/EventScreen';
 import { CrewScreen } from './screens/CrewScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
+import { AdminScreen } from './screens/AdminScreen';
 import { PlacesScreen } from './screens/PlacesScreen';
 
 export default function App() {
@@ -46,20 +47,22 @@ function Shell() {
   return (
     <>
       <main className="app" key={profile.currency}>
-        {view.screen !== 'event' && <InstallBanner />}
+        {view.screen !== 'event' && view.screen !== 'admin' && <InstallBanner />}
         {view.screen === 'event' ? (
           <EventScreen id={view.id} />
         ) : view.screen === 'crew' ? (
           <CrewScreen />
         ) : view.screen === 'profile' ? (
           <ProfileScreen />
+        ) : view.screen === 'admin' ? (
+          <AdminScreen />
         ) : view.screen === 'places' ? (
           <PlacesScreen />
         ) : (
           <EventsScreen />
         )}
       </main>
-      {view.screen !== 'event' && <TabBar current={view.screen} />}
+      {view.screen !== 'event' && view.screen !== 'admin' && <TabBar current={view.screen} />}
     </>
   );
 }

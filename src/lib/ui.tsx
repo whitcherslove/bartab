@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { getHome } from './tabs';
 
-export type View = { screen: 'events' | 'places' | 'crew' | 'profile' } | { screen: 'event'; id: string };
+export type View = { screen: 'events' | 'places' | 'crew' | 'profile' | 'admin' } | { screen: 'event'; id: string };
 
 type UI = {
   view: View;

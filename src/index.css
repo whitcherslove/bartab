@@ -464,3 +464,11 @@ html { background: var(--bg) }
 /* ===== Переводы → получатель ===== */
 .transfers-title { display: inline-flex; align-items: center; gap: 6px; min-width: 0 }
 .transfers-title .av { border: 0 }
+
+/* ===== Админка ===== */
+.admin-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px }
+.admin-stats > div { background: var(--surface); border-radius: 16px; padding: 12px 14px }
+.admin-stats b { display: block; font: 700 24px/1.1 var(--display) }
+.admin-stats span { color: var(--muted); font-size: 13px }
+.admin-stats i { display: block; font-style: normal; font-size: 12px; color: var(--hop); margin-top: 4px }
+.admin-row { align-items: flex-start }
