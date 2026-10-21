@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { BarEvent } from '../lib/types';
 import { useUI } from '../lib/ui';
-import { receiptUrl } from '../lib/remote';
+import { deleteReceipt, receiptUrl } from '../lib/remote';
+import { humanError } from '../lib/supabase';
 import { Icon } from './Icons';
 import { ReceiptSheet } from '../sheets/ReceiptSheet';
 import { useStore } from '../lib/store';
@@ -10,7 +11,7 @@ import { useStore } from '../lib/store';
 export function ReceiptBlock({ ev }: { ev: BarEvent }) {
   const ui = useUI();
   const [url, setUrl] = useState('');
-  const { state } = useStore();
+  const { state, refresh } = useStore();
   const tickets = state.places.find((p) => p.id === ev.placeId)?.category === 'cinema';
 
   useEffect(() => {
@@ -34,6 +35,18 @@ export function ReceiptBlock({ ev }: { ev: BarEvent }) {
     );
   }
 
+  const remove = async () => {
+    if (!confirm(`Удалить ${tickets ? 'скриншот билетов' : 'фото чека'}? Распознанные позиции останутся.`)) return;
+    try {
+      await deleteReceipt(ev.id, ev.receiptPath ?? '');
+      await refresh();
+      ui.close();
+      ui.toast(tickets ? 'Скриншот удалён' : 'Чек удалён');
+    } catch (e) {
+      ui.toast(humanError(e));
+    }
+  };
+
   const view = () =>
     ui.open(
       <>
@@ -43,6 +56,7 @@ export function ReceiptBlock({ ev }: { ev: BarEvent }) {
           {url && <a className="btn" href={url} target="_blank" rel="noopener">Открыть в полном размере</a>}
           <button className="btn primary" onClick={upload}>{tickets ? 'Добавить ещё' : 'Загрузить другой'}</button>
         </div>
+        <button className="btn block danger" style={{ marginTop: 10 }} onClick={remove}>{tickets ? 'Удалить скриншот' : 'Удалить чек'}</button>
       </>,
     );
 

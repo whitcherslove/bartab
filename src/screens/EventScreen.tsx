@@ -3,7 +3,7 @@ import type { BarEvent, TipsMode } from '../lib/types';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { evTotal, evWithTips, itemTotal, stats, tipAmount } from '../lib/calc';
-import { fdate, money, parseNum } from '../lib/format';
+import { dateBadge, fdate, money, parseNum } from '../lib/format';
 import { Icon } from '../components/Icons';
 import { Av, PlacePhoto } from '../components/common';
 import { MapButtons } from '../components/MapButtons';
@@ -63,6 +63,7 @@ export function EventScreen({ id }: { id: string }) {
       </header>
 
       <PlacePhoto place={place} className="hero">
+        {dateBadge(ev.date) && <span className={'date-badge' + (dateBadge(ev.date) === 'Сегодня' ? ' today' : '')}>{dateBadge(ev.date)}</span>}
         <div className="hero-txt">
           <h2>{place?.name ?? 'Без места'}</h2>
           {place?.address && <div>{place.address}</div>}

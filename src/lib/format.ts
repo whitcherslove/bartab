@@ -58,3 +58,10 @@ export const parseNum = (v: string) => Number(v.replace(',', '.').trim()) || 0;
 
 /** Переключить элемент в списке */
 export const toggleIn = (list: string[], id: string) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
+
+/** Пометка для встречи по дате: «Сегодня», «Скоро» или ничего */
+export function dateBadge(iso: string): string {
+  const today = todayIso();
+  if (iso === today) return 'Сегодня';
+  return iso > today ? 'Скоро' : '';
+}

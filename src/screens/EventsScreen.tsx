@@ -1,7 +1,7 @@
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { evWithTips, stats } from '../lib/calc';
-import { fdate, money } from '../lib/format';
+import { dateBadge, fdate, money } from '../lib/format';
 import { Fab, Pill, PlacePhoto } from '../components/common';
 import { EventSheet } from '../sheets/EventSheet';
 import { catOf } from '../lib/categories';
@@ -50,6 +50,7 @@ export function EventsScreen() {
         return (
           <div key={ev.id} className="ev-card" role="button" tabIndex={0} onClick={() => ui.go({ screen: 'event', id: ev.id })} onKeyDown={(e) => e.key === 'Enter' && ui.go({ screen: 'event', id: ev.id })}>
             <PlacePhoto place={place}>
+              {dateBadge(ev.date) && <span className={'date-badge' + (dateBadge(ev.date) === 'Сегодня' ? ' today' : '')}>{dateBadge(ev.date)}</span>}
               <button
                 className="card-menu"
                 aria-label="Действия со встречей"

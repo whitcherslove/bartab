@@ -424,3 +424,10 @@ export async function removeTicketQr(crewId: string, eventId: string, name: stri
   const { error } = await supabase.storage.from('receipts').remove([`${qrFolder(crewId, eventId)}/${name}`]);
   if (error) throw error;
 }
+
+/** Удалить фото чека у встречи (позиции остаются) */
+export async function deleteReceipt(eventId: string, path: string) {
+  if (path) await supabase.storage.from('receipts').remove([path]);
+  const { error } = await supabase.from('events').update({ receipt_path: '', status: '' }).eq('id', eventId);
+  if (error) throw error;
+}
