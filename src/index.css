@@ -472,3 +472,7 @@ html { background: var(--bg) }
 .admin-stats span { color: var(--muted); font-size: 13px }
 .admin-stats i { display: block; font-style: normal; font-size: 12px; color: var(--hop); margin-top: 4px }
 .admin-row { align-items: flex-start }
+
+.member-items + .kv, .member-items + .kv-total { border-top: 1px solid var(--line) }
+.kv-total span { font-weight: 600 }
+.kv-total b { font-size: 17px }
