@@ -194,11 +194,11 @@ export async function uploadPlacePhoto(crewId: string, placeId: string, dataUrl:
 }
 
 /** Загрузка фото чека и запуск распознавания на сервере */
-export async function recognizeReceipt(crewId: string, eventId: string, blob: Blob) {
+export async function recognizeReceipt(crewId: string, eventId: string, blob: Blob, kind: 'receipt' | 'tickets' = 'receipt') {
   const path = `${crewId}/${eventId}-${Date.now()}.jpg`;
   const up = await supabase.storage.from('receipts').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
   if (up.error) throw up.error;
-  const { data, error } = await supabase.functions.invoke(RECEIPT_FN, { body: { eventId, path } });
+  const { data, error } = await supabase.functions.invoke(RECEIPT_FN, { body: { eventId, path, kind } });
   if (error) throw await functionError(error);
   return data as { count: number; sum: number; total: number; status: string };
 }

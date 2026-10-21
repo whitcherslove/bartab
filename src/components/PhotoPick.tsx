@@ -13,9 +13,11 @@ type Props = {
   galleryLabel?: string;
   className?: string;
   disabled?: boolean;
+  /** выбрать несколько фото из галереи */
+  onFiles?: (files: File[]) => void;
 };
 
-export function PhotoButtons({ onFile, facing = 'environment', cameraLabel = 'Сфотографировать', galleryLabel = 'Из галереи', className = 'btn', disabled }: Props) {
+export function PhotoButtons({ onFile, onFiles, facing = 'environment', cameraLabel = 'Сфотографировать', galleryLabel = 'Из галереи', className = 'btn', disabled }: Props) {
   const pick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     e.target.value = ''; // чтобы можно было выбрать тот же файл ещё раз
@@ -29,7 +31,14 @@ export function PhotoButtons({ onFile, facing = 'environment', cameraLabel = 'С
       </label>
       <label className={className} aria-disabled={disabled}>
         {Icon.image} {galleryLabel}
-        <input type="file" accept="image/*" hidden disabled={disabled} onChange={pick} />
+        <input
+          type="file" accept="image/*" hidden disabled={disabled} multiple={!!onFiles}
+          onChange={(e) => {
+            const list = Array.from(e.target.files ?? []);
+            e.target.value = '';
+            if (onFiles && list.length) onFiles(list); else if (list[0]) onFile(list[0]);
+          }}
+        />
       </label>
     </>
   );

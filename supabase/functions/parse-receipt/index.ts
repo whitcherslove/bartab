@@ -46,6 +46,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     eventId = String(body.eventId ?? '');
     const path = String(body.path ?? '');
+    const kind = body.kind === 'tickets' ? 'tickets' : 'receipt';
     if (!eventId || !path) return json({ error: 'Нет eventId или path' }, 400);
 
     const { data: ev, error: evErr } = await db
@@ -53,18 +54,20 @@ Deno.serve(async (req) => {
       .select('id, crew_id')
       .eq('id', eventId)
       .single();
-    if (evErr || !ev) return json({ error: 'Посиделка не найдена или нет доступа' }, 404);
+    if (evErr || !ev) return json({ error: 'Встреча не найдена или нет доступа' }, 404);
     if (!path.startsWith(`${ev.crew_id}/`)) return json({ error: 'Фото не из этой компании' }, 403);
 
-    await db.from('events').update({ status: '⏳ Распознаю чек…', receipt_path: path }).eq('id', eventId);
+    await db.from('events').update({ status: kind === 'tickets' ? '⏳ Распознаю билеты…' : '⏳ Распознаю чек…', receipt_path: path }).eq('id', eventId);
 
     const { data: file, error: fileErr } = await db.storage.from('receipts').download(path);
     if (fileErr || !file) throw new Error('Не удалось прочитать фото: ' + (fileErr?.message ?? 'нет файла'));
     const bytes = new Uint8Array(await file.arrayBuffer());
 
-    const receipt = await parseWithGemini(bytes, file.type || 'image/jpeg');
+    if (kind === 'tickets') return json(await handleTickets(db, eventId, bytes, file.type || 'image/jpeg'));
+
+    const receipt = await parseWithGemini(bytes, file.type || 'image/jpeg', PROMPT) as Receipt;
     const rows = normalize(receipt);
-    if (!rows.length) throw new Error('Не нашёл позиций на фото. Попробуй сфотографировать чек ровнее и ближе.');
+    if (!rows.length) throw new Error('Позиции на фото не найдены. Попробуй сфотографировать чек ровнее и ближе.');
 
     // Позиции добавляются без людей — кто что пил, отмечают в приложении
     const items = rows.map((r) => ({ id: crypto.randomUUID(), event_id: eventId, name: r.name, price: r.price, qty: r.qty, split_mode: 'equal' }));
@@ -90,6 +93,49 @@ Deno.serve(async (req) => {
     return json({ error: msg }, 500);
   }
 });
+
+// ---------- Билеты в кино ----------
+
+type Tickets = { film?: string; date?: string; time?: string; hall?: string; tickets?: { row?: string | number; seat?: string | number; price?: number }[]; total?: number };
+
+const TICKETS_PROMPT = [
+  'Это скриншот или фото билетов в кино (может быть один или несколько билетов).',
+  'Извлеки данные и верни только JSON такого вида:',
+  '{"film":"","date":"","time":"","hall":"","tickets":[{"row":"","seat":"","price":0}],"total":0}',
+  'Правила:',
+  '- film: название фильма; time: время сеанса ЧЧ:ММ; hall: зал (как написано);',
+  '- tickets: по одной записи на каждое место; row — ряд, seat — место, price — цена этого билета;',
+  '- если цена указана общая на несколько билетов — раздели её поровну между ними;',
+  '- если ряд или место не видны — оставь пустую строку;',
+  '- QR-коды и штрихкоды не расшифровывай, читай только напечатанный текст;',
+  '- числа без валюты, десятичный разделитель — точка.',
+].join('\n');
+
+// deno-lint-ignore no-explicit-any
+async function handleTickets(db: any, eventId: string, bytes: Uint8Array, mime: string) {
+  const t = await parseWithGemini(bytes, mime, TICKETS_PROMPT) as Tickets;
+  const list = (t.tickets ?? []).map((x) => ({ row: String(x.row ?? '').trim(), seat: String(x.seat ?? '').trim(), price: Number(x.price) || 0 }));
+  if (!list.length) throw new Error('Билеты на фото не найдены. Загрузи скриншот, где видны ряд, место и цена.');
+  // общая цена без цен на билеты — делим поровну
+  if (list.every((x) => !x.price) && Number(t.total) > 0) list.forEach((x) => { x.price = Number(t.total) / list.length; });
+
+  const items = list.map((x) => ({
+    id: crypto.randomUUID(),
+    event_id: eventId,
+    name: x.row || x.seat ? `Билет · ${[x.row && `ряд ${x.row}`, x.seat && `место ${x.seat}`].filter(Boolean).join(', ')}` : 'Билет',
+    price: Math.round(x.price * 100) / 100,
+    qty: 1,
+    split_mode: 'equal',
+  }));
+  const { error } = await db.from('items').insert(items);
+  if (error) throw new Error('Не удалось сохранить билеты: ' + error.message);
+
+  const sum = items.reduce((s: number, i: { price: number }) => s + i.price, 0);
+  const film = [t.film, t.time, t.hall && (/зал/i.test(t.hall) ? t.hall : `зал ${t.hall}`)].filter(Boolean).join(' · ');
+  const status = `🎬 ${film ? film + ' — ' : ''}билетов: ${items.length}, на ${fmt(sum)}`;
+  await db.from('events').update({ status }).eq('id', eventId);
+  return { count: items.length, sum, total: Number(t.total) || 0, status };
+}
 
 /** Приводим ответ модели к аккуратным строкам */
 function normalize(r: Receipt) {
@@ -135,12 +181,12 @@ const PROMPT = [
 ].join('\n');
 
 /** Gemini с повторами при перегрузке и запасной моделью */
-async function parseWithGemini(bytes: Uint8Array, mime: string): Promise<Receipt> {
+async function parseWithGemini(bytes: Uint8Array, mime: string, prompt: string): Promise<unknown> {
   const apiKey = Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) throw new Error('Не задан секрет GEMINI_API_KEY');
 
   const payload = JSON.stringify({
-    contents: [{ parts: [{ inline_data: { mime_type: mime, data: toBase64(bytes) } }, { text: PROMPT }] }],
+    contents: [{ parts: [{ inline_data: { mime_type: mime, data: toBase64(bytes) } }, { text: prompt }] }],
     generationConfig: { responseMimeType: 'application/json', temperature: 0, thinkingConfig: { thinkingLevel: 'low' } },
   });
 
