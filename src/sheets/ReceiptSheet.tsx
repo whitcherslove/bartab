@@ -69,7 +69,7 @@ export function ReceiptSheet({ eventId }: { eventId: string }) {
 
   return (
     <>
-      <h4>{tickets ? 'Загрузить билеты' : 'Загрузить чек'}</h4>
+      <h4>{tickets ? 'Цены из билетов' : 'Загрузить чек'}</h4>
       <p style={{ color: 'var(--muted)', margin: '-6px 0 16px', fontSize: 15 }}>
         {tickets
           ? 'Скриншот или фото билетов, где видны ряд, место и цена. Можно выбрать несколько скриншотов сразу — каждый билет станет отдельной позицией.'

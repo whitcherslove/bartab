@@ -375,3 +375,52 @@ export async function fetchMyDebts(userId: string): Promise<{ waiting: OpenDebt[
   const byDate = (a: OpenDebt, b: OpenDebt) => b.date.localeCompare(a.date);
   return { waiting: waiting.sort(byDate), owing: owing.sort(byDate) };
 }
+
+// ---------- QR-коды билетов для входа (просто картинки, без распознавания) ----------
+
+export type TicketQr = { name: string; url: string };
+const qrFolder = (crewId: string, eventId: string) => `${crewId}/${eventId}/qr`;
+
+/** Сжать бережно: QR должен оставаться чётким */
+function qrJpeg(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 1800 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      const ctx = c.getContext('2d');
+      if (ctx) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height); }
+      URL.revokeObjectURL(img.src);
+      c.toBlob((b) => (b ? resolve(b) : reject(new Error('Не удалось обработать фото'))), 'image/jpeg', 0.92);
+    };
+    img.onerror = () => reject(new Error('Не удалось открыть фото'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+export async function listTicketQrs(crewId: string, eventId: string): Promise<TicketQr[]> {
+  const folder = qrFolder(crewId, eventId);
+  const { data, error } = await supabase.storage.from('receipts').list(folder, { limit: 50, sortBy: { column: 'name', order: 'asc' } });
+  if (error) throw error;
+  const files = (data ?? []).filter((f) => f.name && !f.name.startsWith('.'));
+  if (!files.length) return [];
+  const { data: signed, error: e2 } = await supabase.storage.from('receipts').createSignedUrls(files.map((f) => `${folder}/${f.name}`), 60 * 60);
+  if (e2) throw e2;
+  return files.map((f, i) => ({ name: f.name, url: signed?.[i]?.signedUrl ?? '' })).filter((x) => x.url);
+}
+
+export async function addTicketQrs(crewId: string, eventId: string, files: File[]) {
+  for (const f of files) {
+    const blob = await qrJpeg(f);
+    const path = `${qrFolder(crewId, eventId)}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.jpg`;
+    const { error } = await supabase.storage.from('receipts').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+    if (error) throw error;
+  }
+}
+
+export async function removeTicketQr(crewId: string, eventId: string, name: string) {
+  const { error } = await supabase.storage.from('receipts').remove([`${qrFolder(crewId, eventId)}/${name}`]);
+  if (error) throw error;
+}

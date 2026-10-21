@@ -11,6 +11,7 @@ import { EventSheet } from '../sheets/EventSheet';
 import { ItemSheet } from '../sheets/ItemSheet';
 import { MemberSheet } from '../sheets/MemberSheet';
 import { ReceiptBlock } from '../components/ReceiptBlock';
+import { TicketQrBlock } from '../components/TicketQrBlock';
 import { ChatSheet } from '../sheets/ChatSheet';
 
 export function EventScreen({ id }: { id: string }) {
@@ -88,6 +89,7 @@ export function EventScreen({ id }: { id: string }) {
       </>)}
 
       <ReceiptBlock ev={ev} />
+      {place?.category === 'cinema' && <TicketQrBlock ev={ev} />}
 
       <h3>Плательщик <small>кто заплатил по счёту</small></h3>
       <div className="chips">

@@ -27,8 +27,8 @@ export function ReceiptBlock({ ev }: { ev: BarEvent }) {
       <button className="receipt-cta" onClick={upload}>
         <span className="receipt-cta-ico">{Icon.cam}</span>
         <span className="grow">
-          <b>{tickets ? 'Загрузить билеты' : 'Загрузить чек'}</b>
-          <span>{ev.status || (tickets ? 'Скриншот или фото билетов — места и цены добавятся сами' : 'Сфотографируй — позиции добавятся сами')}</span>
+          <b>{tickets ? 'Цены из билетов' : 'Загрузить чек'}</b>
+          <span>{ev.status || (tickets ? 'Загрузи скриншоты билетов — места и цены станут позициями' : 'Сфотографируй — позиции добавятся сами')}</span>
         </span>
       </button>
     );

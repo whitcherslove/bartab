@@ -484,3 +484,13 @@ html { background: var(--bg) }
 .why-crew b { font: 600 16px/1.3 var(--display) }
 .why-crew div { display: flex; gap: 10px; color: var(--muted) }
 .why-crew span { flex: none }
+
+/* ===== QR для входа ===== */
+.qr-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px }
+.qr-thumb { aspect-ratio: 1; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: #fff; padding: 0 }
+.qr-thumb img { width: 100%; height: 100%; object-fit: cover; display: block }
+.qr-add { background: var(--surface); border-style: dashed; color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px }
+.qr-add svg { width: 22px; height: 22px }
+.qr-full { background: #fff; border-radius: 16px; padding: 12px; display: grid; place-items: center }
+.qr-full img { max-width: 100%; max-height: 62vh; object-fit: contain; display: block }
+.spinner.small { width: 22px; height: 22px; border-width: 3px }
