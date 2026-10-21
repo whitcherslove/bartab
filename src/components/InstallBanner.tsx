@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useUI } from '../lib/ui';
-import { canPrompt, isInAppBrowser, isIOS, isStandalone, onInstallChange, promptInstall } from '../lib/install';
+import { canPrompt, isPhone, isStandalone, onInstallChange, promptInstall } from '../lib/install';
 import { InstallHelp } from './InstallCard';
 
 const HIDE_KEY = 'bartab-install-hidden-until';
-const isPhone = () => window.matchMedia('(pointer: coarse)').matches || /android|iphone|ipad|ipod/i.test(navigator.userAgent);
 
 /** Плашка «Установить» — только в браузере на телефоне, в установленном приложении её нет */
 export function InstallBanner() {
@@ -16,7 +15,6 @@ export function InstallBanner() {
   useEffect(() => onInstallChange(() => force((n) => n + 1)), []);
 
   if (hidden || isStandalone() || !isPhone()) return null;
-  if (!canPrompt() && !isIOS() && !isInAppBrowser()) return null; // браузер не умеет ставить приложения
 
   const install = async () => {
     if (canPrompt()) {

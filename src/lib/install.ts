@@ -29,3 +29,20 @@ export const isStandalone = () =>
 export const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 /** Браузер внутри Telegram/Instagram/VK и т. п. — там установить нельзя */
 export const isInAppBrowser = () => /Telegram|Instagram|FBAN|FBAV|VKClient|\bLine\b|Twitter/i.test(navigator.userAgent);
+
+export type Browser = 'yandex' | 'samsung' | 'firefox' | 'edge' | 'chrome' | 'safari' | 'chrome-ios' | 'other';
+
+/** Какой браузер — чтобы показать нужную инструкцию */
+export function detectBrowser(): Browser {
+  const ua = navigator.userAgent;
+  if (/YaBrowser|YaSearchBrowser/i.test(ua)) return 'yandex';
+  if (/SamsungBrowser/i.test(ua)) return 'samsung';
+  if (/Firefox|FxiOS/i.test(ua)) return 'firefox';
+  if (/EdgA|EdgiOS|Edg\//i.test(ua)) return 'edge';
+  if (/CriOS/i.test(ua)) return 'chrome-ios';
+  if (isIOS()) return 'safari';
+  if (/Chrome|Chromium/i.test(ua)) return 'chrome';
+  return 'other';
+}
+
+export const isPhone = () => /android|iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
