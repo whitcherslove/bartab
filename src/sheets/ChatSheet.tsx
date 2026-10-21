@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAccount } from '../lib/account';
 import { useStore } from '../lib/store';
+import { catOf } from '../lib/categories';
 import { useUI } from '../lib/ui';
 import { chatText } from '../lib/messages';
 import { Icon } from '../components/Icons';
@@ -18,7 +19,7 @@ export function ChatSheet({ eventId }: { eventId: string }) {
   if (!ev) return null;
 
   const placeName = state.places.find((p) => p.id === ev.placeId)?.name ?? 'Встреча';
-  const preview = chatText(ev, placeName, nameOf);
+  const preview = chatText(ev, placeName, nameOf, catOf(state.places.find((p) => p.id === ev.placeId)?.category).emoji);
 
   const send = async () => {
     setSending(true);

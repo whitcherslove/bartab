@@ -27,6 +27,7 @@ export function EventSheet({ id }: { id?: string }) {
     if (id) {
       updateEvent(id, (e) => {
         Object.assign(e, { placeId, date, members, currency });
+        if (cat !== 'bar') e.tips = 0; // в магазине и кино чаевых нет
         if (!members.includes(e.payer)) e.payer = '';
         e.settled = e.settled.filter((m) => members.includes(m));
       });

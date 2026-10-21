@@ -15,17 +15,23 @@ export function lineFor(ev: BarEvent, pid: string, name: NameOf) {
   return `${name(pid)}: ${money(st.owed, ev.currency)}${tail}`;
 }
 
-/** Итоги в общий чат */
-export function chatText(ev: BarEvent, placeName: string, name: NameOf) {
-  return `🍻 ${placeName}, ${fdate(ev.date)}\nИтого: ${money(evWithTips(ev), ev.currency)}\n\n${ev.members.map((m) => lineFor(ev, m, name)).join('\n')}`;
+/** Итоги в общий чат — коротко: кто кому сколько переводит */
+export function chatText(ev: BarEvent, placeName: string, name: NameOf, emoji = '🍺') {
+  const head = `${emoji} ${placeName}, ${fdate(ev.date)} · ${money(evWithTips(ev), ev.currency)}`;
+  if (!ev.payer) {
+    const parts = ev.members.map((m) => `${name(m)}: ${money(stats(ev, m).owed, ev.currency)}`);
+    return `${head}\n\n${parts.join('\n')}`;
+  }
+  const lines = ev.members
+    .filter((m) => m !== ev.payer && stats(ev, m).owed >= 1)
+    .map((m) => `${name(m)} → ${name(ev.payer)}: ${money(stats(ev, m).owed, ev.currency)}${ev.settled.includes(m) ? ' ✅' : ''}`);
+  return lines.length ? `${head}\n\n${lines.join('\n')}` : `${head}\n\nВсе в расчёте ✅`;
 }
 
 /** Личное сообщение человеку */
-export function personalText(ev: BarEvent, pid: string, placeName: string, name: NameOf) {
+export function personalText(ev: BarEvent, pid: string, placeName: string, name: NameOf, emoji = '🍺') {
   const st = stats(ev, pid);
-  const head = `🍻 ${placeName}, ${fdate(ev.date)}\n`;
-  if (ev.payer && !st.isPayer && !st.settled) {
-    return head + `С тебя ${money(st.owed, ev.currency)}. Перевод для: ${name(ev.payer)} 🙏`;
-  }
-  return head + lineFor(ev, pid, name);
+  const head = `${emoji} ${placeName}, ${fdate(ev.date)}\n`;
+  if (ev.payer && !st.isPayer && !st.settled && st.owed >= 1) return head + `С тебя ${money(st.owed, ev.currency)} → ${name(ev.payer)} 🙏`;
+  return head + `Твоя часть: ${money(st.owed, ev.currency)}`;
 }

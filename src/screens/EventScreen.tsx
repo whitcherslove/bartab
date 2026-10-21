@@ -72,6 +72,11 @@ export function EventScreen({ id }: { id: string }) {
         {place && <MapButtons place={place} />}
       </div>
 
+      {place?.category && place.category !== 'bar' ? (
+        <div className="totals2">
+          <div className="total-main"><b className="num">{money(evTotal(ev), ev.currency)}</b><span>всего</span></div>
+        </div>
+      ) : (<>
       <div className="totals2">
         <div className="total-main"><b className="num">{money(evWithTips(ev), ev.currency)}</b><span>всего</span></div>
         <div className="total-sub num">
@@ -80,6 +85,7 @@ export function EventScreen({ id }: { id: string }) {
         </div>
       </div>
       <TipsCard key={ev.id} ev={ev} />
+      </>)}
 
       <ReceiptBlock ev={ev} />
 
@@ -124,15 +130,18 @@ export function EventScreen({ id }: { id: string }) {
 
       {payer && (
         <>
-          <h3>Переводы для {nameOf(payer)} <small>{doneCount} из {debtors.length}</small></h3>
+          <h3>
+            <span className="transfers-title">Переводы → <Av id={payer} sm /> {nameOf(payer)}</span>
+            <small>{doneCount} из {debtors.length}</small>
+          </h3>
           <div className="list">
             {debtors.length === 0 && <div className="empty">Больше никого нет</div>}
             {debtors.map((m) => {
               const st = stats(ev, m);
               return (
                 <div key={m} className={'row' + (st.settled ? ' done' : '')}>
-                  <Av id={m} /><span className="arrow" aria-hidden="true">→</span><Av id={payer} />
-                  <div className="grow"><div className="t">{nameOf(m)} → {nameOf(payer)}</div><div className="s">{st.settled ? 'переведено' : 'ещё не переведено'}</div></div>
+                  <Av id={m} />
+                  <div className="grow"><div className="t">{nameOf(m)}</div><div className="s">{st.settled ? 'переведено' : 'ещё не переведено'}</div></div>
                   <span className="amt num">{money(st.owed, ev.currency)}</span>
                   <button className={'btn sm ' + (st.settled ? 'undo' : 'ghost')} onClick={() => toggleSettled(m)}>
                     {st.settled ? 'Отменить' : 'Готово'}
