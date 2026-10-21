@@ -160,9 +160,8 @@ export function ProfileScreen() {
         {ACCENTS.map((a) => {
           const dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
           return (
-            <button key={a.id} type="button" className="swatch" aria-pressed={accent === a.id} onClick={() => { setAccent(a.id); setAccentState(a.id); }}>
+            <button key={a.id} type="button" className="swatch" aria-pressed={accent === a.id} aria-label={a.name} title={a.name} onClick={() => { setAccent(a.id); setAccentState(a.id); }}>
               <i style={{ background: dark ? a.dark : a.light }} />
-              {a.name}
             </button>
           );
         })}
