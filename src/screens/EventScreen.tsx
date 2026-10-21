@@ -69,13 +69,26 @@ export function EventScreen({ id }: { id: string }) {
           {place?.address && <div>{place.address}</div>}
         </div>
       </PlacePhoto>
-      <div className="event-meta">
-        <span className="date-chip">{Icon.calendar} {fdate(ev.date)}</span>
-        {place?.category === 'cinema' && (ev.film || ev.sessionTime || ev.hall) && (
-          <span className="date-chip session-chip">🎬 {[ev.film, ev.sessionTime && `🕖 ${ev.sessionTime}`, ev.hall].filter(Boolean).join(' · ')}</span>
-        )}
-        {place && <MapButtons place={place} />}
-      </div>
+      {(() => {
+        const session = place?.category === 'cinema' && (ev.film || ev.sessionTime || ev.hall);
+        return (
+          <>
+            {session && (
+              <div className="session-card">
+                <span className="session-ico" aria-hidden="true">🎬</span>
+                <div className="grow">
+                  <div className="session-film">{ev.film || 'Сеанс'}</div>
+                  <div className="session-meta">{[fdate(ev.date), ev.sessionTime, ev.hall].filter(Boolean).join(' · ')}</div>
+                </div>
+              </div>
+            )}
+            <div className="event-meta">
+              {!session && <span className="date-chip">{Icon.calendar} {fdate(ev.date)}</span>}
+              {place && <MapButtons place={place} />}
+            </div>
+          </>
+        );
+      })()}
 
       {place?.category && place.category !== 'bar' ? (
         <div className="totals2">
