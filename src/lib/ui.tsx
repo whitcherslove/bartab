@@ -13,6 +13,8 @@ type UI = {
   open: (node: ReactNode) => void;
   close: () => void;
   toast: (text: string) => void;
+  /** открыта ли сейчас шторка */
+  hasSheet: boolean;
 };
 
 const Ctx = createContext<UI | null>(null);
@@ -187,7 +189,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   }, [sheet, close]);
 
   return (
-    <Ctx.Provider value={{ view, go, back, closeAndBack, open, close, toast }}>
+    <Ctx.Provider value={{ view, go, back, closeAndBack, open, close, toast, hasSheet: !!sheet }}>
       {children}
       {sheet && (
         <div className="scrim" ref={scrimEl} onClick={(e) => e.target === e.currentTarget && close()}>

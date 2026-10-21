@@ -1,19 +1,50 @@
 import { useEffect, useState } from 'react';
 import { useOptionalUI } from '../lib/ui';
-import { canPrompt, detectBrowser, isInAppBrowser, isIOS, isPhone, isStandalone, onInstallChange, promptInstall } from '../lib/install';
+import {
+  canPrompt, detectBrowser, dismissInstall, isInAppBrowser, isInstalled, isIOS, isPhone, isStandalone,
+  onInstallChange, promptInstall,
+} from '../lib/install';
 
-const Steps = ({ items }: { items: string[] }) => (
-  <ol className="steps" style={{ margin: 0 }}>{items.map((t) => <li key={t}>{t}</li>)}</ol>
-);
-
-/** Как установить BarTab: кнопка, если браузер умеет, иначе инструкция для конкретного браузера */
-export function InstallHelp({ compact }: { compact?: boolean }) {
-  const ui = useOptionalUI();
+/** Перерисовать при изменении состояния установки */
+function useInstallState() {
   const [, force] = useState(0);
   useEffect(() => onInstallChange(() => force((n) => n + 1)), []);
+}
 
-  if (isStandalone()) {
-    return <div className="install-help"><b>BarTab уже установлен ✅</b><span>Открывай его с иконки на экране.</span></div>;
+/** Шаги для браузеров без кнопки установки */
+export function installSteps(): string[] {
+  const b = detectBrowser();
+  if (b === 'safari') return ['Нажми «Поделиться» внизу Safari (квадрат со стрелкой вверх)', 'Выбери «На экран „Домой“» → «Добавить»', 'Открой BarTab с иконки и войди ещё раз — iPhone хранит данные приложения отдельно'];
+  if (b === 'chrome-ios' || (isIOS() && b !== 'other')) return ['Нажми «Поделиться» в адресной строке', 'Выбери «На экран „Домой“» → «Добавить»', 'Если такого пункта нет — открой ссылку в Safari'];
+  if (b === 'yandex') return ['Нажми меню браузера (три точки или полоски)', 'Выбери «Добавить ярлык» или «Установить приложение»'];
+  if (b === 'samsung') return ['Нажми меню ☰ внизу', 'Выбери «Добавить страницу на» → «Главный экран»'];
+  if (b === 'firefox') return ['Нажми меню ⋮', 'Выбери «Установить» или «Добавить на главный экран»'];
+  if (!isPhone()) return ['В Chrome или Edge нажми значок установки справа в адресной строке', 'Или открой меню ⋮ → «Установить BarTab»'];
+  return ['Нажми меню ⋮ в правом верхнем углу', 'Выбери «Установить приложение» или «Добавить на главный экран»'];
+}
+
+const Steps = () => <ol className="steps" style={{ margin: 0 }}>{installSteps().map((t) => <li key={t}>{t}</li>)}</ol>;
+
+/**
+ * Одно действие установки, в зависимости от телефона:
+ * кнопка (Android) → после согласия «Готово»; иначе шаги; в Telegram — «открой в браузере».
+ * onDone — закрыть (кнопки «Понятно» / «Не сейчас»); без onDone кнопок закрытия нет (карточка в профиле).
+ */
+export function InstallAction({ onDone, doneText }: { onDone?: () => void; doneText?: string }) {
+  useInstallState();
+  const ui = useOptionalUI();
+  const [justInstalled, setJustInstalled] = useState(false);
+  const finish = (dismiss: boolean) => { if (dismiss) dismissInstall(); onDone?.(); };
+
+  // уже установлено (в том числе только что)
+  if (justInstalled || isInstalled()) {
+    return (
+      <div className="install-help">
+        <b>Готово! BarTab на экране телефона ✅</b>
+        <span>{doneText ?? 'Открой его с иконки — так быстрее и удобнее.'}</span>
+        {onDone && <button className="btn primary block" onClick={() => finish(false)}>Понятно</button>}
+      </div>
+    );
   }
 
   if (isInAppBrowser()) {
@@ -21,42 +52,41 @@ export function InstallHelp({ compact }: { compact?: boolean }) {
       <div className="install-help">
         <b>Открой ссылку в браузере</b>
         <span>Из Telegram, Instagram или VK приложение не установить. Нажми «⋯» вверху и выбери «Открыть в {isIOS() ? 'Safari' : 'браузере'}».</span>
+        {onDone && <button className="btn block" onClick={() => finish(true)}>Понятно</button>}
       </div>
     );
   }
 
   if (canPrompt()) {
-    const install = async () => { if (await promptInstall()) ui?.toast('BarTab появится на экране телефона'); };
+    const install = async () => {
+      if (await promptInstall()) { setJustInstalled(true); ui?.toast('BarTab появится на экране телефона'); }
+    };
     return (
       <div className="install-help">
-        {!compact && <span>Откроется как обычное приложение, без браузера.</span>}
-        <button className="btn primary block" onClick={install}>Установить на телефон</button>
+        <button className="btn primary block" onClick={install}>Установить приложение</button>
+        {onDone && <button className="link-btn install-later" onClick={() => finish(true)}>Не сейчас</button>}
       </div>
     );
   }
 
-  const b = detectBrowser();
-  let steps: string[];
-  if (b === 'safari') steps = ['Нажми «Поделиться» внизу Safari (квадрат со стрелкой вверх)', 'Пролистай и выбери «На экран „Домой“» → «Добавить»', 'Открой BarTab с иконки и войди ещё раз — iPhone хранит данные приложения отдельно'];
-  else if (b === 'chrome-ios' || (isIOS() && b !== 'other')) steps = ['Нажми «Поделиться» в адресной строке', 'Выбери «На экран „Домой“» → «Добавить»', 'Если такого пункта нет — открой ссылку в Safari'];
-  else if (b === 'yandex') steps = ['Нажми меню браузера (три точки или полоски)', 'Выбери «Добавить ярлык» или «Установить приложение»', 'Подтверди — иконка BarTab появится на экране'];
-  else if (b === 'samsung') steps = ['Нажми меню ☰ внизу', 'Выбери «Добавить страницу на» → «Главный экран»', 'Подтверди — иконка BarTab появится на экране'];
-  else if (b === 'firefox') steps = ['Нажми меню ⋮', 'Выбери «Установить» или «Добавить на главный экран»'];
-  else if (!isPhone()) steps = ['В Chrome или Edge нажми значок установки справа в адресной строке', 'Или открой меню ⋮ → «Установить BarTab»'];
-  else steps = ['Нажми меню ⋮ в правом верхнем углу', 'Выбери «Установить приложение» или «Добавить на главный экран»', 'Если пункта нет — возможно, BarTab уже установлен: поищи иконку на экране'];
-
-  return <div className="install-help"><Steps items={steps} /></div>;
+  return (
+    <div className="install-help">
+      <Steps />
+      {onDone && <button className="btn primary block" onClick={() => finish(true)}>Понятно</button>}
+    </div>
+  );
 }
 
-/** Карточка в профиле — только в браузере */
+/** Карточка в профиле — запасной путь, только в браузере и пока не установлено */
 export function InstallCard() {
-  const [, force] = useState(0);
-  useEffect(() => onInstallChange(() => force((n) => n + 1)), []);
+  useInstallState();
   if (isStandalone()) return null;
   return (
     <>
       <h3>Приложение на телефоне</h3>
-      <div className="list form-card"><InstallHelp /></div>
+      <div className="list form-card">
+        <InstallAction doneText="Открой BarTab с иконки на экране телефона." />
+      </div>
     </>
   );
 }

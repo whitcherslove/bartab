@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { humanError, supabase } from '../../lib/supabase';
 import { pendingJoinCode } from '../../lib/account';
-import { InstallHelp } from '../../components/InstallCard';
+import { InstallAction } from '../../components/InstallCard';
 import { isStandalone } from '../../lib/install';
 import { Brand } from '../../components/common';
 
@@ -13,7 +13,11 @@ export function LoginScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const invited = !!pendingJoinCode();
-  const installIntro = (() => { try { return !!localStorage.getItem('bartab-install-intro') && !isStandalone(); } catch { return false; } })();
+  const [installIntro, setInstallIntro] = useState(() => { try { return !!localStorage.getItem('bartab-install-intro') && !isStandalone(); } catch { return false; } });
+  const continueInBrowser = () => {
+    try { localStorage.removeItem('bartab-install-intro'); } catch { /* ignore */ }
+    setInstallIntro(false);
+  };
 
   const send = async () => {
     const e = email.trim().toLowerCase();
@@ -56,17 +60,25 @@ export function LoginScreen() {
     // при успехе AccountGate сам переключит экран
   };
 
+  // ссылка «Позвать в BarTab»: сначала только установка, вход — по ссылке ниже
+  if (installIntro) {
+    return (
+      <main className="auth">
+        <Brand />
+        <p className="auth-sub">Делим счёт за встречи без калькулятора.</p>
+        <div className="auth-card">
+          <h4>Поставь BarTab на телефон</h4>
+          <InstallAction doneText="Открой BarTab с иконки на экране и войди там." />
+        </div>
+        <div className="auth-links"><button type="button" onClick={continueInBrowser}>Продолжить в браузере</button></div>
+      </main>
+    );
+  }
+
   return (
     <main className="auth">
       <Brand />
       <p className="auth-sub">{invited ? 'Тебя позвали в компанию. Войди, чтобы присоединиться.' : 'Делим счёт за встречи без калькулятора.'}</p>
-      {installIntro && (
-        <div className="auth-card">
-          <h4>Сначала поставь приложение</h4>
-          <InstallHelp />
-          <p className="hint" style={{ textAlign: 'center', margin: '12px 0 0' }}>Потом открой BarTab с экрана телефона и войди там.</p>
-        </div>
-      )}
 
       {!sentTo ? (
         <form className="auth-card" onSubmit={(ev) => { ev.preventDefault(); send(); }}>

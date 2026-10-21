@@ -7,7 +7,7 @@ import { getTabOrder, onTabsChange, TAB_ICONS, TAB_LABELS, type TabId } from './
 import { WelcomeSheet } from './sheets/WelcomeSheet';
 import { InstallBanner } from './components/InstallBanner';
 import { InstallSheet } from './sheets/InstallSheet';
-import { isStandalone } from './lib/install';
+import { shouldOfferInstall } from './lib/install';
 import { EventsScreen } from './screens/EventsScreen';
 import { EventScreen } from './screens/EventScreen';
 import { CrewScreen } from './screens/CrewScreen';
@@ -40,7 +40,7 @@ function Shell() {
         open(<WelcomeSheet />);
       } else if (localStorage.getItem('bartab-install-intro')) {
         localStorage.removeItem('bartab-install-intro');
-        if (!isStandalone()) open(<InstallSheet />);
+        if (shouldOfferInstall()) open(<InstallSheet />);
       }
     } catch { /* ignore */ }
   }, [open]);

@@ -66,7 +66,12 @@ export function CrewSetup({ myName, error: outerError, onDone, onSignOut, embedd
   return (
     <main className="auth">
       <Brand />
-      <p className="auth-sub">Компания — это друзья, с которыми вы ходите в бары, кино и магазины. Встречи, места и переводы у неё общие.</p>
+      <div className="why-crew">
+        <b>Почему сначала компания?</b>
+        <div><span aria-hidden="true">👥</span>В BarTab всё делится внутри компании: встречи, места и переводы общие для её участников.</div>
+        <div><span aria-hidden="true">➕</span>Создай компанию для своих друзей или вступи по ссылке-приглашению.</div>
+        <div><span aria-hidden="true">🔓</span>После этого откроется всё приложение.</div>
+      </div>
       {body}
       {onSignOut && <div className="auth-links"><button type="button" onClick={onSignOut}>Выйти из аккаунта</button></div>}
     </main>
