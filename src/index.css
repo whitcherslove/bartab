@@ -525,3 +525,9 @@ html { background: var(--bg) }
 .swatch i { width: 32px; height: 32px }
 .swatch[aria-pressed="true"] { box-shadow: none }
 .swatch[aria-pressed="true"] i { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--amber) }
+
+/* ===== Цвета: компактный ряд, листается вбок, если не помещается ===== */
+.swatches { display: flex; gap: 4px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: 6px 4px; margin: 0 -4px; max-width: calc(100% + 8px); scrollbar-width: none }
+.swatches::-webkit-scrollbar { display: none }
+.swatch { flex: none; width: 40px; height: 40px; padding: 0; aspect-ratio: auto; scroll-snap-align: start }
+.swatch i { width: 30px; height: 30px }
