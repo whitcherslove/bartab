@@ -11,11 +11,11 @@ type ShareRow = { person_id: string; qty: number };
 type ItemRow = { id: string; name: string; price: number | string; qty: number; split_mode: 'equal' | 'qty'; created_at: string; item_shares: ShareRow[] };
 type EventRow = {
   id: string; place_id: string | null; date: string; tips: number | string; tips_mode: 'sum' | 'pct'; currency: string;
-  payer_id: string | null; status: string; receipt_path: string; event_members: { person_id: string; settled: boolean }[]; items: ItemRow[];
+  payer_id: string | null; status: string; receipt_path: string; film?: string; session_time?: string; hall?: string; event_members: { person_id: string; settled: boolean }[]; items: ItemRow[];
 };
 type ChatRow = { id: string; name: string; chat_id: string };
 
-const EVENT_SELECT = 'id, place_id, date, tips, tips_mode, currency, payer_id, status, receipt_path, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, item_shares(person_id, qty))';
+const EVENT_SELECT = 'id, place_id, date, tips, tips_mode, currency, payer_id, status, receipt_path, film, session_time, hall, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, item_shares(person_id, qty))';
 
 function mapEvent(e: EventRow, byPeopleOrder: (a: string, b: string) => number = () => 0): BarEvent {
   return {
@@ -28,6 +28,9 @@ function mapEvent(e: EventRow, byPeopleOrder: (a: string, b: string) => number =
     payer: e.payer_id ?? '',
     status: e.status,
     receiptPath: e.receipt_path ?? '',
+    film: e.film ?? '',
+    sessionTime: e.session_time ?? '',
+    hall: e.hall ?? '',
     members: e.event_members.map((m) => m.person_id).sort(byPeopleOrder),
     settled: e.event_members.filter((m) => m.settled).map((m) => m.person_id),
     items: [...e.items]
@@ -117,6 +120,7 @@ export async function pushDiff(prev: State, next: State, crewId: string) {
   const evRow = (e: BarEvent) => ({
     id: e.id, crew_id: crewId, place_id: e.placeId || null, date: e.date, tips: e.tips,
     tips_mode: e.tipsMode, currency: e.currency || 'RUB', payer_id: e.payer || null, status: e.status,
+    film: e.film ?? '', session_time: e.sessionTime ?? '', hall: e.hall ?? '',
   });
   const events = next.events.filter((e) => {
     const o = prevEvents.get(e.id);

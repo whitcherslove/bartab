@@ -21,12 +21,16 @@ export function EventSheet({ id }: { id?: string }) {
   const [date, setDate] = useState(ev?.date ?? todayIso());
   const [members, setMembers] = useState<string[]>(ev?.members ?? state.people.filter((p) => !p.archived).map((p) => p.id));
   const [currency, setCurrency] = useState(ev?.currency ?? getDefaultCurrency());
+  const [film, setFilm] = useState(ev?.film ?? '');
+  const [sessionTime, setSessionTime] = useState(ev?.sessionTime ?? '');
+  const [hall, setHall] = useState(ev?.hall ?? '');
 
   const save = () => {
     if (!members.length) return ui.toast('Отметь хотя бы одного участника');
     if (id) {
       updateEvent(id, (e) => {
         Object.assign(e, { placeId, date, members, currency });
+        if (cat === 'cinema') Object.assign(e, { film: film.trim(), sessionTime: sessionTime.trim(), hall: hall.trim() });
         if (cat !== 'bar') e.tips = 0; // в магазине и кино чаевых нет
         if (!members.includes(e.payer)) e.payer = '';
         e.settled = e.settled.filter((m) => members.includes(m));
@@ -36,7 +40,7 @@ export function EventSheet({ id }: { id?: string }) {
     } else {
       const newId = uid();
       update((d) => {
-        d.events.push({ id: newId, date, placeId, members, currency, tips: 0, tipsMode: 'sum', payer: '', settled: [], status: '', items: [] });
+        d.events.push({ id: newId, date, placeId, members, currency, film: cat === 'cinema' ? film.trim() : '', sessionTime: cat === 'cinema' ? sessionTime.trim() : '', hall: cat === 'cinema' ? hall.trim() : '', tips: 0, tipsMode: 'sum', payer: '', settled: [], status: '', items: [] });
       });
       ui.go({ screen: 'event', id: newId });
       ui.toast('Встреча создана');
@@ -77,6 +81,15 @@ export function EventSheet({ id }: { id?: string }) {
           </select>
         </label>
       </div>
+      {cat === 'cinema' && (
+        <>
+          <label className="field"><span>Фильм</span><input value={film} onChange={(e) => setFilm(e.target.value)} placeholder="Подтянется с билетов или впиши вручную" /></label>
+          <div className="two">
+            <label className="field"><span>Время сеанса</span><input type="time" value={sessionTime} onChange={(e) => setSessionTime(e.target.value)} /></label>
+            <label className="field"><span>Зал</span><input value={hall} onChange={(e) => setHall(e.target.value)} placeholder="Зал 3" /></label>
+          </div>
+        </>
+      )}
       <div className="field">
         <span>Участники</span>
         <PeopleChips ids={state.people.filter((p) => !p.archived || members.includes(p.id)).map((p) => p.id)} selected={members} onToggle={(pid) => setMembers(toggleIn(members, pid))} />

@@ -59,9 +59,10 @@ export const parseNum = (v: string) => Number(v.replace(',', '.').trim()) || 0;
 /** Переключить элемент в списке */
 export const toggleIn = (list: string[], id: string) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
 
-/** Пометка для встречи по дате: «Сегодня», «Скоро» или ничего */
+/** Пометка для встречи по дате: «Сегодня», «Скоро» или «Прошла» */
 export function dateBadge(iso: string): string {
   const today = todayIso();
   if (iso === today) return 'Сегодня';
-  return iso > today ? 'Скоро' : '';
+  return iso > today ? 'Скоро' : 'Прошла';
 }
+export const badgeClass = (label: string) => 'date-badge' + (label === 'Сегодня' ? ' today' : label === 'Прошла' ? ' past' : '');

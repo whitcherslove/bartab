@@ -105,7 +105,7 @@ const TICKETS_PROMPT = [
   'Извлеки данные и верни только JSON такого вида:',
   '{"film":"","date":"","time":"","hall":"","tickets":[{"row":"","seat":"","price":0}],"total":0}',
   'Правила:',
-  '- film: название фильма; time: время сеанса ЧЧ:ММ; hall: зал (как написано);',
+  '- film: название фильма; date: дата сеанса в формате ГГГГ-ММ-ДД; time: время сеанса ЧЧ:ММ; hall: зал (как написано, например «3» или «IMAX»);',
   '- tickets: по одной записи на каждое место; row — ряд, seat — место, price — цена этого билета;',
   '- если цена указана общая на несколько билетов — раздели её поровну между ними;',
   '- если ряд или место не видны — оставь пустую строку;',
@@ -135,9 +135,17 @@ async function handleTickets(db: any, eventId: string, bytes: Uint8Array, mime: 
   if (error) throw new Error('Не удалось сохранить билеты: ' + error.message);
 
   const sum = items.reduce((s: number, i: { price: number }) => s + i.price, 0);
-  const film = [t.film, t.time, t.hall && (/зал/i.test(t.hall) ? t.hall : `зал ${t.hall}`)].filter(Boolean).join(' · ');
-  const status = `🎬 ${film ? film + ' — ' : ''}билетов: ${items.length}, на ${fmt(sum)}`;
-  await db.from('events').update({ status }).eq('id', eventId);
+  const hall = String(t.hall ?? '').trim();
+  const hallLabel = hall ? (/зал/i.test(hall) ? hall : `Зал ${hall}`) : '';
+  const time = /^\d{1,2}:\d{2}$/.test(String(t.time ?? '').trim()) ? String(t.time).trim().padStart(5, '0') : '';
+  const status = `🎬 Билетов: ${items.length}, на ${fmt(sum)}`;
+  // сохраняем сеанс во встречу; дату — только если она распознана корректно
+  const upd: Record<string, string> = { status };
+  if (t.film) upd.film = String(t.film).trim().slice(0, 120);
+  if (time) upd.session_time = time;
+  if (hallLabel) upd.hall = hallLabel.slice(0, 40);
+  if (/^20\d\d-\d\d-\d\d$/.test(String(t.date ?? '')) && !Number.isNaN(Date.parse(String(t.date)))) upd.date = String(t.date);
+  await db.from('events').update(upd).eq('id', eventId);
   return { count: items.length, sum, total: Number(t.total) || 0, status };
 }
 

@@ -3,7 +3,7 @@ import type { BarEvent, TipsMode } from '../lib/types';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { evTotal, evWithTips, itemTotal, stats, tipAmount } from '../lib/calc';
-import { dateBadge, fdate, money, parseNum } from '../lib/format';
+import { badgeClass, dateBadge, fdate, money, parseNum } from '../lib/format';
 import { Icon } from '../components/Icons';
 import { Av, PlacePhoto } from '../components/common';
 import { MapButtons } from '../components/MapButtons';
@@ -63,7 +63,7 @@ export function EventScreen({ id }: { id: string }) {
       </header>
 
       <PlacePhoto place={place} className="hero">
-        {dateBadge(ev.date) && <span className={'date-badge' + (dateBadge(ev.date) === 'Сегодня' ? ' today' : '')}>{dateBadge(ev.date)}</span>}
+        {dateBadge(ev.date) && <span className={badgeClass(dateBadge(ev.date))}>{dateBadge(ev.date)}</span>}
         <div className="hero-txt">
           <h2>{place?.name ?? 'Без места'}</h2>
           {place?.address && <div>{place.address}</div>}
@@ -71,6 +71,9 @@ export function EventScreen({ id }: { id: string }) {
       </PlacePhoto>
       <div className="event-meta">
         <span className="date-chip">{Icon.calendar} {fdate(ev.date)}</span>
+        {place?.category === 'cinema' && (ev.film || ev.sessionTime || ev.hall) && (
+          <span className="date-chip session-chip">🎬 {[ev.film, ev.sessionTime && `🕖 ${ev.sessionTime}`, ev.hall].filter(Boolean).join(' · ')}</span>
+        )}
         {place && <MapButtons place={place} />}
       </div>
 

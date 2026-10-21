@@ -43,6 +43,10 @@ export type BarEvent = {
   status: string;
   /** путь к фото последнего чека в хранилище receipts ('' — нет) */
   receiptPath?: string;
+  /** кино: фильм, время сеанса, зал */
+  film?: string;
+  sessionTime?: string;
+  hall?: string;
   items: Item[];
 };
 
