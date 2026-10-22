@@ -553,3 +553,10 @@ html { background: var(--bg) }
 .tab-dot { position: absolute; top: -2px; right: -4px; width: 9px; height: 9px; border-radius: 50%; background: var(--cherry); border: 2px solid var(--surface) }
 
 .push-bell { font-size: 44px; line-height: 1 }
+
+/* ===== Уведомления включены ===== */
+.push-on { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px }
+.push-on-text { display: flex; flex-direction: column; gap: 4px }
+.push-on-text b { font-weight: 600; white-space: normal }
+.push-on-text span { color: var(--muted); font-size: 14px }
+.push-off-btn { align-self: flex-start; border: 1px solid var(--line); background: var(--bg); color: var(--ink) }

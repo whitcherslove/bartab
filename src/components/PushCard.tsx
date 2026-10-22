@@ -22,9 +22,12 @@ export function PushCard() {
       <h3>Уведомления</h3>
       <div className="list form-card">
         {st === 'on' && (
-          <div className="row">
-            <div className="grow"><div className="t">Включены на этом устройстве ✅</div><div className="s">Приглашения в компании и распознанные чеки</div></div>
-            <button className="btn undo sm" disabled={busy} onClick={() => run(disablePush, 'Уведомления выключены')}>Выключить</button>
+          <div className="push-on">
+            <div className="push-on-text">
+              <b>🔔 Включены на этом устройстве</b>
+              <span>Приглашения в компании и распознанные чеки</span>
+            </div>
+            <button className="btn sm push-off-btn" disabled={busy} onClick={() => run(disablePush, 'Уведомления выключены')}>Выключить</button>
           </div>
         )}
         {st === 'off' && (
