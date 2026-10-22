@@ -531,3 +531,14 @@ html { background: var(--bg) }
 .swatches::-webkit-scrollbar { display: none }
 .swatch { flex: none; width: 40px; height: 40px; padding: 0; aspect-ratio: auto; scroll-snap-align: start }
 .swatch i { width: 30px; height: 30px }
+
+/* ===== Переводы: только ожидающие ===== */
+.pending-chips { display: flex; flex-wrap: wrap; gap: 8px }
+.pending-chip { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 6px 5px 6px; color: var(--ink); font-size: 14px; max-width: 100% }
+.pending-chip .av { border: 0 }
+.pc-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px }
+.pc-amt { color: var(--cherry); font-weight: 600; white-space: nowrap }
+.pc-check { width: 26px; height: 26px; border-radius: 50%; background: var(--chip); color: var(--muted); display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none }
+.pending-chip:active .pc-check { background: var(--hop); color: #fff }
+.all-done { background: var(--surface); border-radius: 14px; padding: 10px 14px; font-weight: 500 }
+.pending-hint { margin: 8px 2px 0; font-size: 12px }

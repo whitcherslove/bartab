@@ -31,7 +31,6 @@ export function EventScreen({ id }: { id: string }) {
   const place = state.places.find((p) => p.id === ev.placeId);
   const payer = ev.payer;
   const debtors = payer ? ev.members.filter((m) => m !== payer) : [];
-  const doneCount = debtors.filter((m) => ev.settled.includes(m)).length;
   const unassigned = ev.items.filter((it) => !it.consumers.length).length;
 
   const setPayer = (pid: string) =>
@@ -151,30 +150,35 @@ export function EventScreen({ id }: { id: string }) {
         })}
       </div>
 
-      {payer && (
-        <>
-          <h3>
-            <span className="transfers-title">Переводы → <Av id={payer} sm /> {nameOf(payer)}</span>
-            <small>{doneCount} из {debtors.length}</small>
-          </h3>
-          <div className="list">
-            {debtors.length === 0 && <div className="empty">Больше никого нет</div>}
-            {debtors.map((m) => {
-              const st = stats(ev, m);
-              return (
-                <div key={m} className={'row' + (st.settled ? ' done' : '')}>
-                  <Av id={m} />
-                  <div className="grow"><div className="t">{nameOf(m)}</div><div className="s">{st.settled ? 'переведено' : 'ещё не переведено'}</div></div>
-                  <span className="amt num">{money(st.owed, ev.currency)}</span>
-                  <button className={'btn sm ' + (st.settled ? 'undo' : 'ghost')} onClick={() => toggleSettled(m)}>
-                    {st.settled ? 'Отменить' : 'Готово'}
+      {payer && (() => {
+        // переводят только те, у кого есть что переводить
+        const due = debtors.filter((m) => stats(ev, m).owed >= 1);
+        const pending = due.filter((m) => !ev.settled.includes(m));
+        if (!due.length) return null;
+        return (
+          <>
+            <h3>
+              <span className="transfers-title">Переводы → <Av id={payer} sm /> {nameOf(payer)}</span>
+              <small>{due.length - pending.length} из {due.length}</small>
+            </h3>
+            {pending.length ? (
+              <div className="pending-chips">
+                {pending.map((m) => (
+                  <button key={m} className="pending-chip" onClick={() => toggleSettled(m)} aria-label={`Отметить перевод: ${nameOf(m)}`}>
+                    <Av id={m} sm />
+                    <span className="pc-name">{nameOf(m)}</span>
+                    <span className="pc-amt num">{money(stats(ev, m).owed, ev.currency)}</span>
+                    <span className="pc-check" aria-hidden="true">✓</span>
                   </button>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
+                ))}
+              </div>
+            ) : (
+              <div className="all-done">Все перевели ✅</div>
+            )}
+            {pending.length > 0 && <p className="hint pending-hint">Тап по человеку — перевод отмечен. Отменить — через его подставку выше.</p>}
+          </>
+        );
+      })()}
 
       <h3>
         <span>Позиции <small>{ev.items.length}{unassigned > 0 && <span className="unassigned"> · без людей: {unassigned}</span>}</small></span>
