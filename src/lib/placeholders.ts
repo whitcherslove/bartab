@@ -130,7 +130,7 @@ const cinemaScenes: ((h: number) => string)[] = [
     <circle cx="300" cy="150" r="30" fill="${C.amber}"/>${[0, 72, 144, 216, 288].map((a) => `<circle cx="${300 + Math.cos((a * Math.PI) / 180) * 16}" cy="${150 + Math.sin((a * Math.PI) / 180) * 16}" r="6" fill="${C.ink}"/>`).join('')}`,
 ];
 
-const sceneSets: Record<string, ((h: number) => string)[]> = { bar: scenes, shop: shopScenes, cinema: cinemaScenes };
+const sceneSets: Record<string, ((h: number) => string)[]> = { bar: scenes, other: shopScenes, shop: shopScenes, cinema: cinemaScenes };
 
 const cache = new Map<string, string>();
 

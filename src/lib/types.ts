@@ -5,8 +5,8 @@
 export type Person = { id: string; name: string; tg: string; userId: string | null; avatar: string; archived?: boolean };
 
 /** mapUrl — ссылка из Яндекс/Google Карт, lat/lon — точка на карте (если выбрали из поиска) */
-/** category — бар, магазин или кинотеатр */
-export type Place = { id: string; name: string; address: string; hue: number; photo: string; mapUrl: string; lat: number | null; lon: number | null; category: 'bar' | 'shop' | 'cinema' };
+/** category — бар, кинотеатр или другое (доставка, рестораны, магазины…) */
+export type Place = { id: string; name: string; address: string; hue: number; photo: string; mapUrl: string; lat: number | null; lon: number | null; category: 'bar' | 'cinema' | 'other' };
 
 export type Chat = { id: string; name: string; chatId: string };
 

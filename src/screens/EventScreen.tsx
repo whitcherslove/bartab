@@ -102,7 +102,7 @@ export function EventScreen({ id }: { id: string }) {
         );
       })()}
 
-      {place?.category && place.category !== 'bar' ? (
+      {place?.category === 'cinema' ? (
         <div className="totals2">
           <div className="total-main"><b className="num">{money(evTotal(ev), ev.currency)}</b><span>всего</span></div>
         </div>

@@ -12,7 +12,7 @@ export function PlacesScreen() {
   const { state } = useStore();
   const ui = useUI();
   const [cat, setCatState] = useState<Category>(() => {
-    try { return (localStorage.getItem(KEY) as Category) || DEFAULT_CATEGORY; } catch { return DEFAULT_CATEGORY; }
+    try { const v = localStorage.getItem(KEY); return CATEGORIES.some((c) => c.id === v) ? (v as Category) : DEFAULT_CATEGORY; } catch { return DEFAULT_CATEGORY; }
   });
   const setCat = (c: Category) => { setCatState(c); try { localStorage.setItem(KEY, c); } catch { /* ignore */ } };
   const swipe = useSwipeTabs(CATEGORIES.map((c) => c.id), cat, setCat);
@@ -25,7 +25,7 @@ export function PlacesScreen() {
       <CategorySeg value={cat} onChange={swipe.go} />
       <div className="swipe-area" {...swipe.bind}>
       <div className={'list ' + swipe.enterClass} key={cat}>
-        {list.length === 0 && <div className="empty">{c.emoji} Пока пусто — добавь первый {c.one.toLowerCase()}</div>}
+        {list.length === 0 && <div className="empty">{c.emoji} Пока пусто — {cat === 'bar' ? 'добавь первый бар' : cat === 'cinema' ? 'добавь первый кинотеатр' : 'добавь ресторан, доставку или что угодно'}</div>}
         {list.map((p) => (
           <button key={p.id} className="row" onClick={() => ui.open(<PlaceSheet id={p.id} />)}>
             <PlacePhoto place={p} className="place-thumb" />

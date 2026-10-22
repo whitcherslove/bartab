@@ -184,12 +184,12 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
         </>
       ) : (
         <>
-      <h4>{id ? 'Редактирование' : category === 'bar' ? 'Новый бар' : category === 'shop' ? 'Новый магазин' : 'Новый кинотеатр'}</h4>
+      <h4>{id ? 'Редактирование' : category === 'bar' ? 'Новый бар' : category === 'cinema' ? 'Новый кинотеатр' : 'Новое место'}</h4>
       <CategorySeg value={category} onChange={setCategory} one />
 
       <label className="field">
         <span>Название {searchOn && <small className="muted">— начни вводить, поищем рядом</small>}</span>
-        <input value={name} onChange={(e) => { setName(e.target.value); if (!id) setSearchOn(true); }} placeholder={category === 'bar' ? 'Например, Хмель и Солод' : category === 'shop' ? 'Например, Перекрёсток' : 'Например, Аврора'} autoComplete="off" />
+        <input value={name} onChange={(e) => { setName(e.target.value); if (!id) setSearchOn(true); }} placeholder={category === 'bar' ? 'Например, Хмель и Солод' : category === 'cinema' ? 'Например, Аврора' : 'Например, Тануки или доставка'} autoComplete="off" />
       </label>
       {searchOn && (searching || found.length > 0 || searchErr) && (
         <div className="list found-list">

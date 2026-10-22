@@ -17,7 +17,7 @@ export function MemberSheet({ eventId, pid }: { eventId: string; pid: string }) 
 
   const st = stats(ev, pid);
   const items = personItems(ev, pid);
-  const isBar = (state.places.find((p) => p.id === ev.placeId)?.category ?? 'bar') === 'bar';
+  const isBar = (state.places.find((p) => p.id === ev.placeId)?.category ?? 'bar') !== 'cinema'; // чаевые везде, кроме кино
   const placeName = state.places.find((p) => p.id === ev.placeId)?.name ?? 'Встреча';
   const payerName = ev.payer ? nameOf(ev.payer) : '';
   const link = person.tg
@@ -59,7 +59,7 @@ export function MemberSheet({ eventId, pid }: { eventId: string; pid: string }) 
       ) : (
         <p className="hint" style={{ margin: '0 0 10px' }}>Пока ни одной позиции не отмечено на этого человека.</p>
       )}
-      {/* чаевые — только в барах и только если они есть */}
+      {/* чаевые — везде, кроме кино, и только если они есть */}
       {isBar && st.tip >= 1 && <div className="kv"><span>Чаевые</span><b className="num">{money(st.tip, ev.currency)}</b></div>}
       <div className="kv kv-total"><span>Итого</span><b className="num">{money(st.owed, ev.currency)}</b></div>
       <p style={{ margin: '14px 0 0', fontWeight: 600 }}>{status}</p>

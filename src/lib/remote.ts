@@ -9,7 +9,7 @@ import { stats } from './calc';
 // ---------- Загрузка всех данных компании ----------
 
 type PersonRow = { id: string; name: string; tg: string; user_id: string | null; avatar_url: string; archived: boolean };
-type PlaceRow = { id: string; name: string; address: string; hue: number; photo_path: string; map_url: string; lat: number | null; lon: number | null; category: 'bar' | 'shop' | 'cinema' };
+type PlaceRow = { id: string; name: string; address: string; hue: number; photo_path: string; map_url: string; lat: number | null; lon: number | null; category: 'bar' | 'cinema' | 'other' };
 type ShareRow = { person_id: string; qty: number };
 type ItemRow = { id: string; name: string; price: number | string; qty: number; split_mode: 'equal' | 'qty'; created_at: string; item_shares: ShareRow[] };
 type EventRow = {
@@ -283,7 +283,7 @@ export type Visit = {
   eventId: string;
   date: string;
   crewId: string;
-  place: { id: string; name: string; address: string; hue: number; photo: string; category: 'bar' | 'shop' | 'cinema' } | null;
+  place: { id: string; name: string; address: string; hue: number; photo: string; category: 'bar' | 'cinema' | 'other' } | null;
   /** участники встречи — для аватарок в истории */
   people: { id: string; name: string; avatar: string; userId: string | null }[];
 };
@@ -291,7 +291,7 @@ export type Visit = {
 type VisitRow = {
   events: {
     id: string; date: string; crew_id: string;
-    places: { id: string; name: string; address: string; hue: number; photo_path: string; category: 'bar' | 'shop' | 'cinema' } | null;
+    places: { id: string; name: string; address: string; hue: number; photo_path: string; category: 'bar' | 'cinema' | 'other' } | null;
     event_members: { people: { id: string; name: string; avatar_url: string; user_id: string | null } | null }[];
   } | null;
 };

@@ -31,7 +31,7 @@ export function EventSheet({ id }: { id?: string }) {
       updateEvent(id, (e) => {
         Object.assign(e, { placeId, date, members, currency });
         if (cat === 'cinema') Object.assign(e, { film: film.trim(), sessionTime: sessionTime.trim(), hall: hall.trim() });
-        if (cat !== 'bar') e.tips = 0; // в магазине и кино чаевых нет
+        if (cat === 'cinema') e.tips = 0; // в кино чаевых нет
         if (!members.includes(e.payer)) e.payer = '';
         e.settled = e.settled.filter((m) => members.includes(m));
       });

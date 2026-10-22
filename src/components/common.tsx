@@ -87,7 +87,7 @@ export function Fab({ label, onClick }: { label: string; onClick: () => void }) 
   );
 }
 
-/** Переключатель категорий мест: Бары · Магазины · Кинотеатры */
+/** Переключатель категорий мест: Бары · Кинотеатры · Другое */
 export function CategorySeg({ value, onChange, one }: { value: Category; onChange: (c: Category) => void; one?: boolean }) {
   return (
     <div className="seg cat-seg">

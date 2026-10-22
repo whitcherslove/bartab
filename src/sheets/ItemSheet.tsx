@@ -15,7 +15,7 @@ export function ItemSheet({ eventId, itemId }: { eventId: string; itemId?: strin
   const category = state.places.find((p) => p.id === ev?.placeId)?.category ?? 'bar';
   const texts = {
     bar: { ph: 'Например, IPA 0,5', who: 'Отметь, кто пил или ел' },
-    shop: { ph: 'Например, Сыр', who: 'Отметь, для кого покупка' },
+    other: { ph: 'Например, Пицца', who: 'Отметь, кто ел или для кого это' },
     cinema: { ph: 'Например, Билет', who: 'Отметь, для кого это' },
   }[category];
 
