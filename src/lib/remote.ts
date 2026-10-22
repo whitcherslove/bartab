@@ -14,11 +14,11 @@ type ShareRow = { person_id: string; qty: number };
 type ItemRow = { id: string; name: string; price: number | string; qty: number; split_mode: 'equal' | 'qty'; created_at: string; item_shares: ShareRow[] };
 type EventRow = {
   id: string; place_id: string | null; date: string; tips: number | string; tips_mode: 'sum' | 'pct'; currency: string;
-  payer_id: string | null; status: string; receipt_path: string; film?: string; session_time?: string; hall?: string; event_members: { person_id: string; settled: boolean }[]; items: ItemRow[];
+  payer_id: string | null; status: string; receipt_path: string; category?: 'bar' | 'cinema' | 'other'; film?: string; session_time?: string; hall?: string; event_members: { person_id: string; settled: boolean }[]; items: ItemRow[];
 };
 type ChatRow = { id: string; name: string; chat_id: string };
 
-const EVENT_SELECT = 'id, place_id, date, tips, tips_mode, currency, payer_id, status, receipt_path, film, session_time, hall, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, item_shares(person_id, qty))';
+const EVENT_SELECT = 'id, place_id, date, tips, tips_mode, currency, category, payer_id, status, receipt_path, film, session_time, hall, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, item_shares(person_id, qty))';
 
 function mapEvent(e: EventRow, byPeopleOrder: (a: string, b: string) => number = () => 0): BarEvent {
   return {
@@ -31,6 +31,7 @@ function mapEvent(e: EventRow, byPeopleOrder: (a: string, b: string) => number =
     payer: e.payer_id ?? '',
     status: e.status,
     receiptPath: e.receipt_path ?? '',
+    category: e.category ?? 'bar',
     film: e.film ?? '',
     sessionTime: e.session_time ?? '',
     hall: e.hall ?? '',
@@ -123,7 +124,7 @@ export async function pushDiff(prev: State, next: State, crewId: string) {
   const evRow = (e: BarEvent) => ({
     id: e.id, crew_id: crewId, place_id: e.placeId || null, date: e.date, tips: e.tips,
     tips_mode: e.tipsMode, currency: e.currency || 'RUB', payer_id: e.payer || null, status: e.status,
-    film: e.film ?? '', session_time: e.sessionTime ?? '', hall: e.hall ?? '',
+    film: e.film ?? '', session_time: e.sessionTime ?? '', hall: e.hall ?? '', category: e.category ?? 'bar',
   });
   const events = next.events.filter((e) => {
     const o = prevEvents.get(e.id);
@@ -284,13 +285,15 @@ export type Visit = {
   date: string;
   crewId: string;
   place: { id: string; name: string; address: string; hue: number; photo: string; category: 'bar' | 'cinema' | 'other' } | null;
+  /** категория встречи (для встреч без места) */
+  category: string;
   /** участники встречи — для аватарок в истории */
   people: { id: string; name: string; avatar: string; userId: string | null }[];
 };
 
 type VisitRow = {
   events: {
-    id: string; date: string; crew_id: string;
+    id: string; date: string; crew_id: string; category?: string;
     places: { id: string; name: string; address: string; hue: number; photo_path: string; category: 'bar' | 'cinema' | 'other' } | null;
     event_members: { people: { id: string; name: string; avatar_url: string; user_id: string | null } | null }[];
   } | null;
@@ -304,7 +307,7 @@ export async function fetchMyVisits(userId: string): Promise<Visit[]> {
   if (!ids.length) return [];
   const { data, error } = await supabase
     .from('event_members')
-    .select('events(id, date, crew_id, places(id, name, address, hue, photo_path, category), event_members(people(id, name, avatar_url, user_id)))')
+    .select('events(id, date, crew_id, category, places(id, name, address, hue, photo_path, category), event_members(people(id, name, avatar_url, user_id)))')
     .in('person_id', ids);
   if (error) throw error;
   return ((data ?? []) as unknown as VisitRow[])
@@ -315,6 +318,7 @@ export async function fetchMyVisits(userId: string): Promise<Visit[]> {
       date: e.date,
       crewId: e.crew_id,
       place: e.places ? { id: e.places.id, name: e.places.name, address: e.places.address, hue: e.places.hue, photo: e.places.photo_path, category: e.places.category ?? 'bar' } : null,
+      category: e.places?.category ?? e.category ?? 'bar',
       people: (e.event_members ?? []).map((m) => m.people).filter((p): p is NonNullable<typeof p> => !!p)
         .map((p) => ({ id: p.id, name: p.name, avatar: p.avatar_url ?? '', userId: p.user_id })),
     }))
@@ -368,7 +372,7 @@ export async function fetchMyDebts(userId: string): Promise<{ waiting: OpenDebt[
     const meId = myByCrew.get(r.crew_id);
     if (!meId || !ev.payer) continue;
     const st = stats(ev, meId);
-    const base = { eventId: ev.id, crewId: r.crew_id, date: ev.date, placeName: r.places?.name ?? 'Без места', placeCategory: r.places?.category ?? 'bar', currency: ev.currency };
+    const base = { eventId: ev.id, crewId: r.crew_id, date: ev.date, placeName: r.places?.name ?? 'Без места', placeCategory: r.places?.category ?? ev.category ?? 'bar', currency: ev.currency };
     if (st.isPayer && st.balance > 1) {
       const people = ev.members
         .filter((m) => m !== meId && !ev.settled.includes(m))

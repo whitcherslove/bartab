@@ -2,9 +2,9 @@ import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { evWithTips, stats } from '../lib/calc';
 import { badgeClass, dateBadge, fdate, money } from '../lib/format';
-import { Fab, Pill, PlacePhoto } from '../components/common';
+import { coverPlace, Fab, Pill, PlacePhoto } from '../components/common';
 import { EventSheet } from '../sheets/EventSheet';
-import { catOf } from '../lib/categories';
+import { catOf, eventCategory } from '../lib/categories';
 
 export function EventsScreen() {
   const { state, update } = useStore();
@@ -49,7 +49,7 @@ export function EventsScreen() {
         const place = state.places.find((p) => p.id === ev.placeId);
         return (
           <div key={ev.id} className="ev-card" role="button" tabIndex={0} onClick={() => ui.go({ screen: 'event', id: ev.id })} onKeyDown={(e) => e.key === 'Enter' && ui.go({ screen: 'event', id: ev.id })}>
-            <PlacePhoto place={place}>
+            <PlacePhoto place={coverPlace(place, ev)}>
               {dateBadge(ev.date) && <span className={badgeClass(dateBadge(ev.date))}>{dateBadge(ev.date)}</span>}
               <button
                 className="card-menu"
@@ -58,9 +58,9 @@ export function EventsScreen() {
               >⋯</button>
             </PlacePhoto>
             <div className="body">
-              <p className="place"><span className="cat-emoji" aria-hidden="true">{catOf(place?.category).emoji}</span>{place?.name ?? 'Без места'}</p>
+              <p className="place"><span className="cat-emoji" aria-hidden="true">{catOf(eventCategory(ev, state.places)).emoji}</span>{place?.name ?? 'Без места'}</p>
               <div className="sum num">{money(evWithTips(ev), ev.currency)}</div>
-              <div className="meta">{fdate(ev.date)}{place?.category === 'cinema' && (ev.film || ev.sessionTime) ? `, ${[ev.film, ev.sessionTime].filter(Boolean).join(' · ')}` : `, ${ev.members.length} чел.`}</div>
+              <div className="meta">{fdate(ev.date)}{eventCategory(ev, state.places) === 'cinema' && (ev.film || ev.sessionTime) ? `, ${[ev.film, ev.sessionTime].filter(Boolean).join(' · ')}` : `, ${ev.members.length} чел.`}</div>
               <div>{ev.members.includes(state.me) && <Pill b={stats(ev, state.me).balance} me cur={ev.currency} />}</div>
             </div>
           </div>

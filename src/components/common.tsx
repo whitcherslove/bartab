@@ -109,3 +109,9 @@ export function Brand() {
     </div>
   );
 }
+
+/** Место для обложки встречи: настоящее или заглушка с категорией встречи */
+export function coverPlace(place: Place | undefined, ev: { id: string; category?: string }): Place {
+  if (place) return place;
+  return { id: ev.id, name: 'Без места', address: '', hue: hueOf(ev.id), photo: '', mapUrl: '', lat: null, lon: null, category: (ev.category as Place['category']) ?? 'bar' };
+}

@@ -1,5 +1,5 @@
 import { useStore } from '../lib/store';
-import { catOf } from '../lib/categories';
+import { catOf, eventCategory } from '../lib/categories';
 import { useUI } from '../lib/ui';
 import { personItems, stats } from '../lib/calc';
 import { money } from '../lib/format';
@@ -17,11 +17,11 @@ export function MemberSheet({ eventId, pid }: { eventId: string; pid: string }) 
 
   const st = stats(ev, pid);
   const items = personItems(ev, pid);
-  const isBar = (state.places.find((p) => p.id === ev.placeId)?.category ?? 'bar') !== 'cinema'; // чаевые везде, кроме кино
+  const isBar = eventCategory(ev, state.places) !== 'cinema'; // чаевые везде, кроме кино
   const placeName = state.places.find((p) => p.id === ev.placeId)?.name ?? 'Встреча';
   const payerName = ev.payer ? nameOf(ev.payer) : '';
   const link = person.tg
-    ? `https://t.me/${encodeURIComponent(person.tg)}?text=${encodeURIComponent(personalText(ev, pid, placeName, nameOf, catOf(state.places.find((p) => p.id === ev.placeId)?.category).emoji))}`
+    ? `https://t.me/${encodeURIComponent(person.tg)}?text=${encodeURIComponent(personalText(ev, pid, placeName, nameOf, catOf(eventCategory(ev, state.places)).emoji))}`
     : '';
 
   let status = 'Пока не отмечено, кто заплатил по счёту';

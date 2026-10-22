@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Item, SplitMode } from '../lib/types';
 import { useStore } from '../lib/store';
+import { eventCategory } from '../lib/categories';
 import { useUI } from '../lib/ui';
 import { evenSplit } from '../lib/calc';
 import { money, parseNum, toggleIn, uid } from '../lib/format';
@@ -12,7 +13,7 @@ export function ItemSheet({ eventId, itemId }: { eventId: string; itemId?: strin
   const ev = state.events.find((e) => e.id === eventId);
   const existing = itemId ? ev?.items.find((i) => i.id === itemId) : undefined;
   const members = ev?.members ?? [];
-  const category = state.places.find((p) => p.id === ev?.placeId)?.category ?? 'bar';
+  const category = eventCategory(ev, state.places);
   const texts = {
     bar: { ph: 'Например, IPA 0,5', who: 'Отметь, кто пил или ел' },
     other: { ph: 'Например, Пицца', who: 'Отметь, кто ел или для кого это' },

@@ -3,14 +3,14 @@ import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { CURRENCIES, getDefaultCurrency, todayIso, toggleIn, uid } from '../lib/format';
 import { CategorySeg, PeopleChips } from '../components/common';
-import { DEFAULT_CATEGORY, catOf, type Category } from '../lib/categories';
+import { catOf, eventCategory, type Category } from '../lib/categories';
 
 export function EventSheet({ id }: { id?: string }) {
   const { state, update, updateEvent } = useStore();
   const ui = useUI();
   const ev = id ? state.events.find((e) => e.id === id) : undefined;
 
-  const startCat: Category = (ev && state.places.find((p) => p.id === ev.placeId)?.category) || DEFAULT_CATEGORY;
+  const startCat: Category = eventCategory(ev, state.places);
   const [cat, setCat] = useState<Category>(startCat);
   const placesIn = (c: Category) => state.places.filter((p) => (p.category || 'bar') === c);
   const [placeId, setPlaceId] = useState(ev?.placeId ?? placesIn(startCat)[0]?.id ?? '');
@@ -29,7 +29,7 @@ export function EventSheet({ id }: { id?: string }) {
     if (!members.length) return ui.toast('Отметь хотя бы одного участника');
     if (id) {
       updateEvent(id, (e) => {
-        Object.assign(e, { placeId, date, members, currency });
+        Object.assign(e, { placeId, date, members, currency, category: cat });
         if (cat === 'cinema') Object.assign(e, { film: film.trim(), sessionTime: sessionTime.trim(), hall: hall.trim() });
         if (cat === 'cinema') e.tips = 0; // в кино чаевых нет
         if (!members.includes(e.payer)) e.payer = '';
@@ -40,7 +40,7 @@ export function EventSheet({ id }: { id?: string }) {
     } else {
       const newId = uid();
       update((d) => {
-        d.events.push({ id: newId, date, placeId, members, currency, film: cat === 'cinema' ? film.trim() : '', sessionTime: cat === 'cinema' ? sessionTime.trim() : '', hall: cat === 'cinema' ? hall.trim() : '', tips: 0, tipsMode: 'sum', payer: '', settled: [], status: '', items: [] });
+        d.events.push({ id: newId, date, placeId, members, currency, category: cat, film: cat === 'cinema' ? film.trim() : '', sessionTime: cat === 'cinema' ? sessionTime.trim() : '', hall: cat === 'cinema' ? hall.trim() : '', tips: 0, tipsMode: 'sum', payer: '', settled: [], status: '', items: [] });
       });
       ui.go({ screen: 'event', id: newId });
       ui.toast('Встреча создана');

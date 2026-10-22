@@ -53,7 +53,7 @@ function HistoryLog({ visits }: { visits: Visit[] }) {
               <button key={v.eventId} className="row log-row" onClick={() => open(v)}>
                 {v.place ? <PlacePhoto place={asPlace(v.place)} className="place-thumb" /> : <CrewAvatar crew={crewOf(v.crewId)} size={52} />}
                 <div className="grow">
-                  <div className="t"><span className="cat-emoji" aria-hidden="true">{catOf(v.place?.category).emoji}</span>{v.place?.name ?? 'Без места'}</div>
+                  <div className="t"><span className="cat-emoji" aria-hidden="true">{catOf(v.category).emoji}</span>{v.place?.name ?? 'Без места'}</div>
                   <div className="s">{crewOf(v.crewId).name} · {fdate(v.date)}</div>
                   <div className="log-people">
                     {v.people.slice(0, 5).map((p) => (

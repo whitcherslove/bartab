@@ -11,3 +11,10 @@ export const CATEGORIES: { id: Category; many: string; one: string; emoji: strin
 
 export const DEFAULT_CATEGORY: Category = 'bar';
 export const catOf = (id?: string) => CATEGORIES.find((c) => c.id === id) ?? CATEGORIES[0];
+
+/** Категория встречи: по месту, а если места нет — своя */
+export function eventCategory(ev: { placeId: string; category?: string } | undefined, places: { id: string; category?: string }[]): Category {
+  const fromPlace = ev && places.find((p) => p.id === ev.placeId)?.category;
+  const c = fromPlace || ev?.category;
+  return (CATEGORIES.some((x) => x.id === c) ? c : DEFAULT_CATEGORY) as Category;
+}

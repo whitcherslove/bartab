@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../lib/store';
+import { eventCategory } from '../lib/categories';
 import { useUI } from '../lib/ui';
 import { recognizeReceipt } from '../lib/remote';
 import { humanError } from '../lib/supabase';
@@ -26,7 +27,7 @@ function compress(file: File): Promise<Blob> {
 export function ReceiptSheet({ eventId }: { eventId: string }) {
   const { crewId, sync, refresh, state } = useStore();
   const ev = state.events.find((e) => e.id === eventId);
-  const tickets = state.places.find((p) => p.id === ev?.placeId)?.category === 'cinema';
+  const tickets = eventCategory(ev, state.places) === 'cinema';
   const ui = useUI();
   const [stage, setStage] = useState<'pick' | 'upload' | 'scan'>('pick');
   const [progress, setProgress] = useState('');

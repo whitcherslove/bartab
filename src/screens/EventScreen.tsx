@@ -5,12 +5,13 @@ import { useUI } from '../lib/ui';
 import { evTotal, evWithTips, itemTotal, stats, tipAmount } from '../lib/calc';
 import { badgeClass, dateBadge, fdate, money, parseNum } from '../lib/format';
 import { Icon } from '../components/Icons';
-import { Av, PlacePhoto } from '../components/common';
+import { Av, coverPlace, PlacePhoto } from '../components/common';
 import { MapButtons } from '../components/MapButtons';
 import { EventSheet } from '../sheets/EventSheet';
 import { ItemSheet } from '../sheets/ItemSheet';
 import { MemberSheet } from '../sheets/MemberSheet';
 import { ReceiptBlock } from '../components/ReceiptBlock';
+import { eventCategory } from '../lib/categories';
 import { confetti, useFlip } from '../lib/motion';
 import { TicketQrBlock } from '../components/TicketQrBlock';
 import { ChatSheet } from '../sheets/ChatSheet';
@@ -42,6 +43,7 @@ export function EventScreen({ id }: { id: string }) {
   }
 
   const place = state.places.find((p) => p.id === ev.placeId);
+  const cat = eventCategory(ev, state.places);
   const payer = ev.payer;
   const debtors = payer ? ev.members.filter((m) => m !== payer) : [];
   const unassigned = ev.items.filter((it) => !it.consumers.length).length;
@@ -74,7 +76,7 @@ export function EventScreen({ id }: { id: string }) {
         <button className="icon-btn" aria-label="Изменить встречу" onClick={() => ui.open(<EventSheet id={id} />)}>{Icon.edit}</button>
       </header>
 
-      <PlacePhoto place={place} className="hero">
+      <PlacePhoto place={coverPlace(place, ev)} className="hero">
         {dateBadge(ev.date) && <span className={badgeClass(dateBadge(ev.date))}>{dateBadge(ev.date)}</span>}
         <div className="hero-txt">
           <h2>{place?.name ?? 'Без места'}</h2>
@@ -82,7 +84,7 @@ export function EventScreen({ id }: { id: string }) {
         </div>
       </PlacePhoto>
       {(() => {
-        const session = place?.category === 'cinema' && (ev.film || ev.sessionTime || ev.hall);
+        const session = cat === 'cinema' && (ev.film || ev.sessionTime || ev.hall);
         return (
           <>
             {session && (
@@ -102,7 +104,7 @@ export function EventScreen({ id }: { id: string }) {
         );
       })()}
 
-      {place?.category === 'cinema' ? (
+      {cat === 'cinema' ? (
         <div className="totals2">
           <div className="total-main"><b className="num">{money(evTotal(ev), ev.currency)}</b><span>всего</span></div>
         </div>
@@ -118,7 +120,7 @@ export function EventScreen({ id }: { id: string }) {
       </>)}
 
       <ReceiptBlock ev={ev} />
-      {place?.category === 'cinema' && <TicketQrBlock ev={ev} />}
+      {cat === 'cinema' && <TicketQrBlock ev={ev} />}
 
       <h3>Плательщик <small>кто заплатил по счёту</small></h3>
       <div className="chips">
