@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { BarEvent, TipsMode } from '../lib/types';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
@@ -11,6 +11,7 @@ import { EventSheet } from '../sheets/EventSheet';
 import { ItemSheet } from '../sheets/ItemSheet';
 import { MemberSheet } from '../sheets/MemberSheet';
 import { ReceiptBlock } from '../components/ReceiptBlock';
+import { confetti, useFlip } from '../lib/motion';
 import { TicketQrBlock } from '../components/TicketQrBlock';
 import { ChatSheet } from '../sheets/ChatSheet';
 
@@ -18,6 +19,18 @@ export function EventScreen({ id }: { id: string }) {
   const { state, updateEvent, nameOf } = useStore();
   const ui = useUI();
   const ev = state.events.find((e) => e.id === id);
+  const coastersRef = useRef<HTMLDivElement>(null);
+  const doneRef = useRef<HTMLDivElement>(null);
+  const orderKey = ev ? `${ev.payer}|${ev.settled.join(',')}|${ev.members.join(',')}` : '';
+  useFlip(coastersRef, orderKey);
+  // салют, когда в этой сессии отмечен последний перевод
+  const pendingCount = ev && ev.payer ? ev.members.filter((m) => m !== ev.payer && !ev.settled.includes(m) && stats(ev, m).owed >= 1).length : -1;
+  const prevPending = useRef(pendingCount);
+  useEffect(() => {
+    if (prevPending.current > 0 && pendingCount === 0) setTimeout(() => confetti(doneRef.current), 60);
+    prevPending.current = pendingCount;
+  }, [pendingCount]);
+
 
   if (!ev) {
     return (
@@ -121,7 +134,7 @@ export function EventScreen({ id }: { id: string }) {
         <span>Кто сколько <small>нажми на человека</small></span>
         <button className="link-btn add-link" onClick={() => ui.open(<ChatSheet eventId={id} />)}>{Icon.send} В чат</button>
       </h3>
-      <div className="coasters">
+      <div className="coasters" ref={coastersRef}>
         {ev.members.length === 0 && <div className="empty">Добавь участников через «Изменить»</div>}
         {[...ev.members].sort((a, b) => {
           // плательщик первым, потом те, кому нужно перевести, «переведено» и «в расчёте» — вправо
@@ -142,7 +155,7 @@ export function EventScreen({ id }: { id: string }) {
             }
           }
           return (
-            <button key={m} className={'coaster ' + cls} onClick={() => ui.open(<MemberSheet eventId={id} pid={m} />)}>
+            <button key={m} data-flip={m} className={'coaster ' + cls} onClick={() => ui.open(<MemberSheet eventId={id} pid={m} />)}>
               <span className="mat num"><small>{cap}</small>{val}</span>
               <span className="nm">{nameOf(m)}</span>
             </button>
@@ -173,7 +186,7 @@ export function EventScreen({ id }: { id: string }) {
                 ))}
               </div>
             ) : (
-              <div className="all-done">Все перевели ✅</div>
+              <div className="all-done" ref={doneRef}>Все перевели ✅</div>
             )}
             {pending.length > 0 && <p className="hint pending-hint">Тап по человеку — перевод отмечен. Отменить — через его подставку выше.</p>}
           </>

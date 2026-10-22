@@ -560,3 +560,69 @@ html { background: var(--bg) }
 .push-on-text b { font-weight: 600; white-space: normal }
 .push-on-text span { color: var(--muted); font-size: 14px }
 .push-off-btn { align-self: flex-start; border: 1px solid var(--line); background: var(--bg); color: var(--ink) }
+
+/* =====================================================================
+   Отклик на нажатие и анимации
+   ===================================================================== */
+
+/* без синих квадратов при тапе */
+* { -webkit-tap-highlight-color: transparent }
+
+/* рамка фокуса — только при управлении с клавиатуры */
+:focus:not(:focus-visible) { outline: none }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 10px }
+
+/* «вдавливание» при нажатии */
+button, .btn, [role="button"], a.btn, label.btn { transition: transform .12s ease, filter .12s ease, background-color .15s ease, opacity .15s ease }
+button:active:not(:disabled), .btn:active, [role="button"]:active, label.btn:active { transform: scale(.97); filter: brightness(.94) }
+.row:active { transform: none; filter: none; background: color-mix(in srgb, var(--ink) 5%, transparent) }
+.ev-card:active { transform: scale(.985) }
+.coaster { transition: transform .12s ease }
+.coaster:active { transform: none; filter: none }
+.coaster:active .mat { transform: scale(.93) }
+.coaster .mat { transition: transform .15s cubic-bezier(.3, 1.6, .5, 1), background-color .2s ease, border-color .2s ease }
+.icon-btn:active, .mine-btn:active, .pc-check:active, .swatch:active { transform: scale(.9) }
+.tab:active { transform: scale(.92); filter: none }
+
+/* шторки: выезд с пружинкой и плавный уезд вниз */
+.scrim { animation: fade .2s ease }
+.sheet { animation: sheet-in .34s cubic-bezier(.2, 1.15, .35, 1) }
+@keyframes sheet-in { from { transform: translateY(100%) } }
+.scrim.leaving { pointer-events: none; animation: fade-out .22s ease forwards }
+.scrim.leaving .sheet { animation: sheet-out .22s cubic-bezier(.4, 0, 1, 1) forwards }
+@keyframes fade-out { to { opacity: 0 } }
+@keyframes sheet-out { to { transform: translateY(100%) } }
+
+/* смена экранов (въезд встречи справа, «назад» — вправо) */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .18s }
+html[data-nav="forward"]::view-transition-old(root) { animation: vt-out-left .26s cubic-bezier(.3, 0, .2, 1) both }
+html[data-nav="forward"]::view-transition-new(root) { animation: vt-in-right .26s cubic-bezier(.3, 0, .2, 1) both }
+html[data-nav="back"]::view-transition-old(root) { animation: vt-out-right .24s cubic-bezier(.3, 0, .2, 1) both }
+html[data-nav="back"]::view-transition-new(root) { animation: vt-in-left .24s cubic-bezier(.3, 0, .2, 1) both }
+@keyframes vt-in-right { from { transform: translateX(30%); opacity: 0 } }
+@keyframes vt-out-left { to { transform: translateX(-12%); opacity: 0 } }
+@keyframes vt-in-left { from { transform: translateX(-12%); opacity: 0 } }
+@keyframes vt-out-right { to { transform: translateX(30%); opacity: 0 } }
+/* нижние вкладки не ездят вместе с экраном */
+.tabbar { view-transition-name: tabbar }
+::view-transition-group(tabbar), ::view-transition-old(tabbar), ::view-transition-new(tabbar) { animation: none }
+
+/* сканирование чека */
+.scan-box { position: relative; width: min(70vw, 260px); aspect-ratio: 3 / 4; margin: 0 auto 14px; border-radius: 14px; overflow: hidden; background: var(--chip); box-shadow: 0 0 0 1px var(--line) }
+.scan-box img { width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.85) }
+.scan-line { position: absolute; left: 0; right: 0; height: 26%; top: -26%; background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--amber) 35%, transparent) 70%, var(--amber) 96%, transparent); animation: scan 1.6s cubic-bezier(.45, 0, .55, 1) infinite }
+.scan-box::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.25)) }
+@keyframes scan { to { top: 100% } }
+
+/* конфетти */
+.confetti-piece { position: fixed; width: 8px; height: 12px; border-radius: 2px; pointer-events: none; z-index: 60 }
+
+/* «Все перевели ✅» — галочка с пружинкой */
+.all-done { animation: pop-in .45s cubic-bezier(.3, 1.6, .5, 1) }
+@keyframes pop-in { from { transform: scale(.85); opacity: 0 } }
+
+/* меньше движения — по просьбе системы */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important }
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none !important }
+}

@@ -30,6 +30,7 @@ export function ReceiptSheet({ eventId }: { eventId: string }) {
   const ui = useUI();
   const [stage, setStage] = useState<'pick' | 'upload' | 'scan'>('pick');
   const [progress, setProgress] = useState('');
+  const [preview, setPreview] = useState('');
   const alive = useRef(true); // шторку могли закрыть, пока идёт распознавание
   useEffect(() => () => { alive.current = false; }, []);
 
@@ -41,6 +42,7 @@ export function ReceiptSheet({ eventId }: { eventId: string }) {
       for (let i = 0; i < files.length; i++) {
         setProgress(files.length > 1 ? ` ${i + 1} из ${files.length}` : '');
         setStage('upload');
+        setPreview((old) => { if (old) URL.revokeObjectURL(old); return URL.createObjectURL(files[i]); });
         const blob = await compress(files[i]);
         setStage('scan');
         const res = await recognizeReceipt(crewId, eventId, blob, tickets ? 'tickets' : 'receipt');
@@ -60,7 +62,14 @@ export function ReceiptSheet({ eventId }: { eventId: string }) {
   if (stage !== 'pick') {
     return (
       <div className="scan">
-        <div className="spinner" role="status" aria-label="Распознаю" />
+        {preview ? (
+          <div className="scan-box" role="status" aria-label="Распознаю">
+            <img src={preview} alt="" />
+            <div className="scan-line" />
+          </div>
+        ) : (
+          <div className="spinner" role="status" aria-label="Распознаю" />
+        )}
         <b>{stage === 'upload' ? 'Загружаю фото' : tickets ? 'Распознаю билеты' : 'Распознаю чек'}{progress}…</b>
         <span style={{ color: 'var(--muted)', fontSize: 14 }}>Обычно это 5–20 секунд. Шторку можно закрыть — позиции появятся сами.</span>
       </div>

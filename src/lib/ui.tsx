@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
 import { getHome } from './tabs';
 
 export type View = { screen: 'events' | 'places' | 'crew' | 'profile' | 'admin' } | { screen: 'event'; id: string };
@@ -36,12 +37,34 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const viewRef = useRef<View>(rootView());
   const depthRef = useRef(0);
   const sheetOpen = useRef(false);
+  const swiped = useRef(false); // шторку уже смахнули пальцем — повторно не анимируем
   const ignorePop = useRef(0); // сколько ближайших «назад» сделали мы сами
 
-  const showView = useCallback((v: View) => {
+  /** Показать экран; dir — направление анимации (въезд встречи справа, «назад» — вправо) */
+  /** Убрать шторку с анимацией «уезжает вниз» (копия DOM, чтобы не трогать React) */
+  const dropSheet = useCallback(() => {
+    const el = document.querySelector('.scrim:not(.leaving)') as HTMLElement | null;
+    if (el && !swiped.current && !reducedMotion()) {
+      const ghost = el.cloneNode(true) as HTMLElement;
+      ghost.classList.add('leaving');
+      ghost.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(ghost);
+      setTimeout(() => ghost.remove(), 240);
+    }
+    swiped.current = false;
+    setSheet(null);
+  }, []);
+
+  const showView = useCallback((v: View, dir: 'forward' | 'back' | 'fade' = 'fade') => {
     viewRef.current = v;
-    setView(v);
-    window.scrollTo(0, 0);
+    const apply = () => { setView(v); window.scrollTo(0, 0); };
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+    if (doc.startViewTransition && !reducedMotion()) {
+      document.documentElement.dataset.nav = dir;
+      doc.startViewTransition(() => flushSync(apply));
+    } else {
+      apply();
+    }
   }, []);
 
   // Стартовая запись истории
@@ -58,23 +81,24 @@ export function UIProvider({ children }: { children: ReactNode }) {
       if (sheetOpen.current) {
         // закрываем шторку, экран остаётся прежним
         sheetOpen.current = false;
-        setSheet(null);
+        dropSheet();
         if (st?.bartab && !st.sheet) depthRef.current = st.depth;
         return;
       }
       const v = st?.bartab ? st.view : rootView();
       depthRef.current = st?.bartab ? st.depth : 0;
-      showView(v);
+      const from = viewRef.current.screen;
+      showView(v, (from === 'event' || from === 'admin') && v.screen !== 'event' ? 'back' : 'fade');
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, [showView]);
+  }, [showView, dropSheet]);
 
   const go = useCallback((v: View) => {
     if (sheetOpen.current) {
       // переход прямо из шторки: подменяем запись шторки на новый экран
       sheetOpen.current = false;
-      setSheet(null);
+      dropSheet();
       if (sameView(v, viewRef.current)) {
         ignorePop.current++;
         window.history.back();
@@ -83,19 +107,19 @@ export function UIProvider({ children }: { children: ReactNode }) {
       const st: HistState = { bartab: true, view: v, depth: depthRef.current + 1 };
       depthRef.current = st.depth;
       window.history.replaceState(st, '');
-      showView(v);
+      showView(v, v.screen === 'event' ? 'forward' : 'fade');
       return;
     }
     if (sameView(v, viewRef.current)) return;
     const st: HistState = { bartab: true, view: v, depth: depthRef.current + 1 };
     depthRef.current = st.depth;
     window.history.pushState(st, '');
-    showView(v);
-  }, [showView]);
+    showView(v, v.screen === 'event' || v.screen === 'admin' ? 'forward' : 'fade');
+  }, [showView, dropSheet]);
 
   const back = useCallback(() => {
     if (depthRef.current > 0 || sheetOpen.current) window.history.back();
-    else showView(rootView());
+    else showView(rootView(), 'back');
   }, [showView]);
 
   const closeAndBack = useCallback(() => {
@@ -121,10 +145,10 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const close = useCallback(() => {
     if (!sheetOpen.current) return;
     sheetOpen.current = false;
-    setSheet(null);
+    dropSheet();
     ignorePop.current++;
     window.history.back();
-  }, []);
+  }, [dropSheet]);
 
   const toast = useCallback((text: string) => setToastMsg({ text, key: ++counter.current }), []);
 
@@ -169,6 +193,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
     const fast = d.dy > 50 && d.dy / Math.max(1, Date.now() - d.t0) > 0.6;
     if (d.dy > 120 || fast) {
       setOffset(window.innerHeight, true);
+      swiped.current = true;
       setTimeout(() => close(), 180);
     } else {
       setOffset(0, true);
@@ -230,3 +255,7 @@ export function useUI() {
 export function useOptionalUI() {
   return useContext(Ctx);
 }
+
+/** Пользователь просил меньше движения — анимации выключаем */
+// eslint-disable-next-line react-refresh/only-export-components
+export const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
