@@ -149,9 +149,10 @@ export function EventScreen({ id }: { id: string }) {
           if (payer) {
             if (st.isPayer) {
               if (st.balance > 1) { cls = 'pos'; cap = 'ждёт'; val = money(st.balance, ev.currency); }
-              else { cls = 'pos'; cap = 'оплачено'; val = '✓'; }
+              else { cls = 'pos'; cap = 'оплачено ✓'; val = money(evWithTips(ev), ev.currency); } // весь счёт
             } else if (st.settled || st.owed < 1) {
-              cap = st.settled ? 'переведено' : 'в расчёте'; val = '✓';
+              if (st.settled && st.owed >= 1) { cap = 'переведено ✓'; val = money(st.owed, ev.currency); }
+              else { cap = 'в расчёте'; val = '✓'; }
             } else {
               cls = 'neg'; cap = 'к переводу'; val = money(st.owed, ev.currency);
             }
