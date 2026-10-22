@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
-import { catOf, DEFAULT_CATEGORY, type Category } from '../lib/categories';
+import { CATEGORIES, catOf, DEFAULT_CATEGORY, type Category } from '../lib/categories';
+import { useSwipeTabs } from '../lib/swipe';
 import { CategorySeg, Fab, PlacePhoto } from '../components/common';
 import { PlaceSheet } from '../sheets/PlaceSheet';
 
@@ -14,14 +15,16 @@ export function PlacesScreen() {
     try { return (localStorage.getItem(KEY) as Category) || DEFAULT_CATEGORY; } catch { return DEFAULT_CATEGORY; }
   });
   const setCat = (c: Category) => { setCatState(c); try { localStorage.setItem(KEY, c); } catch { /* ignore */ } };
+  const swipe = useSwipeTabs(CATEGORIES.map((c) => c.id), cat, setCat);
   const list = state.places.filter((p) => (p.category || 'bar') === cat);
   const c = catOf(cat);
 
   return (
     <>
       <header className="top"><h1>Места</h1></header>
-      <CategorySeg value={cat} onChange={setCat} />
-      <div className="list">
+      <CategorySeg value={cat} onChange={swipe.go} />
+      <div className="swipe-area" {...swipe.bind}>
+      <div className={'list ' + swipe.enterClass} key={cat}>
         {list.length === 0 && <div className="empty">{c.emoji} Пока пусто — добавь первый {c.one.toLowerCase()}</div>}
         {list.map((p) => (
           <button key={p.id} className="row" onClick={() => ui.open(<PlaceSheet id={p.id} />)}>
@@ -33,6 +36,7 @@ export function PlacesScreen() {
             <span className="s">{state.events.filter((e) => e.placeId === p.id).length} раз</span>
           </button>
         ))}
+      </div>
       </div>
       <Fab label={c.one} onClick={() => ui.open(<PlaceSheet category={cat} />)} />
     </>

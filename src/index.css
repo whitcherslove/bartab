@@ -628,3 +628,10 @@ html[data-nav="back"]::view-transition-new(root) { animation: vt-in-left .24s cu
 }
 
 .profile-seg { margin: 0 0 16px }
+
+/* ===== Свайп между сегментами ===== */
+.swipe-area { min-height: 60vh; touch-action: pan-y }
+.seg-enter-left { animation: seg-in-left .24s cubic-bezier(.25, 1, .4, 1) }
+.seg-enter-right { animation: seg-in-right .24s cubic-bezier(.25, 1, .4, 1) }
+@keyframes seg-in-left { from { transform: translateX(24px); opacity: 0 } }
+@keyframes seg-in-right { from { transform: translateX(-24px); opacity: 0 } }

@@ -13,6 +13,7 @@ import { InstallCard } from '../components/InstallCard';
 import { MyVisits } from '../components/MyVisits';
 import { MyDebts } from '../components/MyDebts';
 import { PushCard } from '../components/PushCard';
+import { useSwipeTabs } from '../lib/swipe';
 import { QrSheet } from '../sheets/QrSheet';
 import { PhotoChoiceSheet } from '../components/PhotoPick';
 import { getHome, getTabOrder, setHome, setTabOrder, TAB_ICONS, TAB_LABELS, type TabId } from '../lib/tabs';
@@ -28,6 +29,7 @@ export function ProfileScreen() {
   const [accent, setAccentState] = useState<Accent>(getAccent);
   const [admin, setAdmin] = useState(false);
   const [section, setSection] = useState<'me' | 'settings'>('me');
+  const swipe = useSwipeTabs(['me', 'settings'] as const, section, setSection);
   useEffect(() => { isAdmin().then(setAdmin); }, []);
   const [order, setOrderState] = useState<TabId[]>(getTabOrder);
   const [home, setHomeState] = useState<TabId>(getHome);
@@ -108,10 +110,11 @@ export function ProfileScreen() {
       <header className="top"><h1>Профиль</h1></header>
 
       <div className="seg profile-seg">
-        <button type="button" aria-pressed={section === 'me'} onClick={() => setSection('me')}>Профиль</button>
-        <button type="button" aria-pressed={section === 'settings'} onClick={() => setSection('settings')}>Настройки</button>
+        <button type="button" aria-pressed={section === 'me'} onClick={() => swipe.go('me')}>Профиль</button>
+        <button type="button" aria-pressed={section === 'settings'} onClick={() => swipe.go('settings')}>Настройки</button>
       </div>
 
+      <div className={'swipe-area ' + swipe.enterClass} key={section} {...swipe.bind}>
       {section === 'me' ? (
         <>
       <div className="profile-head">
@@ -224,6 +227,7 @@ export function ProfileScreen() {
       <div className="foot"><button onClick={signOut}>Выйти из аккаунта</button></div>
         </>
       )}
+      </div>
     </>
   );
 }
