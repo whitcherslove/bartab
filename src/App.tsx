@@ -2,11 +2,14 @@ import { StoreProvider } from './lib/store';
 import { AccountGate, useAccount } from './lib/account';
 import { UIProvider, useUI, type View } from './lib/ui';
 import { Icon } from './components/Icons';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getTabOrder, onTabsChange, TAB_ICONS, TAB_LABELS, type TabId } from './lib/tabs';
 import { WelcomeSheet } from './sheets/WelcomeSheet';
 import { InstallBanner } from './components/InstallBanner';
 import { InstallSheet } from './sheets/InstallSheet';
+import { PushAskSheet } from './sheets/PushAskSheet';
+import { pushState } from './lib/push';
+
 import { shouldOfferInstall } from './lib/install';
 import { EventsScreen } from './screens/EventsScreen';
 import { EventScreen } from './screens/EventScreen';
@@ -30,6 +33,28 @@ export default function App() {
 function Shell() {
   const { view, open } = useUI();
   const { profile } = useAccount();
+
+  // один раз спросить про уведомления — когда нет других шторок и установка уже не предлагается
+  const { hasSheet } = useUI();
+  const hasSheetRef = useRef(hasSheet);
+  hasSheetRef.current = hasSheet;
+  useEffect(() => {
+    if (hasSheet) return;
+    let asked = false;
+    try { asked = !!localStorage.getItem('bartab-push-asked'); } catch { /* ignore */ }
+    if (asked) return;
+    const t = setTimeout(async () => {
+      if (hasSheetRef.current || shouldOfferInstall()) return;
+      const st = await pushState().catch(() => 'unsupported');
+      if (st !== 'off' || hasSheetRef.current) {
+        if (st === 'on' || st === 'denied') try { localStorage.setItem('bartab-push-asked', '1'); } catch { /* ignore */ }
+        return;
+      }
+      try { localStorage.setItem('bartab-push-asked', '1'); } catch { /* ignore */ }
+      open(<PushAskSheet />);
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [hasSheet, open]);
 
   // ссылка из уведомления: открыть вкладку или встречу
   const acc = useAccount();
