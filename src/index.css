@@ -626,3 +626,5 @@ html[data-nav="back"]::view-transition-new(root) { animation: vt-in-left .24s cu
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important }
   ::view-transition-old(root), ::view-transition-new(root) { animation: none !important }
 }
+
+.profile-seg { margin: 0 0 16px }

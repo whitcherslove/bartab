@@ -27,6 +27,7 @@ export function ProfileScreen() {
   const [theme, setThemeState] = useState<Theme>(getTheme);
   const [accent, setAccentState] = useState<Accent>(getAccent);
   const [admin, setAdmin] = useState(false);
+  const [section, setSection] = useState<'me' | 'settings'>('me');
   useEffect(() => { isAdmin().then(setAdmin); }, []);
   const [order, setOrderState] = useState<TabId[]>(getTabOrder);
   const [home, setHomeState] = useState<TabId>(getHome);
@@ -106,6 +107,13 @@ export function ProfileScreen() {
     <>
       <header className="top"><h1>Профиль</h1></header>
 
+      <div className="seg profile-seg">
+        <button type="button" aria-pressed={section === 'me'} onClick={() => setSection('me')}>Профиль</button>
+        <button type="button" aria-pressed={section === 'settings'} onClick={() => setSection('settings')}>Настройки</button>
+      </div>
+
+      {section === 'me' ? (
+        <>
       <div className="profile-head">
         <button
           type="button"
@@ -138,6 +146,23 @@ export function ProfileScreen() {
       <h3>Мои встречи <small>во всех компаниях</small></h3>
       <MyVisits />
 
+      <InstallCard />
+
+      <h3>Позвать в BarTab <small>без привязки к компании</small></h3>
+      <div className="list crew-card">
+        <div className="row invite">
+          <div className="grow"><div className="s">Ссылка сразу предлагает установить приложение</div><div className="invite-link">{appLink}</div></div>
+        </div>
+        <div className="row crew-actions">
+          <button className="btn primary sm" onClick={shareApp}>Поделиться</button>
+          <button className="btn ghost sm" onClick={() => ui.open(<QrSheet link={appLink} title="BarTab" top={<img src="/icon-192.png" alt="" width={56} height={56} style={{ borderRadius: 14 }} />} hint="Наведи камеру телефона на код — откроется установка BarTab." />)}>QR-код</button>
+          <button className="btn ghost sm" onClick={copyApp}>Копировать</button>
+        </div>
+      </div>
+
+        </>
+      ) : (
+        <>
       <h3>Валюта по умолчанию</h3>
       <label className="field" style={{ marginBottom: 0 }}>
         <select
@@ -183,20 +208,6 @@ export function ProfileScreen() {
 
       <PushCard />
 
-      <InstallCard />
-
-      <h3>Позвать в BarTab <small>без привязки к компании</small></h3>
-      <div className="list crew-card">
-        <div className="row invite">
-          <div className="grow"><div className="s">Ссылка сразу предлагает установить приложение</div><div className="invite-link">{appLink}</div></div>
-        </div>
-        <div className="row crew-actions">
-          <button className="btn primary sm" onClick={shareApp}>Поделиться</button>
-          <button className="btn ghost sm" onClick={() => ui.open(<QrSheet link={appLink} title="BarTab" top={<img src="/icon-192.png" alt="" width={56} height={56} style={{ borderRadius: 14 }} />} hint="Наведи камеру телефона на код — откроется установка BarTab." />)}>QR-код</button>
-          <button className="btn ghost sm" onClick={copyApp}>Копировать</button>
-        </div>
-      </div>
-
       {admin && (
         <div className="list" style={{ marginTop: 24 }}>
           <button className="row" onClick={() => ui.go({ screen: 'admin' })}>
@@ -206,7 +217,13 @@ export function ProfileScreen() {
         </div>
       )}
 
+      <h3>Аккаунт</h3>
+      <div className="list">
+        <div className="row"><div className="grow"><div className="t">{acc.session.user.email}</div><div className="s">вход через {acc.session.user.app_metadata?.provider === 'google' ? 'Google' : 'почту'}</div></div></div>
+      </div>
       <div className="foot"><button onClick={signOut}>Выйти из аккаунта</button></div>
+        </>
+      )}
     </>
   );
 }
