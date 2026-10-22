@@ -9,6 +9,7 @@ import { CrewSetup } from '../screens/auth/CrewSetup';
 import { Splash } from '../screens/auth/Splash';
 
 export type Profile = { id: string; name: string; tg: string; avatar_url: string; currency: string };
+export type Invite = { id: string; crew_id: string; crew_name: string; crew_avatar: string; inviter_name: string };
 export type Crew = { id: string; name: string; invite_code: string; tg_chat_id: string | null; tg_chat_name: string; tg_chat_by: string; avatar_url: string };
 
 type Account = {
@@ -21,6 +22,8 @@ type Account = {
   saveProfile: (p: { name: string; tg: string; avatar_url?: string }) => Promise<void>;
   leaveCrew: (id: string) => Promise<void>;
   saveCurrency: (code: string) => Promise<void>;
+  invites: Invite[];
+  respondInvite: (id: string, accept: boolean) => Promise<void>;
   signOut: () => Promise<void>;
   inviteLink: string;
 };
@@ -66,6 +69,7 @@ export function AccountGate({ children }: { children: ReactNode }) {
     try { return localStorage.getItem(CREW_KEY) || ''; } catch { return ''; }
   });
   const [error, setError] = useState('');
+  const [invites, setInvites] = useState<Invite[]>([]);
 
   // Сессия: восстанавливаем при запуске и следим за входом/выходом
   useEffect(() => {
@@ -103,6 +107,7 @@ export function AccountGate({ children }: { children: ReactNode }) {
       ]);
       if (pErr) throw pErr;
       if (cErr) throw cErr;
+      supabase.rpc('my_invites').then(({ data }) => setInvites((data ?? []) as Invite[]));
       const prof = p ?? { id: user.id, name: '', tg: '', avatar_url: '', currency: 'RUB' };
       setProfile(prof);
       setCrews(c ?? []);
@@ -151,6 +156,14 @@ export function AccountGate({ children }: { children: ReactNode }) {
     setProfile((pr) => (pr ? { ...pr, currency } : pr));
   }, [userId]);
 
+  const respondInvite = useCallback(async (id: string, accept: boolean) => {
+    const { data, error: e } = await supabase.rpc('respond_invite', { invite: id, accept });
+    if (e) throw e;
+    setInvites((list) => list.filter((x) => x.id !== id));
+    if (accept && data) setCrewId(data as string);
+    await reload();
+  }, [reload, setCrewId]);
+
   const leaveCrew = useCallback(async (id: string) => {
     const { error: e } = await supabase.rpc('leave_crew', { c: id });
     if (e) throw e;
@@ -178,7 +191,7 @@ export function AccountGate({ children }: { children: ReactNode }) {
   const inviteLink = `${window.location.origin}/?join=${crew.invite_code}`;
 
   return (
-    <Ctx.Provider value={{ session, profile, crews, crew, setCrewId, reload, saveProfile, leaveCrew, saveCurrency, signOut, inviteLink }}>
+    <Ctx.Provider value={{ session, profile, crews, crew, setCrewId, reload, saveProfile, leaveCrew, saveCurrency, invites, respondInvite, signOut, inviteLink }}>
       {children}
     </Ctx.Provider>
   );

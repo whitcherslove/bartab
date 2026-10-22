@@ -69,6 +69,7 @@ function Shell() {
 
 function TabBar({ current }: { current: View['screen'] }) {
   const { go } = useUI();
+  const { invites } = useAccount();
   const [order, setOrder] = useState<TabId[]>(getTabOrder);
   useEffect(() => onTabsChange(() => setOrder(getTabOrder())), []);
   return (
@@ -76,7 +77,7 @@ function TabBar({ current }: { current: View['screen'] }) {
       <div className="tabbar-in">
         {order.map((screen) => (
           <button key={screen} className="tab" aria-current={current === screen ? 'page' : undefined} onClick={() => go({ screen })}>
-            {Icon[TAB_ICONS[screen]]}
+            <span className="tab-ico">{Icon[TAB_ICONS[screen]]}{screen === 'crew' && invites.length > 0 && <i className="tab-dot" aria-label="Есть приглашения" />}</span>
             {TAB_LABELS[screen]}
           </button>
         ))}

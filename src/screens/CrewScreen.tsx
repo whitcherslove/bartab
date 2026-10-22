@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAccount } from '../lib/account';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
@@ -12,6 +12,8 @@ import { ConnectChatSheet } from '../sheets/ConnectChatSheet';
 import { QrSheet } from '../sheets/QrSheet';
 import { PhotoChoiceSheet } from '../components/PhotoPick';
 import { CrewPickerSheet } from '../sheets/CrewPickerSheet';
+import { AddPersonSheet } from '../sheets/AddPersonSheet';
+import { InviteCards } from '../components/InviteCards';
 
 export function CrewScreen() {
   const acc = useAccount();
@@ -20,6 +22,13 @@ export function CrewScreen() {
   const [renaming, setRenaming] = useState(false);
   const [crewName, setCrewName] = useState(acc.crew.name);
   const [avBusy, setAvBusy] = useState(false);
+  // гости, которых пригласили и ждём ответа
+  const [pendingPeople, setPendingPeople] = useState<Set<string>>(new Set());
+  const loadPending = useCallback(() => {
+    supabase.rpc('crew_pending_invites', { c: acc.crew.id }).then(({ data }) =>
+      setPendingPeople(new Set(((data ?? []) as { person_id: string | null }[]).map((r) => r.person_id ?? '').filter(Boolean))));
+  }, [acc.crew.id]);
+  useEffect(() => { loadPending(); }, [loadPending]);
 
   const changeAvatar = async (file: File | null) => {
     setAvBusy(true);
@@ -69,6 +78,7 @@ export function CrewScreen() {
   return (
     <>
       <header className="top"><h1>Компания</h1></header>
+      <InviteCards />
 
 
       <div className="crew-head">
@@ -100,7 +110,7 @@ export function CrewScreen() {
 
       <h3>
         <span>Люди <small>баланс по всем встречам</small></span>
-        <button className="link-btn add-link" onClick={() => ui.open(<PersonSheet />)}>{Icon.plus} Добавить</button>
+        <button className="link-btn add-link" onClick={() => ui.open(<AddPersonSheet onInvited={loadPending} />)}>{Icon.plus} Добавить</button>
       </h3>
       <div className="list">
         {state.people.filter((p) => !p.archived).map((p) => (
@@ -108,7 +118,7 @@ export function CrewScreen() {
             <Av id={p.id} />
             <div className="grow">
               <div className="t">{p.name}{p.id === state.me ? ' (это ты)' : ''}</div>
-              <div className="s">{p.tg ? '@' + p.tg : 'нет Telegram'}{p.userId ? '' : ' · без аккаунта'}</div>
+              <div className="s">{pendingPeople.has(p.id) ? 'ждёт ответа на приглашение' : `${p.tg ? '@' + p.tg : 'нет Telegram'}${p.userId ? '' : ' · без аккаунта'}`}</div>
             </div>
             <MultiPill balances={balancesByCurrency(state.events, p.id)} me={p.id === state.me} />
           </button>

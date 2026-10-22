@@ -435,3 +435,35 @@ export async function deleteReceipt(eventId: string, path: string) {
   const { error } = await supabase.from('events').update({ receipt_path: '', status: '' }).eq('id', eventId);
   if (error) throw error;
 }
+
+// ---------- Приглашения внутри приложения ----------
+
+export type InviteCandidate = { personId: string; userId: string; name: string; avatar: string; crewId: string };
+
+/** Люди с аккаунтом из моих других компаний, которых нет в текущей */
+export async function fetchInviteCandidates(currentCrew: string, crewIds: string[], me: string): Promise<{ list: InviteCandidate[]; pending: { personId: string | null; invitee: string }[] }> {
+  const others = crewIds.filter((c) => c !== currentCrew);
+  const [peopleRes, hereRes, pendRes] = await Promise.all([
+    others.length
+      ? supabase.from('people').select('id, name, avatar_url, user_id, crew_id').in('crew_id', others).not('user_id', 'is', null).eq('archived', false)
+      : Promise.resolve({ data: [], error: null }),
+    supabase.from('people').select('user_id').eq('crew_id', currentCrew).not('user_id', 'is', null),
+    supabase.rpc('crew_pending_invites', { c: currentCrew }),
+  ]);
+  if (peopleRes.error) throw peopleRes.error;
+  const here = new Set(((hereRes.data ?? []) as { user_id: string }[]).map((r) => r.user_id));
+  const seen = new Set<string>();
+  const list: InviteCandidate[] = [];
+  for (const p of (peopleRes.data ?? []) as { id: string; name: string; avatar_url: string; user_id: string; crew_id: string }[]) {
+    if (p.user_id === me || here.has(p.user_id) || seen.has(p.user_id)) continue;
+    seen.add(p.user_id);
+    list.push({ personId: p.id, userId: p.user_id, name: p.name, avatar: p.avatar_url ?? '', crewId: p.crew_id });
+  }
+  const pending = ((pendRes.data ?? []) as { person_id: string | null; invitee: string }[]).map((r) => ({ personId: r.person_id, invitee: r.invitee }));
+  return { list: list.sort((a, b) => a.name.localeCompare(b.name, 'ru')), pending };
+}
+
+export async function inviteToCrew(crewId: string, fromPerson: string) {
+  const { error } = await supabase.rpc('invite_to_crew', { target_crew: crewId, from_person: fromPerson });
+  if (error) throw error;
+}
