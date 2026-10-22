@@ -31,6 +31,19 @@ function Shell() {
   const { view, open } = useUI();
   const { profile } = useAccount();
 
+  // ссылка из уведомления: открыть вкладку или встречу
+  const acc = useAccount();
+  const { go } = useUI();
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const tab = q.get('tab'), crew = q.get('crew'), event = q.get('event');
+    if (!tab && !event) return;
+    window.history.replaceState(window.history.state, '', window.location.pathname);
+    if (crew && acc.crews.some((c) => c.id === crew) && crew !== acc.crew.id) acc.setCrewId(crew);
+    if (event) go({ screen: 'event', id: event });
+    else if (tab === 'crew' || tab === 'events' || tab === 'places' || tab === 'profile') go({ screen: tab });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // только что вступил по приглашению — поздравляем и предлагаем установить
   useEffect(() => {
     try {

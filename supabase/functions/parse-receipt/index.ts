@@ -8,6 +8,7 @@
 //   GEMINI_FALLBACK_MODEL   — запасная модель (по умолчанию gemini-3.8-flash)
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import webpush from 'npm:web-push@3.6.7';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -63,7 +64,11 @@ Deno.serve(async (req) => {
     if (fileErr || !file) throw new Error('Не удалось прочитать фото: ' + (fileErr?.message ?? 'нет файла'));
     const bytes = new Uint8Array(await file.arrayBuffer());
 
-    if (kind === 'tickets') return json(await handleTickets(db, eventId, bytes, file.type || 'image/jpeg'));
+    if (kind === 'tickets') {
+      const res = await handleTickets(db, eventId, bytes, file.type || 'image/jpeg');
+      await notifyMembers(db, eventId, true);
+      return json(res);
+    }
 
     const receipt = await parseWithGemini(bytes, file.type || 'image/jpeg', PROMPT) as Receipt;
     const rows = normalize(receipt);
@@ -87,6 +92,7 @@ Deno.serve(async (req) => {
     }
     await db.from('events').update({ status }).eq('id', eventId);
 
+    await notifyMembers(db, eventId, false);
     return json({ count: rows.length, sum, total, status });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -147,6 +153,44 @@ async function handleTickets(db: any, eventId: string, bytes: Uint8Array, mime: 
   if (/^20\d\d-\d\d-\d\d$/.test(String(t.date ?? '')) && !Number.isNaN(Date.parse(String(t.date)))) upd.date = String(t.date);
   await db.from('events').update(upd).eq('id', eventId);
   return { count: items.length, sum, total: Number(t.total) || 0, status };
+}
+
+// ---------- Пуш участникам встречи: «Чек распознан» ----------
+
+// deno-lint-ignore no-explicit-any
+async function notifyMembers(userDb: any, eventId: string, tickets: boolean) {
+  try {
+    const pub = Deno.env.get('VAPID_PUBLIC_KEY'), priv = Deno.env.get('VAPID_PRIVATE_KEY'), service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!pub || !priv || !service) return;
+    const { data: me } = await userDb.auth.getUser();
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, service);
+    const { data: ev } = await admin.from('events').select('crew_id, places(name), event_members(people(user_id))').eq('id', eventId).maybeSingle();
+    if (!ev) return;
+    const members = (ev.event_members ?? []) as unknown as { people: { user_id: string | null } | null }[];
+    const users = [...new Set(members.map((m) => m.people?.user_id).filter(Boolean))]
+      .filter((u) => u !== me?.user?.id) as string[];
+    if (!users.length) return;
+    const { data: subs } = await admin.from('push_subscriptions').select('id, endpoint, p256dh, auth').in('user_id', users);
+    if (!subs?.length) return;
+    webpush.setVapidDetails(Deno.env.get('VAPID_SUBJECT') || 'mailto:bartab@example.com', pub, priv);
+    const place = (ev.places as { name?: string } | null)?.name;
+    const payload = JSON.stringify({
+      title: `${tickets ? 'Билеты распознаны' : 'Чек распознан'}${place ? ' · ' + place : ''}`,
+      body: tickets ? 'Отметь, где ты сидишь' : 'Отметь, что твоё',
+      url: `/?crew=${ev.crew_id}&event=${eventId}`,
+      tag: `receipt-${eventId}`,
+    });
+    await Promise.all(subs.map(async (s: { id: string; endpoint: string; p256dh: string; auth: string }) => {
+      try {
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 60 * 60 * 24 });
+      } catch (e) {
+        const code = (e as { statusCode?: number }).statusCode;
+        if (code === 404 || code === 410) await admin.from('push_subscriptions').delete().eq('id', s.id);
+      }
+    }));
+  } catch (e) {
+    console.error('notify failed', e); // уведомления не должны ломать распознавание
+  }
 }
 
 /** Приводим ответ модели к аккуратным строкам */

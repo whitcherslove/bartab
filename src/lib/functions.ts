@@ -5,3 +5,6 @@
 export const RECEIPT_FN = 'dynamic-responder';
 export const TELEGRAM_FN = 'telegram';
 export const PLACES_FN = 'places';
+
+/** Пуш-уведомления (приглашения) — имя функции в Supabase → Edge Functions */
+export const PUSH_FN = 'push';

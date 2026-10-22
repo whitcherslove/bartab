@@ -12,6 +12,7 @@ import { Icon } from '../components/Icons';
 import { InstallCard } from '../components/InstallCard';
 import { MyVisits } from '../components/MyVisits';
 import { MyDebts } from '../components/MyDebts';
+import { PushCard } from '../components/PushCard';
 import { QrSheet } from '../sheets/QrSheet';
 import { PhotoChoiceSheet } from '../components/PhotoPick';
 import { getHome, getTabOrder, setHome, setTabOrder, TAB_ICONS, TAB_LABELS, type TabId } from '../lib/tabs';
@@ -179,6 +180,8 @@ export function ProfileScreen() {
           </div>
         ))}
       </div>
+
+      <PushCard />
 
       <InstallCard />
 

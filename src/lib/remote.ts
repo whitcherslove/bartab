@@ -1,6 +1,9 @@
 import type { BarEvent, Item, State } from './types';
 import { supabase } from './supabase';
+import * as fns from './functions';
 import { RECEIPT_FN, TELEGRAM_FN } from './functions';
+// имя функции пушей: из functions.ts, если там есть PUSH_FN, иначе 'push'
+const PUSH_FN = (fns as unknown as Record<string, string | undefined>).PUSH_FN ?? 'push';
 import { stats } from './calc';
 
 // ---------- Загрузка всех данных компании ----------
@@ -463,7 +466,9 @@ export async function fetchInviteCandidates(currentCrew: string, crewIds: string
   return { list: list.sort((a, b) => a.name.localeCompare(b.name, 'ru')), pending };
 }
 
-export async function inviteToCrew(crewId: string, fromPerson: string) {
+export async function inviteToCrew(crewId: string, fromPerson: string, invitee?: string) {
   const { error } = await supabase.rpc('invite_to_crew', { target_crew: crewId, from_person: fromPerson });
   if (error) throw error;
+  // пуш приглашённому; если не получилось — приглашение всё равно есть в приложении
+  if (invitee) supabase.functions.invoke(PUSH_FN, { body: { type: 'invite', crewId, invitee } }).catch(() => {});
 }

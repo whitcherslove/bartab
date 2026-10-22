@@ -9,7 +9,7 @@ export default defineConfig({
     VitePWA({
       // новая версия ставится сама после git push
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'push-sw.js'],
       manifest: {
         name: 'BarTab',
         short_name: 'BarTab',
@@ -28,6 +28,8 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // обработчик пуш-уведомлений
+        importScripts: ['push-sw.js'],
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: '/index.html',
         // страница политики и ответы после входа через Google не подменяем

@@ -27,7 +27,7 @@ export function AddPersonSheet({ onInvited }: { onInvited?: () => void }) {
   const invite = async (c: InviteCandidate) => {
     setBusy(c.userId);
     try {
-      await inviteToCrew(acc.crew.id, c.personId);
+      await inviteToCrew(acc.crew.id, c.personId, c.userId);
       await refresh();
       onInvited?.();
       ui.close();
