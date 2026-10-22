@@ -635,3 +635,9 @@ html[data-nav="back"]::view-transition-new(root) { animation: vt-in-left .24s cu
 .seg-enter-right { animation: seg-in-right .24s cubic-bezier(.25, 1, .4, 1) }
 @keyframes seg-in-left { from { transform: translateX(24px); opacity: 0 } }
 @keyframes seg-in-right { from { transform: translateX(-24px); opacity: 0 } }
+
+/* ===== Без горизонтального «растяжения» страницы на Android ===== */
+/* clip — обрезает по краю, но не создаёт отдельной прокрутки (липкие заголовки продолжают работать) */
+html, body { overscroll-behavior-x: none; overflow-x: clip }
+.app, .swipe-area { overflow-x: clip }
+.swipe-area { overscroll-behavior-x: none }
