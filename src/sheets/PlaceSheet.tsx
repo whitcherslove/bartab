@@ -31,7 +31,8 @@ function resize(file: File): Promise<string> {
   });
 }
 
-export function PlaceSheet({ id, category: initialCat }: { id?: string; category?: Category }) {
+/** onCreated — новое место создано из встречи: вернуть его туда, а не просто закрыть */
+export function PlaceSheet({ id, category: initialCat, onCreated }: { id?: string; category?: Category; onCreated?: (id: string) => void }) {
   const { state, update, crewId } = useStore();
   const ui = useUI();
   const place = id ? state.places.find((p) => p.id === id) : undefined;
@@ -150,6 +151,7 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
     });
     setBusy(false);
     if (id) { setEditing(false); setSearchOn(false); done(); return; }
+    if (onCreated) { onCreated(placeId); return; }
     ui.close();
     done(placeId);
   };

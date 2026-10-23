@@ -37,6 +37,15 @@ export const Icon = {
   down: (
     <svg viewBox="0 0 24 24" {...s} strokeWidth={2.2} aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
   ),
+  grip: (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6" /><circle cx="15" cy="6" r="1.6" /><circle cx="9" cy="12" r="1.6" /><circle cx="15" cy="12" r="1.6" /><circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" /></svg>
+  ),
+  sort: (
+    <svg viewBox="0 0 24 24" {...s} aria-hidden="true"><path d="M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4" /></svg>
+  ),
+  chev: (
+    <svg viewBox="0 0 24 24" {...s} strokeWidth={2} aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+  ),
   close: (
     <svg viewBox="0 0 24 24" {...s} strokeWidth={2} aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
   ),

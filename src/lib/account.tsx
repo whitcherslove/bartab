@@ -9,7 +9,7 @@ import { CrewSetup } from '../screens/auth/CrewSetup';
 import { Splash } from '../screens/auth/Splash';
 import { forgetView, startOn } from './ui';
 
-export type Profile = { id: string; name: string; tg: string; avatar_url: string; currency: string };
+export type Profile = { id: string; name: string; tg: string; avatar_url: string; currency: string; place_order?: string[] };
 export type Invite = { id: string; crew_id: string; crew_name: string; crew_avatar: string; inviter_name: string };
 export type Crew = { id: string; name: string; invite_code: string; tg_chat_id: string | null; tg_chat_name: string; tg_chat_by: string; avatar_url: string };
 
@@ -23,6 +23,8 @@ type Account = {
   saveProfile: (p: { name: string; tg: string; avatar_url?: string }) => Promise<void>;
   leaveCrew: (id: string) => Promise<void>;
   saveCurrency: (code: string) => Promise<void>;
+  /** личный порядок мест */
+  savePlaceOrder: (ids: string[]) => Promise<void>;
   invites: Invite[];
   respondInvite: (id: string, accept: boolean) => Promise<void>;
   signOut: () => Promise<void>;
@@ -30,6 +32,15 @@ type Account = {
 };
 
 const Ctx = createContext<Account | null>(null);
+
+/** Профиль; до миграции bartab-place-order — без порядка мест */
+async function selectProfile(id: string) {
+  const res = await supabase.from('profiles').select('id, name, tg, avatar_url, currency, place_order').eq('id', id).maybeSingle();
+  if (res.error && /place_order/.test(res.error.message ?? '')) {
+    return supabase.from('profiles').select('id, name, tg, avatar_url, currency').eq('id', id).maybeSingle();
+  }
+  return res;
+}
 
 const CREW_KEY = 'bartab-crew';
 const JOIN_KEY = 'bartab-join';
@@ -104,13 +115,13 @@ export function AccountGate({ children }: { children: ReactNode }) {
         }
       }
       const [{ data: p, error: pErr }, { data: c, error: cErr }] = await Promise.all([
-        supabase.from('profiles').select('id, name, tg, avatar_url, currency').eq('id', user.id).maybeSingle(),
+        selectProfile(user.id),
         supabase.from('crews').select('id, name, invite_code, tg_chat_id, tg_chat_name, tg_chat_by, avatar_url').order('created_at'),
       ]);
       if (pErr) throw pErr;
       if (cErr) throw cErr;
       supabase.rpc('my_invites').then(({ data }) => setInvites((data ?? []) as Invite[]));
-      const prof = p ?? { id: user.id, name: '', tg: '', avatar_url: '', currency: 'RUB' };
+      const prof: Profile = p ?? { id: user.id, name: '', tg: '', avatar_url: '', currency: 'RUB' };
       setProfile(prof);
       setCrews(c ?? []);
       writeCache('account:' + user.id, { profile: prof, crews: c ?? [] });
@@ -150,6 +161,14 @@ export function AccountGate({ children }: { children: ReactNode }) {
     if (e) throw e;
     setProfile((pr) => ({ id: userId, name, tg, avatar_url: avatar, currency: pr?.currency ?? 'RUB' }));
   }, [userId, profile?.avatar_url]);
+
+  /** Личный порядок мест: сразу на экране, потом в профиль */
+  const savePlaceOrder = useCallback(async (ids: string[]) => {
+    if (!userId) return;
+    setProfile((pr) => (pr ? { ...pr, place_order: ids } : pr));
+    const { error: e } = await supabase.from('profiles').update({ place_order: ids }).eq('id', userId);
+    if (e) throw e;
+  }, [userId]);
 
   const saveCurrency = useCallback(async (currency: string) => {
     if (!userId) return;
@@ -199,7 +218,7 @@ export function AccountGate({ children }: { children: ReactNode }) {
   const inviteLink = `${window.location.origin}/?join=${crew.invite_code}`;
 
   return (
-    <Ctx.Provider value={{ session, profile, crews, crew, setCrewId, reload, saveProfile, leaveCrew, saveCurrency, invites, respondInvite, signOut, inviteLink }}>
+    <Ctx.Provider value={{ session, profile, crews, crew, setCrewId, reload, saveProfile, leaveCrew, saveCurrency, savePlaceOrder, invites, respondInvite, signOut, inviteLink }}>
       {children}
     </Ctx.Provider>
   );

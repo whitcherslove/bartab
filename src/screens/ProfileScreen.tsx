@@ -3,7 +3,6 @@ import { isAdmin } from '../lib/admin';
 import { useAccount } from '../lib/account';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
-import { CURRENCIES } from '../lib/format';
 import { personPlaceholderFor } from '../lib/placeholders';
 import { uploadAvatar } from '../lib/remote';
 import { humanError } from '../lib/supabase';
@@ -18,6 +17,7 @@ import { QrSheet } from '../sheets/QrSheet';
 import { PhotoChoiceSheet } from '../components/PhotoPick';
 import { getHome, getTabOrder, setHome, setTabOrder, TAB_ICONS, TAB_LABELS, type TabId } from '../lib/tabs';
 import { done } from '../lib/motion';
+import { CurrencyPicker, currencyLabel } from '../components/Pickers';
 
 export function ProfileScreen() {
   const acc = useAccount();
@@ -168,14 +168,20 @@ export function ProfileScreen() {
       ) : (
         <>
       <h3>Валюта по умолчанию</h3>
-      <label className="field" style={{ marginBottom: 0 }}>
-        <select
-          value={acc.profile.currency || 'RUB'}
-          onChange={async (e) => { try { await acc.saveCurrency(e.target.value); done(); } catch (err) { ui.fail(humanError(err)); } }}
-        >
-          {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.label} ({c.code})</option>)}
-        </select>
-      </label>
+      <button
+        type="button"
+        className="pick-field"
+        onClick={() => ui.open(
+          <CurrencyPicker
+            title="Валюта по умолчанию"
+            value={acc.profile.currency || 'RUB'}
+            onPick={async (code) => { ui.close(); try { await acc.saveCurrency(code); done(); } catch (err) { ui.fail(humanError(err)); } }}
+          />,
+        )}
+      >
+        <span className="grow pick-val">{currencyLabel(acc.profile.currency || 'RUB')}</span>
+        <span className="pick-chev">{Icon.chev}</span>
+      </button>
       <p className="hint">Подставляется в новые встречи. У каждой встречи валюту можно поменять в «Изменить». Курсы не пересчитываются.</p>
 
       <h3>Тема</h3>
