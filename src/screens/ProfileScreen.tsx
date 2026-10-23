@@ -19,6 +19,8 @@ import { getHome, getTabOrder, setHome, setTabOrder, TAB_ICONS, TAB_LABELS, type
 import { done } from '../lib/motion';
 import { CurrencyPicker, currencyLabel } from '../components/Pickers';
 
+const SECTION_KEY = 'bartab-profile-section';
+
 export function ProfileScreen() {
   const acc = useAccount();
   const { refresh } = useStore();
@@ -29,7 +31,15 @@ export function ProfileScreen() {
   const [theme, setThemeState] = useState<Theme>(getTheme);
   const [accent, setAccentState] = useState<Accent>(getAccent);
   const [admin, setAdmin] = useState(false);
-  const [section, setSection] = useState<'me' | 'settings'>('me');
+  // открытая вкладка (Профиль / Настройки) переживает перерисовку экрана —
+  // например, смена валюты пересоздаёт экраны, и раньше выкидывало в «Профиль»
+  const [section, setSectionState] = useState<'me' | 'settings'>(() => {
+    try { return sessionStorage.getItem(SECTION_KEY) === 'settings' ? 'settings' : 'me'; } catch { return 'me'; }
+  });
+  const setSection = (v: 'me' | 'settings') => {
+    setSectionState(v);
+    try { sessionStorage.setItem(SECTION_KEY, v); } catch { /* ignore */ }
+  };
   const swipe = useSwipeTabs(['me', 'settings'] as const, section, setSection);
   useEffect(() => { isAdmin().then(setAdmin); }, []);
   const [order, setOrderState] = useState<TabId[]>(getTabOrder);
