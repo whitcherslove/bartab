@@ -56,3 +56,21 @@ export function confetti(from: HTMLElement | null) {
     anim.onfinish = () => p.remove();
   }
 }
+
+/**
+ * Тихое «готово» вместо всплывашки, когда результат и так виден:
+ * короткая вибрация (где есть) и мягкая подсветка изменившегося элемента с data-flash="key".
+ */
+export function done(key?: string) {
+  try { navigator.vibrate?.(12); } catch { /* нет вибрации */ }
+  if (!key || reducedMotion()) return;
+  // ждём, пока экран перерисуется после изменения
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.querySelectorAll<HTMLElement>(`[data-flash="${CSS.escape(key)}"]`).forEach((el) => {
+      el.animate(
+        [{ boxShadow: '0 0 0 2px var(--amber)', backgroundColor: 'var(--amber-soft)' }, { boxShadow: '0 0 0 0 transparent' }],
+        { duration: 900, easing: 'ease-out' },
+      );
+    });
+  }));
+}

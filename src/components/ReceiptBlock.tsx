@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { BarEvent } from '../lib/types';
 import { useUI } from '../lib/ui';
+import { done } from '../lib/motion';
 import { deleteReceipt, receiptUrls } from '../lib/remote';
 import { humanError } from '../lib/supabase';
 import { Icon } from './Icons';
@@ -98,9 +99,10 @@ function ReceiptViewer({ eventId }: { eventId: string }) {
       await deleteReceipt(ev.id, askR, ids);
       await refresh();
       if (list.length === 1) ui.close();
-      ui.toast(ids.length ? `Удалено вместе с позициями (${ids.length})` : 'Удалено');
+      if (ids.length) ui.toast(`Удалено вместе с позициями: ${ids.length}`);
+      else done();
     } catch (e) {
-      ui.toast(humanError(e));
+      ui.fail(humanError(e));
     }
     setAsking('');
     setBusy(false);

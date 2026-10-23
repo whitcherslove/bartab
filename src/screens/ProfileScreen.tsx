@@ -17,6 +17,7 @@ import { useSwipeTabs } from '../lib/swipe';
 import { QrSheet } from '../sheets/QrSheet';
 import { PhotoChoiceSheet } from '../components/PhotoPick';
 import { getHome, getTabOrder, setHome, setTabOrder, TAB_ICONS, TAB_LABELS, type TabId } from '../lib/tabs';
+import { done } from '../lib/motion';
 
 export function ProfileScreen() {
   const acc = useAccount();
@@ -45,19 +46,19 @@ export function ProfileScreen() {
   const pickHome = (t: TabId) => {
     setHomeState(t);
     setHome(t);
-    ui.toast(`Главный экран — «${TAB_LABELS[t]}»`);
+    done();
   };
   const dirty = name.trim() !== acc.profile.name || tg.trim().replace(/^@/, '') !== acc.profile.tg;
 
   const save = async () => {
-    if (!name.trim()) return ui.toast('Как тебя называть?');
+    if (!name.trim()) return ui.fail('Как тебя называть?');
     setBusy(true);
     try {
       await acc.saveProfile({ name: name.trim(), tg: tg.trim().replace(/^@/, '') });
       await refresh();
-      ui.toast('Профиль сохранён');
+      done();
     } catch (e) {
-      ui.toast(humanError(e));
+      ui.fail(humanError(e));
     }
     setBusy(false);
   };
@@ -69,9 +70,9 @@ export function ProfileScreen() {
       const url = await uploadAvatar(acc.session.user.id, file);
       await acc.saveProfile({ name: acc.profile.name, tg: acc.profile.tg, avatar_url: url });
       await refresh();
-      ui.toast('Аватарка обновлена');
+      done();
     } catch (e) {
-      ui.toast(humanError(e));
+      ui.fail(humanError(e));
     }
     setBusy(false);
   };
@@ -82,7 +83,7 @@ export function ProfileScreen() {
       await acc.saveProfile({ name: acc.profile.name, tg: acc.profile.tg, avatar_url: '' });
       await refresh();
     } catch (e) {
-      ui.toast(humanError(e));
+      ui.fail(humanError(e));
     }
     setBusy(false);
   };
@@ -96,7 +97,7 @@ export function ProfileScreen() {
     copyApp();
   };
   const copyApp = async () => {
-    try { await navigator.clipboard.writeText(appLink); ui.toast('Ссылка скопирована'); } catch { ui.toast('Выдели ссылку и скопируй вручную'); }
+    try { await navigator.clipboard.writeText(appLink); ui.toast('Ссылка скопирована'); } catch { ui.fail('Выдели ссылку и скопируй вручную'); }
   };
 
   const signOut = async () => {
@@ -170,7 +171,7 @@ export function ProfileScreen() {
       <label className="field" style={{ marginBottom: 0 }}>
         <select
           value={acc.profile.currency || 'RUB'}
-          onChange={async (e) => { try { await acc.saveCurrency(e.target.value); ui.toast('Валюта по умолчанию сохранена'); } catch (err) { ui.toast(humanError(err)); } }}
+          onChange={async (e) => { try { await acc.saveCurrency(e.target.value); done(); } catch (err) { ui.fail(humanError(err)); } }}
         >
           {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.label} ({c.code})</option>)}
         </select>

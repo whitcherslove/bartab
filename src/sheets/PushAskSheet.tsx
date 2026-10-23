@@ -15,7 +15,7 @@ export function PushAskSheet() {
       ui.toast(st === 'on' ? 'Уведомления включены 🔔' : 'Можно включить позже в профиле');
     } catch (e) {
       ui.close();
-      ui.toast(humanError(e));
+      ui.fail(humanError(e));
     }
   };
   return (

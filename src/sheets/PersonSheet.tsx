@@ -5,6 +5,7 @@ import { uid } from '../lib/format';
 import { removePerson } from '../lib/remote';
 import { humanError } from '../lib/supabase';
 import { Av } from '../components/common';
+import { done } from '../lib/motion';
 
 export function PersonSheet({ id }: { id?: string }) {
   const { state, update, refresh } = useStore();
@@ -15,7 +16,7 @@ export function PersonSheet({ id }: { id?: string }) {
 
   const save = () => {
     const n = name.trim();
-    if (!n) return ui.toast('Укажи имя');
+    if (!n) return ui.fail('Укажи имя');
     const t = tg.trim().replace(/^@/, '');
     update((d) => {
       const p = id ? d.people.find((x) => x.id === id) : undefined;
@@ -23,7 +24,7 @@ export function PersonSheet({ id }: { id?: string }) {
       else d.people.push({ id: uid(), name: n, tg: t, userId: null, avatar: '' });
     });
     ui.close();
-    ui.toast('Сохранено');
+    done(id);
   };
 
   const remove = async () => {
@@ -38,9 +39,9 @@ export function PersonSheet({ id }: { id?: string }) {
       await removePerson(id);
       await refresh();
       ui.close();
-      ui.toast(`${person.name}: удаление из компании выполнено`);
+      done();
     } catch (e) {
-      ui.toast(humanError(e));
+      ui.fail(humanError(e));
     }
   };
 

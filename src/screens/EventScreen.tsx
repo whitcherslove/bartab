@@ -4,7 +4,7 @@ import { itemGroups } from '../lib/receipts';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { evTotal, evWithTips, itemTotal, stats, tipAmount } from '../lib/calc';
-import { badgeClass, dateBadge, fdate, money, parseNum } from '../lib/format';
+import { badgeClass, clone, dateBadge, fdate, money, parseNum } from '../lib/format';
 import { Icon } from '../components/Icons';
 import { Av, coverPlace, PlacePhoto } from '../components/common';
 import { MapButtons } from '../components/MapButtons';
@@ -13,7 +13,7 @@ import { ItemSheet } from '../sheets/ItemSheet';
 import { MemberSheet } from '../sheets/MemberSheet';
 import { ReceiptBlock } from '../components/ReceiptBlock';
 import { eventCategory } from '../lib/categories';
-import { confetti, useFlip } from '../lib/motion';
+import { confetti, done, useFlip } from '../lib/motion';
 import { TicketQrBlock } from '../components/TicketQrBlock';
 import { ChatSheet } from '../sheets/ChatSheet';
 
@@ -57,9 +57,11 @@ export function EventScreen({ id }: { id: string }) {
     });
 
   const clearItems = () => {
-    if (!confirm(`Удалить все позиции (${ev.items.length})? Отменить будет нельзя.`)) return;
+    const was = clone(ev.items), status = ev.status;
     updateEvent(id, (e) => { e.items = []; e.status = ''; });
-    ui.toast('Позиции удалены');
+    ui.toast(`Позиции удалены: ${was.length}`, {
+      action: { label: 'Вернуть', run: () => updateEvent(id, (e) => { if (!e.items.length) { e.items = was; e.status = status; } }) },
+    });
   };
 
   const toggleSettled = (pid: string) => {
@@ -67,7 +69,7 @@ export function EventScreen({ id }: { id: string }) {
     updateEvent(id, (e) => {
       e.settled = was ? e.settled.filter((m) => m !== pid) : [...e.settled, pid];
     });
-    ui.toast(was ? `${nameOf(pid)}: отметка снята` : `${nameOf(pid)}: перевод отмечен ✅`);
+    done(pid); // подставка и так поменяется — подсвечиваем её
   };
 
   // одна строка позиции — в общем списке или в разделе своего чека
@@ -83,7 +85,7 @@ export function EventScreen({ id }: { id: string }) {
       });
     };
     return (
-    <div key={it.id} className={'row item-row' + (it.consumers.length ? '' : ' no-people')} role="button" tabIndex={0} onClick={() => ui.open(<ItemSheet eventId={id} itemId={it.id} />)}>
+    <div key={it.id} data-flash={it.id} className={'row item-row' + (it.consumers.length ? '' : ' no-people')} role="button" tabIndex={0} onClick={() => ui.open(<ItemSheet eventId={id} itemId={it.id} />)}>
       <div className="grow">
         <div className="t">{it.name}</div>
         <div className="s num">
@@ -197,7 +199,7 @@ export function EventScreen({ id }: { id: string }) {
             }
           }
           return (
-            <button key={m} data-flip={m} className={'coaster ' + cls} onClick={() => ui.open(<MemberSheet eventId={id} pid={m} />)}>
+            <button key={m} data-flip={m} data-flash={m} className={'coaster ' + cls} onClick={() => ui.open(<MemberSheet eventId={id} pid={m} />)}>
               <span className="mat num"><small>{cap}</small>{val}</span>
               <span className="nm">{nameOf(m)}</span>
             </button>

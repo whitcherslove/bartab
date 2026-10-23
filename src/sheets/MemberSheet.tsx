@@ -7,6 +7,7 @@ import { personalText } from '../lib/messages';
 import { Icon } from '../components/Icons';
 import { PersonSheet } from './PersonSheet';
 import { Av } from '../components/common';
+import { done } from '../lib/motion';
 
 export function MemberSheet({ eventId, pid }: { eventId: string; pid: string }) {
   const { state, updateEvent, nameOf } = useStore();
@@ -35,7 +36,7 @@ export function MemberSheet({ eventId, pid }: { eventId: string; pid: string }) 
       e.settled = st.settled ? e.settled.filter((m) => m !== pid) : [...e.settled, pid];
     });
     ui.close();
-    ui.toast(st.settled ? `${person.name}: отметка снята` : `${person.name}: перевод отмечен ✅`);
+    done(pid);
   };
 
   return (

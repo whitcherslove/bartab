@@ -1,5 +1,6 @@
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
+import { done } from '../lib/motion';
 import { evWithTips, stats } from '../lib/calc';
 import { badgeClass, dateBadge, fdate, money } from '../lib/format';
 import { coverPlace, CrewAvatar, Fab, Pill, PlacePhoto } from '../components/common';
@@ -28,7 +29,7 @@ export function EventsScreen() {
               if (!confirm(`Удалить встречу «${title}» со всеми позициями? Отменить будет нельзя.`)) return;
               update((d) => { d.events = d.events.filter((e) => e.id !== id); });
               ui.close();
-              ui.toast('Встреча удалена');
+              done();
             }}
           >
             Удалить встречу

@@ -4,6 +4,7 @@ import { useUI } from '../lib/ui';
 import { CURRENCIES, getDefaultCurrency, todayIso, toggleIn, uid } from '../lib/format';
 import { CategorySeg, PeopleChips } from '../components/common';
 import { catOf, eventCategory, type Category } from '../lib/categories';
+import { done } from '../lib/motion';
 
 export function EventSheet({ id }: { id?: string }) {
   const { state, update, updateEvent } = useStore();
@@ -26,7 +27,7 @@ export function EventSheet({ id }: { id?: string }) {
   const [hall, setHall] = useState(ev?.hall ?? '');
 
   const save = () => {
-    if (!members.length) return ui.toast('Отметь хотя бы одного участника');
+    if (!members.length) return ui.fail('Отметь хотя бы одного участника');
     if (id) {
       updateEvent(id, (e) => {
         Object.assign(e, { placeId, date, members, currency, category: cat });
@@ -36,14 +37,14 @@ export function EventSheet({ id }: { id?: string }) {
         e.settled = e.settled.filter((m) => members.includes(m));
       });
       ui.close();
-      ui.toast('Встреча сохранена');
+      done();
     } else {
       const newId = uid();
       update((d) => {
         d.events.push({ id: newId, date, placeId, members, currency, category: cat, film: cat === 'cinema' ? film.trim() : '', sessionTime: cat === 'cinema' ? sessionTime.trim() : '', hall: cat === 'cinema' ? hall.trim() : '', tips: 0, tipsMode: 'sum', payer: '', settled: [], status: '', items: [] });
       });
       ui.go({ screen: 'event', id: newId });
-      ui.toast('Встреча создана');
+      done();
     }
   };
 
@@ -51,7 +52,7 @@ export function EventSheet({ id }: { id?: string }) {
     if (!id || !confirm('Удалить встречу со всеми позициями?')) return;
     update((d) => { d.events = d.events.filter((e) => e.id !== id); });
     ui.closeAndBack();
-    ui.toast('Встреча удалена');
+    done();
   };
 
   return (

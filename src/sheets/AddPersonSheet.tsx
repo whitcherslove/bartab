@@ -33,7 +33,7 @@ export function AddPersonSheet({ onInvited }: { onInvited?: () => void }) {
       ui.close();
       ui.toast(`${c.name}: приглашение отправлено`);
     } catch (e) {
-      ui.toast(humanError(e));
+      ui.fail(humanError(e));
       setBusy('');
     }
   };

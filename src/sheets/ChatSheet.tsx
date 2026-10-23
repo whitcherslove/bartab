@@ -29,7 +29,7 @@ export function ChatSheet({ eventId }: { eventId: string }) {
       ui.toast(`Итоги отправлены в «${res.name}»`);
     } catch (e) {
       setSending(false);
-      ui.toast(humanError(e));
+      ui.fail(humanError(e));
     }
   };
 

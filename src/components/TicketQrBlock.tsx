@@ -7,6 +7,7 @@ import { humanError } from '../lib/supabase';
 import { PhotoButtons } from './PhotoPick';
 import { Icon } from './Icons';
 import { PhotoViewer, ViewerAsk } from './PhotoViewer';
+import { done } from '../lib/motion';
 
 /** QR-коды для входа в кино: просто картинки, видны всем участникам */
 export function TicketQrBlock({ ev }: { ev: BarEvent }) {
@@ -25,10 +26,10 @@ export function TicketQrBlock({ ev }: { ev: BarEvent }) {
     setBusy(true);
     try {
       await addTicketQrs(crewId, ev.id, files);
-      ui.toast(files.length > 1 ? `QR-кодов добавлено: ${files.length}` : 'QR-код добавлен');
+      done();
       load();
     } catch (e) {
-      ui.toast(humanError(e));
+      ui.fail(humanError(e));
     }
     setBusy(false);
   };
@@ -77,7 +78,7 @@ function QrViewer({ list, start, onDelete, onAdd, onChanged }: {
 
   const remove = async (q: TicketQr) => {
     setBusy(true);
-    try { await onDelete(q); ui.close(); ui.toast('Удалено'); onChanged(); } catch (e) { ui.toast(humanError(e)); setBusy(false); }
+    try { await onDelete(q); ui.close(); done(); onChanged(); } catch (e) { ui.fail(humanError(e)); setBusy(false); }
   };
 
   return (

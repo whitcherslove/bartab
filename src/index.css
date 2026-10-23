@@ -178,7 +178,12 @@ h3 small { font: 500 13px var(--text); color: var(--muted) }
 .split-left.bad { color: var(--cherry) }
 .scan { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 26px 0 12px; text-align: center }
 .spinner { width: 44px; height: 44px; border-radius: 50%; border: 4px solid var(--chip); border-top-color: var(--amber); animation: spin .9s linear infinite }
-.toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 14px; font-size: 14px; z-index: 30; max-width: calc(100% - 32px); animation: fade .2s ease }
+.toast { position: fixed; left: 50%; top: calc(10px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); display: flex; align-items: center; gap: 12px; background: color-mix(in srgb, var(--ink) 88%, transparent); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); color: var(--bg); padding: 9px 16px; border-radius: 999px; font-size: 14px; font-weight: 500; z-index: 40; max-width: calc(100% - 32px); width: max-content; box-shadow: 0 6px 20px rgba(0, 0, 0, .18); touch-action: none; user-select: none; -webkit-user-select: none; animation: toast-in .32s cubic-bezier(.2, 1.3, .4, 1) }
+.toast-text { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical }
+.toast.has-action { padding-right: 6px }
+.toast-act { border: 0; border-radius: 999px; padding: 6px 12px; background: color-mix(in srgb, var(--bg) 18%, transparent); color: var(--bg); font-weight: 700; flex: none }
+.toast.error { background: var(--cherry); color: #fff; border-radius: 16px }
+@keyframes toast-in { from { transform: translate(-50%, -24px) scale(.92); opacity: 0 } }
 .foot { text-align: center; margin: 28px 0 8px }
 .foot button { border: 0; background: none; color: var(--muted); text-decoration: underline; font-size: 14px }
 

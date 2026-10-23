@@ -29,11 +29,11 @@ export function AdminScreen() {
 
   const delUser = async (u: AdminUser) => {
     if (!confirm(`Удалить аккаунт ${u.email}? Человек останется в старых встречах как гость. Отменить нельзя.`)) return;
-    try { await adminDeleteUser(u.id); ui.toast('Аккаунт удалён'); load(); } catch (e) { ui.toast(humanError(e)); }
+    try { await adminDeleteUser(u.id); ui.toast('Аккаунт удалён'); load(); } catch (e) { ui.fail(humanError(e)); }
   };
   const delCrew = async (c: AdminCrew) => {
     if (!confirm(`Удалить компанию «${c.name}» со всеми встречами (${c.events})? Отменить нельзя.`)) return;
-    try { await adminDeleteCrew(c.id); ui.toast('Компания удалена'); load(); if (c.id === acc.crew.id) acc.reload(); } catch (e) { ui.toast(humanError(e)); }
+    try { await adminDeleteCrew(c.id); ui.toast('Компания удалена'); load(); if (c.id === acc.crew.id) acc.reload(); } catch (e) { ui.fail(humanError(e)); }
   };
 
   const ql = q.trim().toLowerCase();

@@ -17,7 +17,7 @@ export function InviteCards() {
       await acc.respondInvite(id, accept);
       ui.toast(accept ? `Ты в компании «${name}» 🎉` : 'Приглашение отклонено');
     } catch (e) {
-      ui.toast(humanError(e));
+      ui.fail(humanError(e));
     }
     setBusy('');
   };

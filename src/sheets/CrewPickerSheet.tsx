@@ -3,15 +3,16 @@ import { useUI } from '../lib/ui';
 import { Icon } from '../components/Icons';
 import { CrewAvatar } from '../components/common';
 import { CrewSetup } from '../screens/auth/CrewSetup';
+import { done } from '../lib/motion';
 
 /** Переключение компаний + явные кнопки «Создать» и «Вступить» */
 export function CrewPickerSheet() {
   const acc = useAccount();
   const ui = useUI();
 
-  const pick = (id: string, name: string) => {
+  const pick = (id: string) => {
     ui.close();
-    if (id !== acc.crew.id) { acc.setCrewId(id); ui.toast(`Компания «${name}»`); }
+    if (id !== acc.crew.id) { acc.setCrewId(id); done(); }
   };
 
   const openForm = (mode: 'create' | 'join') =>
@@ -37,7 +38,7 @@ export function CrewPickerSheet() {
       <h4>Мои компании</h4>
       <div className="list">
         {acc.crews.map((c) => (
-          <button key={c.id} className="row" onClick={() => pick(c.id, c.name)}>
+          <button key={c.id} className="row" onClick={() => pick(c.id)}>
             <CrewAvatar crew={c} size={40} />
             <div className="grow"><div className="t">{c.name}</div></div>
             {c.id === acc.crew.id && <span className="crew-check">{Icon.check}</span>}

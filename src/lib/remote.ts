@@ -175,7 +175,8 @@ export async function pushDiff(prev: State, next: State, crewId: string) {
   if (itemUpserts.length) {
     await run(
       supabase.from('items').upsert(
-        itemUpserts.map((it) => ({ id: it.id, event_id: itemEvent.get(it.id), name: it.name, price: it.price, qty: it.qty, split_mode: it.splitMode })),
+        // receipt_id — чтобы «Вернуть» после удаления сохранил привязку к чеку
+        itemUpserts.map((it) => ({ id: it.id, event_id: itemEvent.get(it.id), name: it.name, price: it.price, qty: it.qty, split_mode: it.splitMode, ...(it.receiptId ? { receipt_id: it.receiptId } : {}) })),
       ),
     );
     // кто что пил: перезаписываем целиком для изменённых позиций

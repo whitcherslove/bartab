@@ -11,6 +11,7 @@ import { PhotoButtons } from '../components/PhotoPick';
 import { uploadPlacePhoto } from '../lib/remote';
 import { humanError } from '../lib/supabase';
 import { locate, searchPlaces, type FoundPlace } from '../lib/maps';
+import { done } from '../lib/motion';
 
 /** Сжимаем фото на телефоне до 720 px по ширине */
 function resize(file: File): Promise<string> {
@@ -89,7 +90,7 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
   const onFile = async (file?: File) => {
     if (!file) return;
     let data: string;
-    try { data = await resize(file); } catch { return ui.toast('Не удалось прочитать фото'); }
+    try { data = await resize(file); } catch { return ui.fail('Не удалось прочитать фото'); }
     if (editing || !id) { setPhoto(data); return; }
     // просмотр: сразу загружаем и сохраняем
     setBusy(true);
@@ -97,9 +98,9 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
       const url = await uploadPlacePhoto(crewId, id, data);
       setPhoto(url);
       update((d) => { const p = d.places.find((x) => x.id === id); if (p) p.photo = url; });
-      ui.toast('Фото обновлено');
+      done();
     } catch (e) {
-      ui.toast('Фото не загрузилось: ' + humanError(e));
+      ui.fail('Фото не загрузилось: ' + humanError(e));
     }
     setBusy(false);
   };
@@ -119,7 +120,7 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
 
   const save = async () => {
     const n = name.trim();
-    if (!n) return ui.toast('Укажи название');
+    if (!n) return ui.fail('Укажи название');
     const link = mapUrl.trim();
     const placeId = id ?? draftId;
     let url = photo;
@@ -129,7 +130,7 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
         url = await uploadPlacePhoto(crewId, placeId, photo);
       } catch (e) {
         setBusy(false);
-        return ui.toast('Фото не загрузилось: ' + humanError(e));
+        return ui.fail('Фото не загрузилось: ' + humanError(e));
       }
     }
     const data = { name: n, address: address.trim(), photo: url, mapUrl: link, lat: coords?.lat ?? null, lon: coords?.lon ?? null, category };
@@ -139,9 +140,9 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
       else d.places.push({ id: placeId, hue: hueOf(n), ...data });
     });
     setBusy(false);
-    if (id) { setEditing(false); setSearchOn(false); ui.toast('Сохранено'); return; }
+    if (id) { setEditing(false); setSearchOn(false); done(); return; }
     ui.close();
-    ui.toast('Место сохранено');
+    done(placeId);
   };
 
   const remove = () => {
@@ -154,7 +155,7 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
       d.events.forEach((e) => { if (e.placeId === id) e.placeId = ''; });
     });
     ui.close();
-    ui.toast('Место удалено');
+    done();
   };
 
   const preview = { name: name || 'Б', address, mapUrl: mapUrl.trim(), lat: coords?.lat ?? null, lon: coords?.lon ?? null, category };

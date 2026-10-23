@@ -14,6 +14,7 @@ import { PhotoChoiceSheet } from '../components/PhotoPick';
 import { CrewPickerSheet } from '../sheets/CrewPickerSheet';
 import { AddPersonSheet } from '../sheets/AddPersonSheet';
 import { InviteCards } from '../components/InviteCards';
+import { done } from '../lib/motion';
 
 export function CrewScreen() {
   const acc = useAccount();
@@ -35,9 +36,9 @@ export function CrewScreen() {
     try {
       await setCrewAvatar(acc.crew.id, file);
       await acc.reload();
-      ui.toast(file ? 'Аватарка компании обновлена' : 'Аватарка убрана');
+      done();
     } catch (e) {
-      ui.toast(humanError(e));
+      ui.fail(humanError(e));
     }
     setAvBusy(false);
   };
@@ -51,28 +52,28 @@ export function CrewScreen() {
     copy();
   };
   const copy = async () => {
-    try { await navigator.clipboard.writeText(acc.inviteLink); ui.toast('Ссылка скопирована'); } catch { ui.toast('Выдели ссылку и скопируй вручную'); }
+    try { await navigator.clipboard.writeText(acc.inviteLink); ui.toast('Ссылка скопирована'); } catch { ui.fail('Выдели ссылку и скопируй вручную'); }
   };
 
   const rename = async () => {
     const n = crewName.trim();
     if (!n) return;
     const { error } = await supabase.from('crews').update({ name: n }).eq('id', acc.crew.id);
-    if (error) return ui.toast(humanError(error));
+    if (error) return ui.fail(humanError(error));
     await acc.reload();
     setRenaming(false);
-    ui.toast('Название обновлено');
+    done();
   };
 
 
   const leave = async () => {
     if (!confirm(`Выйти из компании «${acc.crew.name}»? Встречи с тобой останутся у друзей, а у тебя пропадут. Вернуться можно по приглашению.`)) return;
-    try { await acc.leaveCrew(acc.crew.id); ui.toast('Выход из компании выполнен'); } catch (e) { ui.toast(humanError(e)); }
+    try { await acc.leaveCrew(acc.crew.id); ui.toast('Выход из компании выполнен'); } catch (e) { ui.fail(humanError(e)); }
   };
 
   const removeChat = async () => {
     if (!confirm(`Отключить чат «${acc.crew.tg_chat_name}» от компании? Бот останется в группе, его можно удалить там вручную.`)) return;
-    try { await disconnectCrewChat(acc.crew.id); await acc.reload(); ui.toast('Чат отключён'); } catch (e) { ui.toast(humanError(e)); }
+    try { await disconnectCrewChat(acc.crew.id); await acc.reload(); done(); } catch (e) { ui.fail(humanError(e)); }
   };
 
   return (
@@ -114,7 +115,7 @@ export function CrewScreen() {
       </h3>
       <div className="list">
         {state.people.filter((p) => !p.archived).map((p) => (
-          <button key={p.id} className="row" onClick={() => ui.open(<PersonSheet id={p.id} />)}>
+          <button key={p.id} data-flash={p.id} className="row" onClick={() => ui.open(<PersonSheet id={p.id} />)}>
             <Av id={p.id} />
             <div className="grow">
               <div className="t">{p.name}{p.id === state.me ? ' (это ты)' : ''}</div>

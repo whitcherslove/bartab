@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useUI } from '../lib/ui';
 import { disablePush, enablePush, pushState, type PushState } from '../lib/push';
 import { humanError } from '../lib/supabase';
+import { done } from '../lib/motion';
 
 /** Включить / выключить пуш-уведомления на этом устройстве */
 export function PushCard() {
@@ -11,9 +12,9 @@ export function PushCard() {
   useEffect(() => { pushState().then(setSt).catch(() => setSt('unsupported')); }, []);
   if (!st || st === 'no-key') return null;
 
-  const run = async (fn: () => Promise<PushState>, ok: string) => {
+  const run = async (fn: () => Promise<PushState>) => {
     setBusy(true);
-    try { const s = await fn(); setSt(s); if (s === 'on' || s === 'off') ui.toast(ok); } catch (e) { ui.toast(humanError(e)); }
+    try { const s = await fn(); setSt(s); if (s === 'on' || s === 'off') done(); } catch (e) { ui.fail(humanError(e)); }
     setBusy(false);
   };
 
@@ -27,13 +28,13 @@ export function PushCard() {
               <b>🔔 Включены на этом устройстве</b>
               <span>Приглашения в компании и распознанные чеки</span>
             </div>
-            <button className="btn sm push-off-btn" disabled={busy} onClick={() => run(disablePush, 'Уведомления выключены')}>Выключить</button>
+            <button className="btn sm push-off-btn" disabled={busy} onClick={() => run(disablePush)}>Выключить</button>
           </div>
         )}
         {st === 'off' && (
           <div className="install-help">
             <span>Пришлём, когда тебя позовут в компанию или распознают чек во встрече.</span>
-            <button className="btn primary block" disabled={busy} onClick={() => run(enablePush, 'Уведомления включены')}>Включить уведомления</button>
+            <button className="btn primary block" disabled={busy} onClick={() => run(enablePush)}>Включить уведомления</button>
           </div>
         )}
         {st === 'denied' && <div className="install-help"><b>Уведомления запрещены</b><span>Разреши их в настройках сайта или приложения на телефоне, потом вернись сюда.</span></div>}

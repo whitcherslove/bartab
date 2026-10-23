@@ -27,7 +27,7 @@ export function PlacesScreen() {
       <div className={'list ' + swipe.enterClass} key={cat}>
         {list.length === 0 && <div className="empty">{c.emoji} Пока пусто — {cat === 'bar' ? 'добавь первый бар' : cat === 'cinema' ? 'добавь первый кинотеатр' : 'добавь ресторан, доставку или что угодно'}</div>}
         {list.map((p) => (
-          <button key={p.id} className="row" onClick={() => ui.open(<PlaceSheet id={p.id} />)}>
+          <button key={p.id} data-flash={p.id} className="row" onClick={() => ui.open(<PlaceSheet id={p.id} />)}>
             <PlacePhoto place={p} className="place-thumb" />
             <div className="grow">
               <div className="t">{p.name}</div>

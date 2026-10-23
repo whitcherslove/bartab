@@ -56,7 +56,7 @@ export function ReceiptSheet({ eventId }: { eventId: string }) {
     } catch (e) {
       await refresh();
       if (alive.current) setStage('pick');
-      ui.toast(humanError(e));
+      ui.fail(humanError(e));
     }
   };
   const onFile = (file?: File) => file && onFiles([file]);

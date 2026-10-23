@@ -14,10 +14,16 @@ type UI = {
   /** full — на весь экран (просмотр фото), без шторки */
   open: (node: ReactNode, opts?: { full?: boolean }) => void;
   close: () => void;
-  toast: (text: string) => void;
+  /** короткое сообщение сверху; action — кнопка, например «Вернуть» */
+  toast: (text: string, opts?: ToastOpts) => void;
+  /** ошибка: красная, держится дольше, закрывается тапом */
+  fail: (text: string) => void;
   /** открыта ли сейчас шторка */
   hasSheet: boolean;
 };
+
+export type ToastOpts = { action?: { label: string; run: () => void } };
+type ToastMsg = { text: string; key: number; error?: boolean; action?: ToastOpts['action'] };
 
 const Ctx = createContext<UI | null>(null);
 
@@ -41,7 +47,7 @@ const sameView = (a: View, b: View) => a.screen === b.screen && (a.screen !== 'e
 export function UIProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<View>(startView);
   const [sheet, setSheet] = useState<{ node: ReactNode; key: number; full?: boolean } | null>(null);
-  const [toastMsg, setToastMsg] = useState<{ text: string; key: number } | null>(null);
+  const [toastMsg, setToastMsg] = useState<ToastMsg | null>(null);
   const counter = useRef(0);
   const viewRef = useRef<View>(view);
   const depthRef = useRef(0);
@@ -162,7 +168,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
     window.history.back();
   }, [dropSheet]);
 
-  const toast = useCallback((text: string) => setToastMsg({ text, key: ++counter.current }), []);
+  const toast = useCallback((text: string, opts?: ToastOpts) => setToastMsg({ text, key: ++counter.current, action: opts?.action }), []);
+  const fail = useCallback((text: string) => setToastMsg({ text, key: ++counter.current, error: true }), []);
 
   // Смахивание шторки вниз: тянем за полоску или за шторку, когда она пролистана до начала
   const sheetEl = useRef<HTMLDivElement | null>(null);
@@ -214,7 +221,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!toastMsg) return;
-    const t = setTimeout(() => setToastMsg(null), 2600);
+    // обычное — 2,2 с; с «Вернуть» и ошибки — дольше, чтобы успеть прочитать и нажать
+    const t = setTimeout(() => setToastMsg(null), toastMsg.error || toastMsg.action ? 5000 : 2200);
     return () => clearTimeout(t);
   }, [toastMsg]);
 
@@ -226,7 +234,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   }, [sheet, close]);
 
   return (
-    <Ctx.Provider value={{ view, go, back, closeAndBack, open, close, toast, hasSheet: !!sheet }}>
+    <Ctx.Provider value={{ view, go, back, closeAndBack, open, close, toast, fail, hasSheet: !!sheet }}>
       {children}
       {sheet?.full && (
         <div className="viewer" role="dialog" aria-modal="true" key={sheet.key}>
@@ -251,12 +259,43 @@ export function UIProvider({ children }: { children: ReactNode }) {
           </div>
         </div>
       )}
-      {toastMsg && (
-        <div className="toast" role="status" key={toastMsg.key}>
-          {toastMsg.text}
-        </div>
-      )}
+      {toastMsg && <Toast msg={toastMsg} onClose={() => setToastMsg(null)} />}
     </Ctx.Provider>
+  );
+}
+
+/** Пилюля сверху: тап или смахивание вверх — убрать */
+function Toast({ msg, onClose }: { msg: ToastMsg; onClose: () => void }) {
+  const el = useRef<HTMLDivElement>(null);
+  const d = useRef<{ y0: number; dy: number } | null>(null);
+  const move = (dy: number, animate: boolean) => {
+    if (!el.current) return;
+    el.current.style.transition = animate ? 'transform .18s ease, opacity .18s ease' : 'none';
+    el.current.style.transform = dy ? `translate(-50%, ${dy}px)` : '';
+    el.current.style.opacity = dy ? String(Math.max(0, 1 + dy / 60)) : '';
+  };
+  return (
+    <div
+      className={'toast' + (msg.error ? ' error' : '') + (msg.action ? ' has-action' : '')}
+      role={msg.error ? 'alert' : 'status'}
+      key={msg.key}
+      ref={el}
+      onPointerDown={(e) => { if (!(e.target as HTMLElement).closest('button')) d.current = { y0: e.clientY, dy: 0 }; }}
+      onPointerMove={(e) => { if (d.current) { d.current.dy = Math.min(0, e.clientY - d.current.y0); move(d.current.dy, false); } }}
+      onPointerUp={() => {
+        const s = d.current;
+        d.current = null;
+        if (!s) return;
+        if (s.dy < -20 || Math.abs(s.dy) < 4) { move(-80, true); setTimeout(onClose, 160); } // смахнули вверх или тапнули
+        else move(0, true);
+      }}
+      onPointerCancel={() => { d.current = null; move(0, true); }}
+    >
+      <span className="toast-text">{msg.text}</span>
+      {msg.action && (
+        <button className="toast-act" onClick={() => { msg.action!.run(); onClose(); }}>{msg.action.label}</button>
+      )}
+    </div>
   );
 }
 

@@ -4,8 +4,9 @@ import { useStore } from '../lib/store';
 import { eventCategory } from '../lib/categories';
 import { useUI } from '../lib/ui';
 import { evenSplit } from '../lib/calc';
-import { money, parseNum, toggleIn, uid } from '../lib/format';
+import { clone, money, parseNum, toggleIn, uid } from '../lib/format';
 import { Av, PeopleChips } from '../components/common';
+import { done } from '../lib/motion';
 
 export function ItemSheet({ eventId, itemId }: { eventId: string; itemId?: string }) {
   const { state, updateEvent, nameOf } = useStore();
@@ -55,30 +56,43 @@ export function ItemSheet({ eventId, itemId }: { eventId: string; itemId?: strin
   const step = (pid: string, d: number) => setSplit({ ...split, [pid]: Math.max(0, (split[pid] || 0) + d) });
 
   const save = () => {
-    if (!(priceNum > 0)) return ui.toast('Укажи цену');
+    if (!(priceNum > 0)) return ui.fail('Укажи цену');
     let data: Omit<Item, 'id'>;
     if (mode === 'qty') {
       const clean: Record<string, number> = {};
       members.forEach((m) => { if (split[m] > 0) clean[m] = split[m]; });
       const sum = Object.values(clean).reduce((s, n) => s + n, 0);
-      if (sum !== qty) return ui.toast(`Распредели все ${qty} шт.: сейчас ${sum}`);
+      if (sum !== qty) return ui.fail(`Распредели все ${qty} шт.: сейчас ${sum}`);
       data = { name: name.trim() || 'Позиция', price: priceNum, qty, splitMode: 'qty', split: clean, consumers: Object.keys(clean) };
     } else {
       data = { name: name.trim() || 'Позиция', price: priceNum, qty, splitMode: 'equal', split: {}, consumers: consumers.filter((m) => members.includes(m)) };
     }
+    const newId = itemId || uid();
     updateEvent(eventId, (e) => {
       const it = itemId ? e.items.find((i) => i.id === itemId) : undefined;
       if (it) Object.assign(it, data);
-      else e.items.push({ id: uid(), ...data });
+      else e.items.push({ id: newId, ...data });
     });
     ui.close();
-    ui.toast('Позиция сохранена');
+    done(newId); // результат виден в списке — без всплывашки
   };
 
   const remove = () => {
-    updateEvent(eventId, (e) => { e.items = e.items.filter((i) => i.id !== itemId); });
+    let pos = -1, removed: Item | undefined;
+    updateEvent(eventId, (e) => {
+      pos = e.items.findIndex((i) => i.id === itemId);
+      removed = e.items[pos] ? clone(e.items[pos]) : undefined;
+      e.items = e.items.filter((i) => i.id !== itemId);
+    });
     ui.close();
-    ui.toast('Позиция удалена');
+    ui.toast('Позиция удалена', {
+      action: { label: 'Вернуть', run: () => {
+        if (!removed) return;
+        const back = removed;
+        updateEvent(eventId, (e) => { if (!e.items.some((i) => i.id === back.id)) e.items.splice(Math.max(0, pos), 0, back); });
+        done(back.id);
+      } },
+    });
   };
 
   return (
