@@ -199,8 +199,8 @@ export function EventScreen({ id }: { id: string }) {
             }
           }
           return (
-            <button key={m} data-flip={m} data-flash={m} className={'coaster ' + cls} onClick={() => ui.open(<MemberSheet eventId={id} pid={m} />)}>
-              <span className="mat num"><small>{cap}</small>{val}</span>
+            <button key={m} data-flip={m} className={'coaster ' + cls} onClick={() => ui.open(<MemberSheet eventId={id} pid={m} />)}>
+              <span className="mat num" data-flash={m} data-flash-shape="round"><small>{cap}</small>{val}</span>
               <span className="nm">{nameOf(m)}</span>
             </button>
           );

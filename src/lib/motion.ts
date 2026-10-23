@@ -66,11 +66,23 @@ export function done(key?: string) {
   if (!key || reducedMotion()) return;
   // ждём, пока экран перерисуется после изменения
   requestAnimationFrame(() => requestAnimationFrame(() => {
+    const css = getComputedStyle(document.documentElement);
+    const accent = css.getPropertyValue('--amber').trim() || '#B8650C';
+    const soft = css.getPropertyValue('--amber-soft').trim() || 'transparent';
     document.querySelectorAll<HTMLElement>(`[data-flash="${CSS.escape(key)}"]`).forEach((el) => {
-      el.animate(
-        [{ boxShadow: '0 0 0 2px var(--amber)', backgroundColor: 'var(--amber-soft)' }, { boxShadow: '0 0 0 0 transparent' }],
-        { duration: 900, easing: 'ease-out' },
-      );
+      if (el.dataset.flashShape === 'round') {
+        // круглое (подставка): кольцо по форме круга и лёгкий «пульс», без прямоугольников
+        el.animate(
+          [
+            { outline: `3px solid ${accent}`, outlineOffset: '1px', transform: 'scale(1.06)' },
+            { outline: '3px solid transparent', outlineOffset: '8px', transform: 'scale(1)' },
+          ],
+          { duration: 700, easing: 'cubic-bezier(.2, .8, .3, 1)' },
+        );
+      } else {
+        // строка списка: мягкая заливка цветом приложения, без рамки
+        el.animate([{ backgroundColor: soft }, { backgroundColor: 'transparent' }], { duration: 900, easing: 'ease-out' });
+      }
     });
   }));
 }

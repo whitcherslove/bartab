@@ -619,7 +619,12 @@ html { background: var(--bg) }
 
 /* рамка фокуса — только при управлении с клавиатуры */
 :focus:not(:focus-visible) { outline: none }
-:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; border-radius: 10px }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px }
+/* рамка фокуса нужна только для клавиатуры: на телефоне её не показываем совсем */
+@media (hover: none) and (pointer: coarse) { :focus-visible { outline: none } }
+/* у подставки рамка — по кругу, а не вокруг всей кнопки */
+.coaster:focus-visible { outline: none }
+.coaster:focus-visible .mat { outline: 2px solid var(--amber); outline-offset: 3px }
 
 /* «вдавливание» при нажатии */
 button, .btn, [role="button"], a.btn, label.btn { transition: transform .12s ease, filter .12s ease, background-color .15s ease, opacity .15s ease }
