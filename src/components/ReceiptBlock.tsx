@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { BarEvent } from '../lib/types';
 import { useUI } from '../lib/ui';
 import { deleteReceipt, receiptUrls } from '../lib/remote';
@@ -7,8 +7,8 @@ import { Icon } from './Icons';
 import { ReceiptSheet } from '../sheets/ReceiptSheet';
 import { useStore } from '../lib/store';
 import { eventCategory } from '../lib/categories';
-import { plainStatus, receiptItems, receiptLine, receiptsOf, receiptState, receiptsSummary, receiptsTitle } from '../lib/receipts';
-import { PhotoViewer } from './PhotoViewer';
+import { plainStatus, receiptLine, receiptOwnItems, receiptsOf, receiptState, receiptsSummary, receiptsTitle } from '../lib/receipts';
+import { PhotoViewer, ViewerAsk } from './PhotoViewer';
 
 /** Временные ссылки на фото; пока грузятся — пустые строки */
 function useReceiptUrls(paths: string[]) {
@@ -82,21 +82,23 @@ function ReceiptViewer({ eventId }: { eventId: string }) {
   const ev = state.events.find((e) => e.id === eventId);
   const list = ev ? receiptsOf(ev) : [];
   const urls = useReceiptUrls(list.map((r) => r.path));
-  const [asking, setAsking] = useState('');
+  const [asking, setAsking] = useState(''); // id чека, про который спрашиваем «удалить?»
   const [busy, setBusy] = useState(false);
+  const clearAsk = useCallback(() => setAsking(''), [setAsking]);
   if (!ev || !list.length) return null;
   const tickets = eventCategory(ev, state.places) === 'cinema';
+  const askR = list.find((r) => r.id === asking);
 
-  const remove = async (i: number, withItems: boolean) => {
-    const r = list[i];
-    const n = receiptItems(ev, r).length;
+  const remove = async (withItems: boolean) => {
+    if (!askR) return;
+    const ids = withItems ? receiptOwnItems(ev, askR).map((it) => it.id) : [];
     setBusy(true);
     try {
       await sync(); // сначала отправляем, что накопилось
-      await deleteReceipt(ev.id, r, withItems);
+      await deleteReceipt(ev.id, askR, ids);
       await refresh();
       if (list.length === 1) ui.close();
-      ui.toast(withItems && n ? `Удалено вместе с позициями (${n})` : 'Удалено');
+      ui.toast(ids.length ? `Удалено вместе с позициями (${ids.length})` : 'Удалено');
     } catch (e) {
       ui.toast(humanError(e));
     }
@@ -104,33 +106,13 @@ function ReceiptViewer({ eventId }: { eventId: string }) {
     setBusy(false);
   };
 
-  const footer = (i: number) => {
-    const r = list[i];
-    const n = receiptItems(ev, r).length;
-    if (asking === r.id) {
-      return (
-        <div className="viewer-ask">
-          <p>С этого фото пришло позиций: {n}. Удалить их тоже?</p>
-          <button className="btn block danger" disabled={busy} onClick={() => remove(i, true)}>Удалить вместе с позициями</button>
-          <button className="btn block" disabled={busy} onClick={() => remove(i, false)}>Только фото, позиции оставить</button>
-          <button className="viewer-link" disabled={busy} onClick={() => setAsking('')}>Отмена</button>
-        </div>
-      );
-    }
-    return (
-      <div className="viewer-btns">
-        <button className="viewer-btn" disabled={busy} onClick={() => (n ? setAsking(r.id) : confirm('Удалить это фото?') && remove(i, false))}>
-          {Icon.trash} Удалить
-        </button>
-        <button className="viewer-btn" onClick={() => ui.open(<ReceiptSheet eventId={eventId} />)}>
-          {Icon.plus} {tickets ? 'Ещё билеты' : 'Ещё чек'}
-        </button>
-      </div>
-    );
-  };
+  // вопрос «удалить позиции?» — всегда, даже если чек один
+  const n = askR ? receiptOwnItems(ev, askR).length : 0;
+  const what = askR?.kind === 'tickets' ? 'скриншот билетов' : 'чек';
 
   return (
     <PhotoViewer
+      onIndex={clearAsk}
       photos={list.map((r, i) => ({
         key: r.id,
         url: urls[i],
@@ -138,7 +120,20 @@ function ReceiptViewer({ eventId }: { eventId: string }) {
         caption: receiptState(r) === 'busy' ? plainStatus(r.status) : receiptLine(ev, r),
         tone: receiptState(r),
       }))}
-      footer={footer}
+      footer={(i) => (
+        <div className="viewer-btns">
+          <button className="viewer-btn danger" disabled={busy} onClick={() => setAsking(list[i].id)}>{Icon.trash} Удалить</button>
+          <button className="viewer-btn" onClick={() => ui.open(<ReceiptSheet eventId={eventId} />)}>{Icon.plus} {tickets ? 'Ещё билеты' : 'Ещё чек'}</button>
+        </div>
+      )}
+      overlay={askR && (
+        <ViewerAsk key={askR.id} onClose={clearAsk}>
+          <p className="viewer-ask-t">Удалить {what}?</p>
+          <p className="viewer-ask-s">{n ? `С этого фото пришло позиций: ${n}. Удалить их тоже?` : 'Позиций с этого фото нет — удалится только фото.'}</p>
+          {n > 0 && <button className="viewer-btn danger block" disabled={busy} onClick={() => remove(true)}>Удалить вместе с позициями ({n})</button>}
+          <button className={'viewer-btn block' + (n ? '' : ' danger')} disabled={busy} onClick={() => remove(false)}>{n ? 'Только фото, позиции оставить' : 'Удалить фото'}</button>
+        </ViewerAsk>
+      )}
     />
   );
 }

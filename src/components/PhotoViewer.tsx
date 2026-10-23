@@ -20,11 +20,13 @@ const MAX = 5;
  * Свайп влево/вправо — соседнее фото, вниз — закрыть.
  * Увеличение — двумя пальцами или двойным тапом (на всех остальных экранах зум выключен).
  */
-export function PhotoViewer({ photos, start = 0, footer, onIndex }: {
+export function PhotoViewer({ photos, start = 0, footer, overlay, onIndex }: {
   photos: ViewerPhoto[];
   start?: number;
   /** кнопки снизу для текущего фото */
   footer?: (i: number) => ReactNode;
+  /** панель поверх фото (например, вопрос при удалении) */
+  overlay?: ReactNode;
   onIndex?: (i: number) => void;
 }) {
   const ui = useUI();
@@ -48,10 +50,19 @@ export function PhotoViewer({ photos, start = 0, footer, onIndex }: {
   };
   /** точка относительно центра экрана просмотра */
   const rel = (p: Pt): Pt => { const s = size(); return { x: p.x - s.l - s.w / 2, y: p.y - s.t - s.h / 2 }; };
-  const clamp = (v: { s: number; x: number; y: number }) => {
+  /** размер фото на экране без зума (вписано целиком) */
+  const imgBox = () => {
     const { w, h } = size();
+    const el = img.current;
+    if (!el || !el.naturalWidth || !el.naturalHeight) return { w, h, dw: w, dh: h };
+    const k = Math.min(w / el.naturalWidth, h / el.naturalHeight);
+    return { w, h, dw: el.naturalWidth * k, dh: el.naturalHeight * k };
+  };
+  /** зум не меньше 1, фото не уезжает за края */
+  const clamp = (v: { s: number; x: number; y: number }) => {
+    const { w, h, dw, dh } = imgBox();
     const s = Math.min(MAX, Math.max(1, v.s));
-    const mx = ((s - 1) * w) / 2, my = ((s - 1) * h) / 2;
+    const mx = Math.max(0, (dw * s - w) / 2), my = Math.max(0, (dh * s - h) / 2);
     return { s, x: Math.min(mx, Math.max(-mx, v.x)), y: Math.min(my, Math.max(-my, v.y)) };
   };
 
@@ -179,7 +190,17 @@ export function PhotoViewer({ photos, start = 0, footer, onIndex }: {
       if (now - lastTap.current.t < 300 && Math.hypot(p.x - lastTap.current.p.x, p.y - lastTap.current.p.y) < 30) {
         lastTap.current.t = 0;
         if (z.current.s > 1.01) z.current = { s: 1, x: 0, y: 0 };
-        else { const r = rel(p); z.current = clamp({ s: 2.5, x: -1.5 * r.x, y: -1.5 * r.y }); }
+        else {
+          const { w, h, dw, dh } = imgBox();
+          const fit = w / dw; // во сколько раз увеличить, чтобы фото встало по ширине
+          if (fit > 1.3) {
+            // длинный чек: по ширине экрана, с начала — дальше листаем пальцем вниз
+            z.current = clamp({ s: fit, x: 0, y: (dh * fit - h) / 2 });
+          } else {
+            const r = rel(p);
+            z.current = clamp({ s: 2.5, x: -1.5 * r.x, y: -1.5 * r.y });
+          }
+        }
         paintImg(true);
       } else {
         lastTap.current = { t: now, p };
@@ -239,6 +260,63 @@ export function PhotoViewer({ photos, start = 0, footer, onIndex }: {
         </div>
       )}
       {footer && <div className="viewer-foot">{footer(i)}</div>}
+      {overlay}
+    </>
+  );
+}
+
+/**
+ * Вопрос поверх фото. Закрыть можно кнопкой «Отмена», смахнув панель вниз
+ * или тапнув по затемнённому фото — как обычную шторку.
+ */
+export function ViewerAsk({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  const panel = useRef<HTMLDivElement>(null);
+  const shade = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ y0: number; t0: number; dy: number; id: number } | null>(null);
+  const [leaving, setLeaving] = useState(false);
+
+  const paint = (dy: number, animate: boolean) => {
+    if (panel.current) {
+      panel.current.style.transition = animate ? 'transform .2s ease' : 'none';
+      panel.current.style.transform = dy ? `translateY(${dy}px)` : '';
+    }
+    if (shade.current) shade.current.style.opacity = String(Math.max(0, 1 - dy / 260));
+  };
+  const close = () => {
+    if (leaving) return;
+    setLeaving(true);
+    paint(panel.current?.offsetHeight ?? 300, true);
+    setTimeout(onClose, 180);
+  };
+
+  const onDown = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = { y0: e.clientY, t0: Date.now(), dy: 0, id: e.pointerId };
+  };
+  const onMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d || d.id !== e.pointerId) return;
+    d.dy = Math.max(0, e.clientY - d.y0);
+    paint(d.dy, false);
+  };
+  const onUp = () => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d) return;
+    const fast = d.dy > 40 && d.dy / Math.max(1, Date.now() - d.t0) > 0.5;
+    if (d.dy > 80 || fast) close();
+    else paint(0, true);
+  };
+
+  return (
+    <>
+      <div className="viewer-shade" ref={shade} onClick={close} />
+      <div className="viewer-ask" ref={panel} role="alertdialog" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
+        <div className="viewer-grab" aria-hidden="true" />
+        {children}
+        <button className="viewer-link" onClick={close}>Отмена</button>
+      </div>
     </>
   );
 }

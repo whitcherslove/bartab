@@ -47,3 +47,16 @@ describe('несколько чеков', () => {
     expect(warn.text).toContain('чек 2: не сходится итог');
   });
 });
+
+describe('удаление чека вместе с позициями', () => {
+  it('несколько чеков — только позиции этого чека', async () => {
+    const { receiptOwnItems } = await import('../src/lib/receipts');
+    const ev = event([rec('r1', '✅'), rec('r2', '✅')], [item('a', 100, 'r1'), item('b', 50), item('c', 30, 'r2')]);
+    expect(receiptOwnItems(ev, ev.receipts![0]).map((i) => i.id)).toEqual(['a']);
+  });
+  it('старая встреча с одним чеком — позиции без чека считаются его', async () => {
+    const { receiptOwnItems } = await import('../src/lib/receipts');
+    const ev = event([rec('r1', '✅')], [item('a', 100), item('b', 50)]);
+    expect(receiptOwnItems(ev, ev.receipts![0]).map((i) => i.id)).toEqual(['a', 'b']);
+  });
+});

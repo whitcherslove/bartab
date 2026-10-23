@@ -448,9 +448,10 @@ export async function removeTicketQr(crewId: string, eventId: string, name: stri
 }
 
 /** Удалить фото чека у встречи (позиции остаются) */
-export async function deleteReceipt(eventId: string, r: Receipt, withItems: boolean) {
-  if (withItems) {
-    const { error } = await supabase.from('items').delete().eq('receipt_id', r.id);
+/** Удалить чек; itemIds — его позиции, если их тоже удаляем */
+export async function deleteReceipt(eventId: string, r: Receipt, itemIds: string[] = []) {
+  if (itemIds.length) {
+    const { error } = await supabase.from('items').delete().eq('event_id', eventId).in('id', itemIds);
     if (error) throw error;
   }
   const { error } = await supabase.from('receipts').delete().eq('id', r.id);

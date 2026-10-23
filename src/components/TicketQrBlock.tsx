@@ -6,7 +6,7 @@ import { addTicketQrs, listTicketQrs, removeTicketQr, type TicketQr } from '../l
 import { humanError } from '../lib/supabase';
 import { PhotoButtons } from './PhotoPick';
 import { Icon } from './Icons';
-import { PhotoViewer } from './PhotoViewer';
+import { PhotoViewer, ViewerAsk } from './PhotoViewer';
 
 /** QR-коды для входа в кино: просто картинки, видны всем участникам */
 export function TicketQrBlock({ ev }: { ev: BarEvent }) {
@@ -47,25 +47,7 @@ export function TicketQrBlock({ ev }: { ev: BarEvent }) {
   // тот же просмотр, что у чеков: на весь экран, свайп и зум
   const view = (i: number) => {
     if (!list) return;
-    ui.open(
-      <PhotoViewer
-        start={i}
-        photos={list.map((q) => ({ key: q.name, url: q.url, title: 'QR для входа', caption: 'Прибавь яркость — сканер прочитает быстрее' }))}
-        footer={(j) => (
-          <div className="viewer-btns">
-            <button
-              className="viewer-btn"
-              onClick={async () => {
-                if (!confirm('Удалить этот QR-код?')) return;
-                try { await removeTicketQr(crewId, ev.id, list[j].name); ui.close(); ui.toast('Удалено'); load(); } catch (e) { ui.toast(humanError(e)); }
-              }}
-            >{Icon.trash} Удалить</button>
-            <button className="viewer-btn" onClick={openAdd}>{Icon.plus} Добавить</button>
-          </div>
-        )}
-      />,
-      { full: true },
-    );
+    ui.open(<QrViewer list={list} start={i} onDelete={(q) => removeTicketQr(crewId, ev.id, q.name)} onAdd={openAdd} onChanged={load} />, { full: true });
   };
 
   return (
@@ -82,5 +64,40 @@ export function TicketQrBlock({ ev }: { ev: BarEvent }) {
         </button>
       </div>
     </>
+  );
+}
+
+function QrViewer({ list, start, onDelete, onAdd, onChanged }: {
+  list: TicketQr[]; start: number; onDelete: (q: TicketQr) => Promise<void>; onAdd: () => void; onChanged: () => void;
+}) {
+  const ui = useUI();
+  const [asking, setAsking] = useState<TicketQr | null>(null);
+  const [busy, setBusy] = useState(false);
+  const clearAsk = useCallback(() => setAsking(null), []);
+
+  const remove = async (q: TicketQr) => {
+    setBusy(true);
+    try { await onDelete(q); ui.close(); ui.toast('Удалено'); onChanged(); } catch (e) { ui.toast(humanError(e)); setBusy(false); }
+  };
+
+  return (
+    <PhotoViewer
+      start={start}
+      onIndex={clearAsk}
+      photos={list.map((q) => ({ key: q.name, url: q.url, title: 'QR для входа', caption: 'Прибавь яркость — сканер прочитает быстрее' }))}
+      footer={(j) => (
+        <div className="viewer-btns">
+          <button className="viewer-btn danger" disabled={busy} onClick={() => setAsking(list[j])}>{Icon.trash} Удалить</button>
+          <button className="viewer-btn" onClick={onAdd}>{Icon.plus} Добавить</button>
+        </div>
+      )}
+      overlay={asking && (
+        <ViewerAsk key={asking.name} onClose={clearAsk}>
+          <p className="viewer-ask-t">Удалить QR-код?</p>
+          <p className="viewer-ask-s">Его перестанут видеть все участники встречи.</p>
+          <button className="viewer-btn danger block" disabled={busy} onClick={() => remove(asking)}>Удалить QR-код</button>
+        </ViewerAsk>
+      )}
+    />
   );
 }

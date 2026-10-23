@@ -41,6 +41,17 @@ export const plainStatus = (s: string) => s.replace(/^[^\p{L}\p{N}]+/u, '');
 
 export const receiptItems = (ev: BarEvent, r: Receipt): Item[] => ev.items.filter((it) => it.receiptId === r.id);
 
+/**
+ * Какие позиции «пришли с этого фото» — их предлагаем удалить вместе с чеком.
+ * Старые встречи: позиции к чеку не привязаны; если чек один — это все позиции без чека.
+ */
+export function receiptOwnItems(ev: BarEvent, r: Receipt): Item[] {
+  const linked = receiptItems(ev, r);
+  if (linked.length || receiptsOf(ev).length > 1) return linked;
+  const known = new Set(receiptsOf(ev).map((x) => x.id));
+  return ev.items.filter((it) => !it.receiptId || !known.has(it.receiptId));
+}
+
 /** Короткая строка про чек: «12 поз. · 4 300 ₽», «Распознаю…», «не сходится итог» */
 export function receiptLine(ev: BarEvent, r: Receipt) {
   const st = receiptState(r);
