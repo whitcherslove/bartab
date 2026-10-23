@@ -2,13 +2,16 @@ import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { evWithTips, stats } from '../lib/calc';
 import { badgeClass, dateBadge, fdate, money } from '../lib/format';
-import { coverPlace, Fab, Pill, PlacePhoto } from '../components/common';
+import { coverPlace, CrewAvatar, Fab, Pill, PlacePhoto } from '../components/common';
+import { useAccount } from '../lib/account';
+import { CrewPickerSheet } from '../sheets/CrewPickerSheet';
 import { EventSheet } from '../sheets/EventSheet';
 import { catOf, eventCategory } from '../lib/categories';
 
 export function EventsScreen() {
   const { state, update } = useStore();
   const ui = useUI();
+  const acc = useAccount();
   const list = [...state.events].sort((a, b) => b.date.localeCompare(a.date));
 
   // меню карточки: удалить встречу
@@ -36,7 +39,12 @@ export function EventsScreen() {
 
   return (
     <>
-      <header className="top"><h1>Встречи</h1></header>
+      <header className="top">
+        <h1>Встречи</h1>
+        <button className="crew-btn" onClick={() => ui.open(<CrewPickerSheet />)} aria-label={`Компания «${acc.crew.name}» — сменить`}>
+          <CrewAvatar crew={acc.crew} size={38} />
+        </button>
+      </header>
       <Fab label="Встреча" onClick={() => ui.open(<EventSheet />)} />
       {list.length === 0 && (
         <div className="empty">

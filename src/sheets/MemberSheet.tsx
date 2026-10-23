@@ -26,7 +26,7 @@ export function MemberSheet({ eventId, pid }: { eventId: string; pid: string }) 
 
   let status = 'Пока не отмечено, кто заплатил по счёту';
   if (ev.payer) {
-    if (st.isPayer) status = st.balance > 1 ? `Плательщик · ждёт ещё ${money(st.balance, ev.currency)}` : 'Плательщик · все переводы получены ✅';
+    if (st.isPayer) status = st.balance > 1 ? `Оплата счёта · ждёт ещё ${money(st.balance, ev.currency)}` : 'Оплата счёта · все переводы получены ✅';
     else status = st.settled ? `Перевод для: ${payerName} — отмечен ✅` : `К переводу ${money(st.owed, ev.currency)} → ${payerName}`;
   }
 

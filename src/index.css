@@ -46,13 +46,24 @@ button:disabled { cursor: default; opacity: .5 }
 .top h1 { font: 700 26px/1.1 var(--display); margin: 0; letter-spacing: -.01em; flex: 1 }
 .icon-btn { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; flex: none }
 .icon-btn svg { width: 20px; height: 20px }
+button.crew-btn { border: 0; background: none; padding: 0; border-radius: 30%; display: grid; flex: none; box-shadow: 0 0 0 1px var(--line) }
+button.crew-btn:active { transform: scale(.92) }
 
 /* ===== Нижнее меню ===== */
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px) }
-.tabbar-in { max-width: 520px; margin: 0 auto; display: flex }
-.tab { flex: 1; border: 0; background: none; padding: 10px 0 12px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 12px; color: var(--muted) }
-.tab svg { width: 24px; height: 24px }
+/* полупрозрачная панель: контент просвечивает под размытием */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .tabbar { background: color-mix(in srgb, var(--surface) 70%, transparent); border-top-color: color-mix(in srgb, var(--line) 70%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6) }
+}
+.tabbar-in { max-width: 520px; margin: 0 auto; display: flex; position: relative; padding: 6px 4px 4px }
+.tab { position: relative; z-index: 1; flex: 1; border: 0; background: none; padding: 6px 0 7px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px; color: var(--muted); transition: color .25s }
+.tab svg { width: 24px; height: 24px; transition: transform .3s cubic-bezier(.3, 1.5, .5, 1) }
 .tab[aria-current="page"] { color: var(--amber); font-weight: 600 }
+.tab[aria-current="page"] svg { transform: translateY(-1px) scale(1.06) }
+/* подложка-пилюля под активной вкладкой */
+.tab-glider { position: absolute; top: 6px; bottom: 4px; left: calc(4px + var(--i) * (100% - 8px) / var(--n)); width: calc((100% - 8px) / var(--n)); transition: left .34s cubic-bezier(.3, 1.25, .5, 1); pointer-events: none }
+.tab-glider::before { content: ""; position: absolute; inset: 0 max(4px, calc(50% - 44px)); border-radius: 16px; background: color-mix(in srgb, var(--amber) 15%, transparent); border: 1px solid color-mix(in srgb, var(--amber) 22%, transparent) }
+@media (prefers-reduced-motion: reduce) { .tab-glider, .tab svg { transition: none } }
 
 /* ===== Карточки посиделок ===== */
 .ev-card { display: block; width: 100%; text-align: left; border: 0; padding: 0; background: var(--surface); border-radius: 20px; overflow: hidden; margin: 0 0 14px; box-shadow: 0 1px 0 var(--line) }
@@ -540,7 +551,22 @@ html { background: var(--bg) }
 .pc-amt { color: var(--cherry); font-weight: 600; white-space: nowrap }
 .pc-check { width: 26px; height: 26px; border-radius: 50%; background: var(--chip); color: var(--muted); display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none }
 .pending-chip:active .pc-check { background: var(--hop); color: #fff }
-.all-done { background: var(--surface); border-radius: 14px; padding: 10px 14px; font-weight: 500 }
+.all-done { background: var(--surface); border-radius: 16px; margin: 18px 0 4px; overflow: hidden }
+.all-done-row { width: 100%; display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 11px 14px; text-align: left; font-weight: 500 }
+.done-ico { width: 26px; height: 26px; border-radius: 50%; background: var(--hop); color: var(--surface); display: grid; place-items: center; flex: none }
+.done-ico svg { width: 15px; height: 15px; stroke-width: 3 }
+.done-more { display: inline-flex; align-items: center; gap: 2px; color: var(--muted); font-size: 14px; font-weight: 400 }
+.done-caret { display: grid; transition: transform .25s }
+.done-caret svg { width: 16px; height: 16px }
+.all-done.open .done-caret { transform: rotate(180deg) }
+.done-list { border-top: 1px solid var(--line); padding: 6px 8px 8px; animation: done-open .25s ease-out }
+@keyframes done-open { from { opacity: 0; transform: translateY(-4px) } }
+.done-item { width: 100%; display: flex; align-items: center; gap: 8px; border: 0; background: none; padding: 7px 6px; border-radius: 10px; font-size: 14px; text-align: left }
+.done-item:active { background: var(--chip) }
+.done-item .av { border: 0 }
+.done-arrow { color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.done-item .pc-amt { color: var(--hop) }
+.done-hint { margin: 4px 6px 0; font-size: 12px }
 .pending-hint { margin: 8px 2px 0; font-size: 12px }
 
 /* ===== Приглашения ===== */

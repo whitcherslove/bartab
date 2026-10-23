@@ -7,6 +7,7 @@ import { LoginScreen } from '../screens/auth/LoginScreen';
 import { ProfileStep } from '../screens/auth/ProfileStep';
 import { CrewSetup } from '../screens/auth/CrewSetup';
 import { Splash } from '../screens/auth/Splash';
+import { forgetView } from './ui';
 
 export type Profile = { id: string; name: string; tg: string; avatar_url: string; currency: string };
 export type Invite = { id: string; crew_id: string; crew_name: string; crew_avatar: string; inviter_name: string };
@@ -171,6 +172,9 @@ export function AccountGate({ children }: { children: ReactNode }) {
     setCrewIdState('');
     await reload();
   }, [reload]);
+
+  // вышли из аккаунта — после входа начинаем с главного экрана
+  useEffect(() => { if (session === null) forgetView(); }, [session]);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();

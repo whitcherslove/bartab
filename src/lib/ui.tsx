@@ -27,14 +27,22 @@ type HistState = { bartab: true; view: View; depth: number; sheet?: boolean };
 
 /** Главный экран — из настроек (вкладка, выбранная звёздочкой) */
 const rootView = (): View => ({ screen: getHome() });
+
+// При смене компании данные грузятся заново и экраны пересоздаются.
+// Запоминаем текущий экран, чтобы не выкидывало на главный (например, после создания компании).
+let keptView: View | null = null;
+const startView = (): View => keptView ?? rootView();
+/** Выход из аккаунта: после входа начинаем с главного экрана */
+// eslint-disable-next-line react-refresh/only-export-components
+export function forgetView() { keptView = null; }
 const sameView = (a: View, b: View) => a.screen === b.screen && (a.screen !== 'event' || (b.screen === 'event' && a.id === b.id));
 
 export function UIProvider({ children }: { children: ReactNode }) {
-  const [view, setView] = useState<View>(rootView);
+  const [view, setView] = useState<View>(startView);
   const [sheet, setSheet] = useState<{ node: ReactNode; key: number } | null>(null);
   const [toastMsg, setToastMsg] = useState<{ text: string; key: number } | null>(null);
   const counter = useRef(0);
-  const viewRef = useRef<View>(rootView());
+  const viewRef = useRef<View>(view);
   const depthRef = useRef(0);
   const sheetOpen = useRef(false);
   const swiped = useRef(false); // шторку уже смахнули пальцем — повторно не анимируем
@@ -69,8 +77,11 @@ export function UIProvider({ children }: { children: ReactNode }) {
 
   // Стартовая запись истории
   useEffect(() => {
-    const st: HistState = { bartab: true, view: rootView(), depth: 0 };
+    const st: HistState = { bartab: true, view: viewRef.current, depth: 0 };
     window.history.replaceState(st, '');
+    keptView = null;
+    // экраны пересоздаются (смена компании) — запоминаем, где были
+    return () => { keptView = viewRef.current; };
   }, []);
 
   // Системная кнопка «Назад»

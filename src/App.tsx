@@ -2,7 +2,7 @@ import { StoreProvider } from './lib/store';
 import { AccountGate, useAccount } from './lib/account';
 import { UIProvider, useUI, type View } from './lib/ui';
 import { Icon } from './components/Icons';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { getTabOrder, onTabsChange, TAB_ICONS, TAB_LABELS, type TabId } from './lib/tabs';
 import { WelcomeSheet } from './sheets/WelcomeSheet';
 import { InstallBanner } from './components/InstallBanner';
@@ -112,11 +112,13 @@ function TabBar({ current }: { current: View['screen'] }) {
   useEffect(() => onTabsChange(() => setOrder(getTabOrder())), []);
   return (
     <nav className="tabbar" aria-label="Разделы">
-      <div className="tabbar-in">
+      <div className="tabbar-in" style={{ '--n': order.length, '--i': Math.max(0, order.indexOf(current as TabId)) } as CSSProperties}>
+        {/* подложка под активной вкладкой — переезжает плавно */}
+        {order.includes(current as TabId) && <span className="tab-glider" aria-hidden="true" />}
         {order.map((screen) => (
           <button key={screen} className="tab" aria-current={current === screen ? 'page' : undefined} onClick={() => go({ screen })}>
             <span className="tab-ico">{Icon[TAB_ICONS[screen]]}{screen === 'crew' && invites.length > 0 && <i className="tab-dot" aria-label="Есть приглашения" />}</span>
-            {TAB_LABELS[screen]}
+            <span className="tab-label">{TAB_LABELS[screen]}</span>
           </button>
         ))}
       </div>

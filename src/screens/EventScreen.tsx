@@ -22,6 +22,7 @@ export function EventScreen({ id }: { id: string }) {
   const ev = state.events.find((e) => e.id === id);
   const coastersRef = useRef<HTMLDivElement>(null);
   const doneRef = useRef<HTMLDivElement>(null);
+  const [showDone, setShowDone] = useState(false);
   const orderKey = ev ? `${ev.payer}|${ev.settled.join(',')}|${ev.members.join(',')}` : '';
   useFlip(coastersRef, orderKey);
   // салют, когда в этой сессии отмечен последний перевод
@@ -122,7 +123,7 @@ export function EventScreen({ id }: { id: string }) {
       <ReceiptBlock ev={ev} />
       {cat === 'cinema' && <TicketQrBlock ev={ev} />}
 
-      <h3>Плательщик <small>кто заплатил по счёту</small></h3>
+      <h3>Кто заплатил</h3>
       <div className="chips">
         {ev.members.map((m) => (
           <button key={m} type="button" className="chip" aria-pressed={m === payer} onClick={() => setPayer(m)}>
@@ -130,7 +131,7 @@ export function EventScreen({ id }: { id: string }) {
           </button>
         ))}
       </div>
-      {!payer && <p className="hint">Отметь, кто заплатил по счёту, — и посчитаем, сколько переводят остальные</p>}
+      {!payer && <p className="hint">Отметь — и посчитаем, сколько переводят остальные</p>}
 
       <h3>
         <span>Кто сколько <small>нажми на человека</small></span>
@@ -171,27 +172,48 @@ export function EventScreen({ id }: { id: string }) {
         const due = debtors.filter((m) => stats(ev, m).owed >= 1);
         const pending = due.filter((m) => !ev.settled.includes(m));
         if (!due.length) return null;
+        // все рассчитались — одна строка, переводы раскрываются по тапу
+        if (!pending.length) {
+          return (
+            <div className={'all-done' + (showDone ? ' open' : '')} ref={doneRef}>
+              <button className="all-done-row" onClick={() => setShowDone((v) => !v)} aria-expanded={showDone}>
+                <span className="done-ico" aria-hidden="true">{Icon.check}</span>
+                <span className="grow">Все рассчитались</span>
+                <span className="done-more">Переводы <span className="done-caret">{Icon.down}</span></span>
+              </button>
+              {showDone && (
+                <div className="done-list">
+                  {due.map((m) => (
+                    <button key={m} className="done-item" onClick={() => toggleSettled(m)} aria-label={`Снять отметку: ${nameOf(m)}`}>
+                      <Av id={m} sm />
+                      <span className="pc-name">{nameOf(m)}</span>
+                      <span className="done-arrow">→ {nameOf(payer)}</span>
+                      <span className="pc-amt num">{money(stats(ev, m).owed, ev.currency)}</span>
+                    </button>
+                  ))}
+                  <p className="hint done-hint">Тап по человеку — снять отметку</p>
+                </div>
+              )}
+            </div>
+          );
+        }
         return (
           <>
             <h3>
               <span className="transfers-title">Переводы → <Av id={payer} sm /> {nameOf(payer)}</span>
               <small>{due.length - pending.length} из {due.length}</small>
             </h3>
-            {pending.length ? (
-              <div className="pending-chips">
-                {pending.map((m) => (
-                  <button key={m} className="pending-chip" onClick={() => toggleSettled(m)} aria-label={`Отметить перевод: ${nameOf(m)}`}>
-                    <Av id={m} sm />
-                    <span className="pc-name">{nameOf(m)}</span>
-                    <span className="pc-amt num">{money(stats(ev, m).owed, ev.currency)}</span>
-                    <span className="pc-check" aria-hidden="true">✓</span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="all-done" ref={doneRef}>Все перевели ✅</div>
-            )}
-            {pending.length > 0 && <p className="hint pending-hint">Тап по человеку — перевод отмечен. Отменить — через его подставку выше.</p>}
+            <div className="pending-chips">
+              {pending.map((m) => (
+                <button key={m} className="pending-chip" onClick={() => toggleSettled(m)} aria-label={`Отметить перевод: ${nameOf(m)}`}>
+                  <Av id={m} sm />
+                  <span className="pc-name">{nameOf(m)}</span>
+                  <span className="pc-amt num">{money(stats(ev, m).owed, ev.currency)}</span>
+                  <span className="pc-check" aria-hidden="true">✓</span>
+                </button>
+              ))}
+            </div>
+            <p className="hint pending-hint">Тап по человеку — перевод отмечен. Отменить — через его подставку выше.</p>
           </>
         );
       })()}

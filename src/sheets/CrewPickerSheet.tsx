@@ -22,7 +22,12 @@ export function CrewPickerSheet() {
           embedded
           mode={mode}
           myName={acc.profile.name}
-          onDone={async (id) => { acc.setCrewId(id); await acc.reload(); ui.close(); ui.toast('Готово'); }}
+          onDone={async (id) => {
+            // остаёмся на экране новой компании, а не уходим на главный
+            ui.go({ screen: 'crew' });
+            acc.setCrewId(id);
+            await acc.reload();
+          }}
         />
       </>,
     );
