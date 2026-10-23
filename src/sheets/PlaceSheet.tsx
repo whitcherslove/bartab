@@ -68,7 +68,7 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
         if (!ctrl.signal.aborted) {
           setFound(res.results);
           setProvider(res.provider);
-          if (!res.results.length) setSearchErr('Ничего не нашлось — заполни адрес вручную');
+          if (!res.results.length) setSearchErr(category === 'other' ? 'На карте не нашлось' : 'Ничего не нашлось — заполни адрес вручную');
         }
       } catch (e) {
         if (!ctrl.signal.aborted) { setFound([]); setSearchErr('Поиск сейчас недоступен — заполни поля вручную'); console.warn(e); }
@@ -77,6 +77,15 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
     }, 450);
     return () => clearTimeout(t);
   }, [name, searchOn, category]);
+
+  const other = category === 'other';
+  /** «Без адреса»: закрываем поиск, место без карты */
+  const noAddress = () => {
+    setSearchOn(false);
+    setFound([]);
+    setMapUrl('');
+    setCoords(null);
+  };
 
   const pick = (f: FoundPlace) => {
     setName(f.name);
@@ -194,6 +203,16 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
       </label>
       {searchOn && (searching || found.length > 0 || searchErr) && (
         <div className="list found-list">
+          {/* «Другое»: доставка, подписка, подарок — место без адреса, одним тапом */}
+          {other && name.trim() && (
+            <button type="button" className="row found-noaddr" onClick={noAddress}>
+              <span className="found-ico" aria-hidden="true">🧾</span>
+              <div className="grow">
+                <div className="t">Без адреса — просто «{name.trim()}»</div>
+                <div className="s">Доставка, подписка, подарок и всё, что не на карте</div>
+              </div>
+            </button>
+          )}
           {searching && <div className="row"><div className="s">Ищу…</div></div>}
           {!searching && found.map((f) => (
             <button key={f.key} type="button" className="row" onClick={() => pick(f)}>
@@ -208,7 +227,7 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
           {!searching && (
             <div className="row found-foot">
               <span className="s">{found.length && provider ? `Найдено: ${provider}` : ''}</span>
-              <button type="button" className="link-btn" onClick={() => { setSearchOn(false); setFound([]); }}>Добавить вручную</button>
+              {!other && <button type="button" className="link-btn" onClick={() => { setSearchOn(false); setFound([]); }}>Добавить вручную</button>}
             </div>
           )}
         </div>
@@ -217,7 +236,15 @@ export function PlaceSheet({ id, category: initialCat }: { id?: string; category
         <button type="button" className="link-btn" onClick={() => setSearchOn(true)}>Найти на карте заново</button>
       )}
 
-      <label className="field"><span>Адрес</span><input value={address} onChange={(e) => { setAddress(e.target.value); setMapUrl(''); setCoords(null); }} /></label>
+      {/* в «Другом» вместо адреса — описание (адрес из поиска тоже попадёт сюда) */}
+      <label className="field">
+        <span>{other ? 'Описание' : 'Адрес'}</span>
+        <input
+          value={address}
+          onChange={(e) => { setAddress(e.target.value); setMapUrl(''); setCoords(null); }}
+          placeholder={other ? 'Например, доставка через Самокат — или адрес' : undefined}
+        />
+      </label>
 
       {mapSource(preview) && name.trim() && (
         <div className="field"><span>Показать на карте</span><MapButtons place={preview} /></div>

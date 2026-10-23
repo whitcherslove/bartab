@@ -242,6 +242,8 @@ h3 small { font: 500 13px var(--text); color: var(--muted) }
 .link-btn { border: 0; background: none; color: var(--amber); padding: 0; margin: -6px 0 14px; font-size: 14px; text-decoration: underline }
 .muted { color: var(--muted); font-weight: 400 }
 .found-foot { justify-content: space-between }
+.found-noaddr { text-align: left; border-bottom: 1px solid var(--line) }
+.found-ico { width: 18px; text-align: center; font-size: 16px; flex: none }
 .found-foot .link-btn { margin: 0 }
 
 /* ===== Профиль ===== */

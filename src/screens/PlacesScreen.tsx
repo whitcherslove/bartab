@@ -31,7 +31,7 @@ export function PlacesScreen() {
             <PlacePhoto place={p} className="place-thumb" />
             <div className="grow">
               <div className="t">{p.name}</div>
-              <div className="s">{p.address || 'Адрес не указан'}</div>
+              {(p.address || p.category !== 'other') && <div className="s">{p.address || 'Адрес не указан'}</div>}
             </div>
             <span className="s">{state.events.filter((e) => e.placeId === p.id).length} раз</span>
           </button>
