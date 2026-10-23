@@ -29,7 +29,8 @@ export function ClaimStep({ people, crewId, onDone }: { people: Person[]; crewId
   });
 
   const addMe = () => run(async () => {
-    const { error: e } = await supabase.from('people').insert({ crew_id: crewId, name: profile.name, tg: profile.tg, user_id: session.user.id });
+    // данные — из профиля, включая аватарку (раньше её забывали)
+    const { error: e } = await supabase.from('people').insert({ crew_id: crewId, name: profile.name, tg: profile.tg, avatar_url: profile.avatar_url ?? '', user_id: session.user.id });
     if (e) throw e;
   });
 
