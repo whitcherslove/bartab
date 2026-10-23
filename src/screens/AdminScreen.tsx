@@ -28,11 +28,11 @@ export function AdminScreen() {
   useEffect(() => { load(); }, []);
 
   const delUser = async (u: AdminUser) => {
-    if (!confirm(`Удалить аккаунт ${u.email}? Человек останется в старых встречах как гость. Отменить нельзя.`)) return;
+    if (!(await ui.ask({ title: `Удалить аккаунт ${u.email}?`, text: 'Человек останется в старых встречах как гость. Отменить нельзя.', ok: 'Удалить', danger: true }))) return;
     try { await adminDeleteUser(u.id); ui.toast('Аккаунт удалён'); load(); } catch (e) { ui.fail(humanError(e)); }
   };
   const delCrew = async (c: AdminCrew) => {
-    if (!confirm(`Удалить компанию «${c.name}» со всеми встречами (${c.events})? Отменить нельзя.`)) return;
+    if (!(await ui.ask({ title: `Удалить компанию «${c.name}»?`, text: `Со всеми встречами (${c.events}). Отменить нельзя.`, ok: 'Удалить', danger: true }))) return;
     try { await adminDeleteCrew(c.id); ui.toast('Компания удалена'); load(); if (c.id === acc.crew.id) acc.reload(); } catch (e) { ui.fail(humanError(e)); }
   };
 

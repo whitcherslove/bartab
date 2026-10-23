@@ -67,12 +67,12 @@ export function CrewScreen() {
 
 
   const leave = async () => {
-    if (!confirm(`Выйти из компании «${acc.crew.name}»? Встречи с тобой останутся у друзей, а у тебя пропадут. Вернуться можно по приглашению.`)) return;
+    if (!(await ui.ask({ title: `Выйти из компании «${acc.crew.name}»?`, text: 'Встречи с тобой останутся у друзей, а у тебя пропадут. Вернуться можно по приглашению.', ok: 'Выйти', danger: true }))) return;
     try { await acc.leaveCrew(acc.crew.id); ui.toast('Выход из компании выполнен'); } catch (e) { ui.fail(humanError(e)); }
   };
 
   const removeChat = async () => {
-    if (!confirm(`Отключить чат «${acc.crew.tg_chat_name}» от компании? Бот останется в группе, его можно удалить там вручную.`)) return;
+    if (!(await ui.ask({ title: `Отключить чат «${acc.crew.tg_chat_name}»?`, text: 'Бот останется в группе, его можно удалить там вручную.', ok: 'Отключить', danger: true }))) return;
     try { await disconnectCrewChat(acc.crew.id); await acc.reload(); done(); } catch (e) { ui.fail(humanError(e)); }
   };
 

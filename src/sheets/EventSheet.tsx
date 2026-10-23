@@ -65,8 +65,8 @@ export function EventSheet({ id, draft }: { id?: string; draft?: Draft }) {
     }
   };
 
-  const remove = () => {
-    if (!id || !confirm('Удалить встречу со всеми позициями?')) return;
+  const remove = async () => {
+    if (!id || !(await ui.ask({ title: 'Удалить встречу?', text: 'Вместе со всеми позициями и чеками. Отменить будет нельзя.', ok: 'Удалить', danger: true }))) return;
     update((d) => { d.events = d.events.filter((e) => e.id !== id); });
     ui.closeAndBack();
     done();

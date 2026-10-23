@@ -25,8 +25,8 @@ export function EventsScreen() {
           <button className="btn block" onClick={() => ui.go({ screen: 'event', id })}>Открыть</button>
           <button
             className="btn block danger"
-            onClick={() => {
-              if (!confirm(`Удалить встречу «${title}» со всеми позициями? Отменить будет нельзя.`)) return;
+            onClick={async () => {
+              if (!(await ui.ask({ title: `Удалить встречу «${title}»?`, text: 'Вместе со всеми позициями и чеками. Отменить будет нельзя.', ok: 'Удалить', danger: true }))) return;
               update((d) => { d.events = d.events.filter((e) => e.id !== id); });
               ui.close();
               done();

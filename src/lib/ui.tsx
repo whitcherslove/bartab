@@ -18,10 +18,13 @@ type UI = {
   toast: (text: string, opts?: ToastOpts) => void;
   /** ошибка: красная, держится дольше, закрывается тапом */
   fail: (text: string) => void;
+  /** своё окно «Точно?» вместо системного; true — подтвердили */
+  ask: (o: AskOpts) => Promise<boolean>;
   /** открыта ли сейчас шторка */
   hasSheet: boolean;
 };
 
+export type AskOpts = { title: string; text?: string; ok: string; danger?: boolean; cancel?: string };
 export type ToastOpts = { action?: { label: string; run: () => void } };
 type ToastMsg = { text: string; key: number; error?: boolean; action?: ToastOpts['action'] };
 
@@ -55,6 +58,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<View>(startView);
   const [sheet, setSheet] = useState<{ node: ReactNode; key: number; full?: boolean } | null>(null);
   const [toastMsg, setToastMsg] = useState<ToastMsg | null>(null);
+  const [asking, setAsking] = useState<(AskOpts & { done: (v: boolean) => void }) | null>(null);
   const counter = useRef(0);
   const viewRef = useRef<View>(view);
   const depthRef = useRef(0);
@@ -177,6 +181,9 @@ export function UIProvider({ children }: { children: ReactNode }) {
   }, [dropSheet]);
 
   const toast = useCallback((text: string, opts?: ToastOpts) => setToastMsg({ text, key: ++counter.current, action: opts?.action }), []);
+  const ask = useCallback((o: AskOpts) => new Promise<boolean>((resolve) => {
+    setAsking({ ...o, done: (v) => { setAsking(null); resolve(v); } });
+  }), []);
   const fail = useCallback((text: string) => setToastMsg({ text, key: ++counter.current, error: true }), []);
 
   // Смахивание шторки вниз: тянем за полоску или за шторку, когда она пролистана до начала
@@ -242,7 +249,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   }, [sheet, close]);
 
   return (
-    <Ctx.Provider value={{ view, go, back, closeAndBack, open, close, toast, fail, hasSheet: !!sheet }}>
+    <Ctx.Provider value={{ view, go, back, closeAndBack, open, close, toast, fail, ask, hasSheet: !!sheet }}>
       {children}
       {sheet?.full && (
         <div className="viewer" role="dialog" aria-modal="true" key={sheet.key}>
@@ -267,8 +274,30 @@ export function UIProvider({ children }: { children: ReactNode }) {
           </div>
         </div>
       )}
+      {asking && <AskDialog o={asking} />}
       {toastMsg && <Toast msg={toastMsg} onClose={() => setToastMsg(null)} />}
     </Ctx.Provider>
+  );
+}
+
+/** Окно подтверждения поверх всего: тап мимо или «Отмена» — нет */
+function AskDialog({ o }: { o: AskOpts & { done: (v: boolean) => void } }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') o.done(false); if (e.key === 'Enter') o.done(true); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [o]);
+  return (
+    <div className="ask-scrim" onPointerDown={(e) => e.target === e.currentTarget && o.done(false)}>
+      <div className="ask-box" role="alertdialog" aria-modal="true" aria-labelledby="ask-title">
+        <b id="ask-title">{o.title}</b>
+        {o.text && <p>{o.text}</p>}
+        <div className="ask-btns">
+          <button className="btn" onClick={() => o.done(false)}>{o.cancel ?? 'Отмена'}</button>
+          <button className={'btn ' + (o.danger ? 'danger-fill' : 'primary')} onClick={() => o.done(true)} autoFocus>{o.ok}</button>
+        </div>
+      </div>
+    </div>
   );
 }
 

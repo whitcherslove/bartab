@@ -31,10 +31,10 @@ export function PersonSheet({ id }: { id?: string }) {
     if (!id || !person) return;
     const used = state.events.filter((e) => e.members.includes(id)).length;
     const account = person.userId ? ' У человека есть аккаунт — доступ к компании закроется.' : '';
-    const msg = used
-      ? `Удалить ${person.name} из компании? Человек пропадёт из списка людей, но останется в ${used} старых встреч${used === 1 ? 'е' : 'ах'} — суммы в них не пересчитаются.${account}`
-      : `Удалить ${person.name} из компании?${account}`;
-    if (!confirm(msg)) return;
+    const text = (used
+      ? `Человек пропадёт из списка людей, но останется в ${used} старых встреч${used === 1 ? 'е' : 'ах'} — суммы в них не пересчитаются.`
+      : 'Человек пропадёт из списка людей.') + account;
+    if (!(await ui.ask({ title: `Удалить ${person.name} из компании?`, text, ok: 'Удалить', danger: true }))) return;
     try {
       await removePerson(id);
       await refresh();

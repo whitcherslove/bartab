@@ -111,7 +111,7 @@ export function ProfileScreen() {
   };
 
   const signOut = async () => {
-    if (!confirm('Выйти из аккаунта?')) return;
+    if (!(await ui.ask({ title: 'Выйти из аккаунта?', ok: 'Выйти', danger: true }))) return;
     await acc.signOut();
   };
 
