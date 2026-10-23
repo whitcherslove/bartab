@@ -151,7 +151,7 @@ export function ProfileScreen() {
           <span>Юзернейм в Telegram, без @</span>
           <input value={tg} onChange={(e) => setTg(e.target.value)} placeholder="vasya_pub" autoCapitalize="off" autoCorrect="off" />
         </label>
-        {dirty && <button className="btn primary block sticky-save" onClick={save} disabled={busy}>{busy ? 'Сохраняю…' : 'Сохранить'}</button>}
+        {dirty && <button className="btn primary block" onClick={save} disabled={busy}>{busy ? 'Сохраняю…' : 'Сохранить'}</button>}
         <p className="hint" style={{ margin: dirty ? '10px 2px 0' : 0 }}>Telegram и фото увидят друзья во всех твоих компаниях.</p>
       </div>
 

@@ -25,7 +25,9 @@ export function watchKeyboard() {
   const reveal = () => {
     const el = document.activeElement as HTMLElement | null;
     if (!isEditable(el)) return;
-    setTimeout(() => { if (document.activeElement === el) el!.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 60);
+    // страница (или шторка) просто поднимается: поле — в верхнюю часть видимого,
+    // под ним остаётся место для следующих полей и кнопки
+    setTimeout(() => { if (document.activeElement === el) el!.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 60);
   };
 
   vv?.addEventListener('resize', () => { apply(); reveal(); });
