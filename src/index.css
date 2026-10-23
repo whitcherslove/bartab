@@ -774,3 +774,14 @@ html, body { overscroll-behavior-x: none; overflow-x: clip }
 .drag-handle { width: 40px; height: 44px; margin: -8px -6px -8px 0; display: grid; place-items: center; color: var(--muted); touch-action: none; cursor: grab; flex: none }
 .drag-handle svg { width: 20px; height: 20px }
 .reorder-row.dragging .drag-handle { cursor: grabbing; color: var(--amber) }
+
+/* ===== Карточка места: крупные «Изменить» и «Удалить», вопрос в шторке ===== */
+.place-acts { display: flex; gap: 10px; flex: none }
+.icon-btn.big { width: 48px; height: 48px }
+.icon-btn.big svg { width: 22px; height: 22px }
+.icon-btn.danger { color: var(--cherry); border-color: color-mix(in srgb, var(--cherry) 35%, var(--line)); background: color-mix(in srgb, var(--cherry) 8%, var(--surface)) }
+.icon-btn.danger[aria-expanded="true"] { background: var(--cherry); color: #fff; border-color: var(--cherry) }
+.confirm-box { margin: 12px 0 4px; padding: 14px; border-radius: 16px; background: color-mix(in srgb, var(--cherry) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--cherry) 30%, var(--line)); animation: done-open .2s ease-out }
+.confirm-box p { margin: 4px 0 12px; font-size: 14px; color: var(--muted) }
+.confirm-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
+.btn.danger-fill { background: var(--cherry); color: #fff; border-color: var(--cherry) }

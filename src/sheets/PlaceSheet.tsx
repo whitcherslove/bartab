@@ -156,11 +156,11 @@ export function PlaceSheet({ id, category: initialCat, onCreated }: { id?: strin
     done(placeId);
   };
 
+  // удаление — со своим вопросом в шторке, без системного окна
+  const [asking, setAsking] = useState(false);
+  const used = id ? state.events.filter((e) => e.placeId === id).length : 0;
   const remove = () => {
     if (!id) return;
-    const used = state.events.filter((e) => e.placeId === id).length;
-    const msg = used ? `Удалить место? В ${used} встреч${used === 1 ? 'е' : 'ах'} пропадёт привязка к нему, остальное сохранится.` : 'Удалить место?';
-    if (!confirm(msg)) return;
     update((d) => {
       d.places = d.places.filter((p) => p.id !== id);
       d.events.forEach((e) => { if (e.placeId === id) e.placeId = ''; });
@@ -170,6 +170,17 @@ export function PlaceSheet({ id, category: initialCat, onCreated }: { id?: strin
   };
 
   const preview = { name: name || 'Б', address, mapUrl: mapUrl.trim(), lat: coords?.lat ?? null, lon: coords?.lon ?? null, category };
+
+  const askBox = asking && (
+    <div className="confirm-box" role="alertdialog" aria-label="Удалить место?">
+      <b>Удалить место?</b>
+      <p>{used ? `Во встречах здесь (${used}) пропадёт только привязка к месту — позиции и переводы останутся.` : 'Встреч здесь не было — удалится только само место.'}</p>
+      <div className="confirm-btns">
+        <button className="btn" onClick={() => setAsking(false)}>Отмена</button>
+        <button className="btn danger-fill" onClick={remove}>Удалить</button>
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -186,8 +197,13 @@ export function PlaceSheet({ id, category: initialCat, onCreated }: { id?: strin
               <h4 className="place-title">{name}</h4>
               <span className="place-cat">{catOf(category).emoji} {catOf(category).one}</span>
             </div>
-            <button className="icon-btn" aria-label="Редактировать" onClick={() => setEditing(true)}>{Icon.edit}</button>
+            {/* крупные кнопки, чтобы не промахнуться */}
+            <div className="place-acts">
+              <button className="icon-btn big" aria-label="Редактировать" onClick={() => { setAsking(false); setEditing(true); }}>{Icon.edit}</button>
+              <button className="icon-btn big danger" aria-label="Удалить место" aria-expanded={asking} onClick={() => setAsking((v) => !v)}>{Icon.trash}</button>
+            </div>
           </div>
+          {askBox}
           {address && <p className="place-addr">{address}</p>}
           {mapSource(preview) && <MapButtons place={preview} />}
           <p className="hint" style={{ margin: '14px 2px 0' }}>
@@ -257,7 +273,8 @@ export function PlaceSheet({ id, category: initialCat, onCreated }: { id?: strin
         {id && <button className="btn" onClick={cancelEdit} disabled={busy}>Отмена</button>}
         <button className="btn primary" onClick={save} disabled={busy}>{busy ? 'Сохраняю…' : 'Сохранить'}</button>
       </div>
-      {id && <button className="btn block danger" style={{ marginTop: 10 }} onClick={remove} disabled={busy}>Удалить место</button>}
+      {id && !asking && <button className="btn block danger" style={{ marginTop: 10 }} onClick={() => setAsking(true)} disabled={busy}>Удалить место</button>}
+      {id && askBox}
         </>
       )}
     </>
