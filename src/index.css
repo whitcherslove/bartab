@@ -785,3 +785,14 @@ html, body { overscroll-behavior-x: none; overflow-x: clip }
 .confirm-box p { margin: 4px 0 12px; font-size: 14px; color: var(--muted) }
 .confirm-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
 .btn.danger-fill { background: var(--cherry); color: #fff; border-color: var(--cherry) }
+
+/* ===== Клавиатура: шторка над ней, «Сохранить» всегда видно ===== */
+.scrim { bottom: var(--kb, 0px) }
+.sheet { max-height: min(88vh, calc(var(--vvh, 100dvh) - 24px)) }
+html.kb-open .sheet { border-radius: 24px 24px 0 0; padding-bottom: 12px }
+/* кнопки шторки прилипают к её низу, пока листаешь поля */
+.sheet .sheet-btns { position: sticky; bottom: -1px; z-index: 2; background: var(--surface); padding: 10px 0 2px; margin-top: 0; box-shadow: 0 -12px 12px -12px rgba(0, 0, 0, .18) }
+/* пока печатаешь — вкладки и «+» прячутся, чтобы не висели над клавиатурой */
+html.kb-open .tabbar, html.kb-open .fab { display: none }
+/* «Сохранить» в профиле: пока печатаешь — над клавиатурой */
+html.kb-open .sticky-save { position: sticky; bottom: calc(12px + var(--kb, 0px)); z-index: 3; box-shadow: 0 6px 18px rgba(0, 0, 0, .18) }

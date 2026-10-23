@@ -3,10 +3,12 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.tsx';
 import { applyAccent, applyTheme } from './lib/theme';
+import { watchKeyboard } from './lib/keyboard';
 import './lib/install'; // ловим «можно установить» как можно раньше
 
 applyTheme();
 applyAccent();
+watchKeyboard();
 
 // Зум пальцами выключен во всём приложении — увеличивать можно только фото в просмотре.
 // viewport и touch-action в CSS это уже запрещают; iPhone иногда их игнорирует, поэтому ещё и здесь.
