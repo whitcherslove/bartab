@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import type { BarEvent, TipsMode } from '../lib/types';
+import type { BarEvent, Item, TipsMode } from '../lib/types';
+import { itemGroups } from '../lib/receipts';
 import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { evTotal, evWithTips, itemTotal, stats, tipAmount } from '../lib/calc';
@@ -68,6 +69,43 @@ export function EventScreen({ id }: { id: string }) {
     });
     ui.toast(was ? `${nameOf(pid)}: отметка снята` : `${nameOf(pid)}: перевод отмечен ✅`);
   };
+
+  // одна строка позиции — в общем списке или в разделе своего чека
+  const itemRow = (it: Item) => {
+    const mine = it.splitMode === 'qty' ? (it.split[state.me] || 0) > 0 : it.consumers.includes(state.me);
+    const toggleMine = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (it.splitMode === 'qty') return ui.open(<ItemSheet eventId={id} itemId={it.id} />); // сколько штук — в позиции
+      updateEvent(id, (ev2) => {
+        const x = ev2.items.find((i) => i.id === it.id);
+        if (!x) return;
+        x.consumers = x.consumers.includes(state.me) ? x.consumers.filter((c) => c !== state.me) : [...x.consumers, state.me];
+      });
+    };
+    return (
+    <div key={it.id} className={'row item-row' + (it.consumers.length ? '' : ' no-people')} role="button" tabIndex={0} onClick={() => ui.open(<ItemSheet eventId={id} itemId={it.id} />)}>
+      <div className="grow">
+        <div className="t">{it.name}</div>
+        <div className="s num">
+          {it.qty} × {money(it.price, ev.currency)}{' '}
+          {it.splitMode === 'qty' ? (
+            <span>{it.consumers.map((c) => `${nameOf(c)} ${it.split[c] || 0}`).join(', ')}</span>
+          ) : (
+            <span className="avs">{it.consumers.map((c) => <Av key={c} id={c} sm />)}</span>
+          )}
+          {!it.consumers.length && <span className="unassigned">ни на кого</span>}
+        </div>
+      </div>
+      <span className="amt num">{money(itemTotal(it), ev.currency)}</span>
+      {ev.members.includes(state.me) && (
+        <button className={'mine-btn' + (mine ? ' on' : '')} aria-pressed={mine} onClick={toggleMine} aria-label={mine ? 'Убрать себя из позиции' : 'Это моё'}>
+          {mine ? '✓ Моё' : 'Моё'}
+        </button>
+      )}
+    </div>
+    );
+  };
+  const groups = itemGroups(ev);
 
   return (
     <>
@@ -222,43 +260,20 @@ export function EventScreen({ id }: { id: string }) {
         <span>Позиции <small>{ev.items.length}{unassigned > 0 && <span className="unassigned"> · без людей: {unassigned}</span>}</small></span>
         {ev.items.length > 1 && <button className="link-btn danger-link" onClick={clearItems}>Удалить все</button>}
       </h3>
-      <div className="list">
-        {ev.items.length === 0 && <div className="empty">Добавь позиции вручную или загрузи чек</div>}
-        {ev.items.map((it) => {
-          const mine = it.splitMode === 'qty' ? (it.split[state.me] || 0) > 0 : it.consumers.includes(state.me);
-          const toggleMine = (e: React.MouseEvent) => {
-            e.stopPropagation();
-            if (it.splitMode === 'qty') return ui.open(<ItemSheet eventId={id} itemId={it.id} />); // сколько штук — в позиции
-            updateEvent(id, (ev2) => {
-              const x = ev2.items.find((i) => i.id === it.id);
-              if (!x) return;
-              x.consumers = x.consumers.includes(state.me) ? x.consumers.filter((c) => c !== state.me) : [...x.consumers, state.me];
-            });
-          };
-          return (
-          <div key={it.id} className={'row item-row' + (it.consumers.length ? '' : ' no-people')} role="button" tabIndex={0} onClick={() => ui.open(<ItemSheet eventId={id} itemId={it.id} />)}>
-            <div className="grow">
-              <div className="t">{it.name}</div>
-              <div className="s num">
-                {it.qty} × {money(it.price, ev.currency)}{' '}
-                {it.splitMode === 'qty' ? (
-                  <span>{it.consumers.map((c) => `${nameOf(c)} ${it.split[c] || 0}`).join(', ')}</span>
-                ) : (
-                  <span className="avs">{it.consumers.map((c) => <Av key={c} id={c} sm />)}</span>
-                )}
-                {!it.consumers.length && <span className="unassigned">ни на кого</span>}
-              </div>
+      {ev.items.length === 0 && <div className="list"><div className="empty">Добавь позиции вручную или загрузи чек</div></div>}
+      {groups.length > 1 ? (
+        groups.map((g) => (
+          <section key={g.key} className="item-group">
+            <div className="item-group-h">
+              <span>{g.title}</span>
+              <span className="num">{g.items.length} поз. · {money(g.items.reduce((s, it) => s + itemTotal(it), 0), ev.currency)}</span>
             </div>
-            <span className="amt num">{money(itemTotal(it), ev.currency)}</span>
-            {ev.members.includes(state.me) && (
-              <button className={'mine-btn' + (mine ? ' on' : '')} aria-pressed={mine} onClick={toggleMine} aria-label={mine ? 'Убрать себя из позиции' : 'Это моё'}>
-                {mine ? '✓ Моё' : 'Моё'}
-              </button>
-            )}
-          </div>
-          );
-        })}
-      </div>
+            <div className="list">{g.items.map(itemRow)}</div>
+          </section>
+        ))
+      ) : ev.items.length > 0 && (
+        <div className="list">{ev.items.map(itemRow)}</div>
+      )}
 
       <div className="actbar">
         <div className="actbar-in">

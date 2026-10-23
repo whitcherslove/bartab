@@ -145,6 +145,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'places', filter }, onRemote)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'event_members' }, onRemote)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, onRemote)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'receipts' }, onRemote)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'item_shares' }, onRemote)
       .subscribe();
     return () => {

@@ -399,6 +399,32 @@ button.profile-avatar, button.crew-head-av { border: 0; background: none; paddin
 .receipt-thumb { width: 60px; height: 76px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); padding: 0; background: var(--chip); flex: none }
 .receipt-thumb img { width: 100%; height: 100%; object-fit: cover; display: block }
 .receipt-thumb-ph { display: grid; place-items: center; height: 100%; color: var(--muted) }
+/* несколько чеков: стопка фото */
+.receipt-stack { position: relative; width: 64px; height: 78px; border: 0; background: none; padding: 0; flex: none }
+.rs-sheet { position: absolute; inset: 0 4px 0 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: var(--chip); transition: transform .25s }
+.rs-sheet img { width: 100%; height: 100%; object-fit: cover; display: block }
+.receipt-stack.many .rs-sheet:first-child { transform: translate(6px, -3px) rotate(5deg); filter: brightness(.92) }
+.receipt-stack.many .rs-sheet:last-child { transform: translate(-1px, 2px) rotate(-3deg) }
+.receipt-stack:active .rs-sheet:first-child { transform: translate(9px, -5px) rotate(8deg) }
+.rs-count { position: absolute; right: -4px; bottom: -4px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--amber); color: var(--amber-ink); font-size: 12px; font-weight: 700; display: grid; place-items: center; border: 2px solid var(--surface) }
+.receipt-info { border: 0; background: none; padding: 0; text-align: left; min-width: 0; color: inherit; display: flex; flex-direction: column }
+.receipt-info .t { font-weight: 600 }
+.receipt-info .s, .receipt-row .s { color: var(--muted); font-size: 13px; margin-top: 2px }
+.rs-warn { color: var(--amber) !important }
+.rs-error { color: var(--cherry) !important }
+.rs-busy { color: var(--muted) }
+.receipt-thumb.sm { width: 44px; height: 54px; border-radius: 8px; display: block }
+.receipt-thumb.sm img { width: 100%; height: 100%; object-fit: cover; display: block }
+.receipt-row { width: 100%; text-align: left }
+.receipt-status { margin: -8px 0 12px; font-size: 14px; color: var(--muted) }
+.receipt-ask { margin-top: 12px; display: grid; gap: 8px; text-align: center }
+.receipt-ask p { margin: 0 0 4px; font-size: 14px; color: var(--muted) }
+.receipt-ask .link-btn { margin: 4px auto 0 }
+.sheet h4:has(.sheet-back) { display: flex; align-items: center; gap: 10px }
+/* позиции разделами по чекам */
+.item-group + .item-group { margin-top: 14px }
+.item-group-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0 4px 6px; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em }
+.item-group-h .num { text-transform: none; letter-spacing: 0; font-weight: 500 }
 .receipt-full { width: 100%; max-height: 65vh; object-fit: contain; border-radius: 12px; background: var(--chip); display: block }
 
 /* ===== Долги в профиле ===== */

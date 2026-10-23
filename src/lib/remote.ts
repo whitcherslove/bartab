@@ -1,4 +1,4 @@
-import type { BarEvent, Item, State } from './types';
+import type { BarEvent, Item, Receipt, State } from './types';
 import { supabase } from './supabase';
 import * as fns from './functions';
 import { RECEIPT_FN, TELEGRAM_FN } from './functions';
@@ -11,14 +11,25 @@ import { stats } from './calc';
 type PersonRow = { id: string; name: string; tg: string; user_id: string | null; avatar_url: string; archived: boolean };
 type PlaceRow = { id: string; name: string; address: string; hue: number; photo_path: string; map_url: string; lat: number | null; lon: number | null; category: 'bar' | 'cinema' | 'other' };
 type ShareRow = { person_id: string; qty: number };
-type ItemRow = { id: string; name: string; price: number | string; qty: number; split_mode: 'equal' | 'qty'; created_at: string; item_shares: ShareRow[] };
+type ItemRow = { id: string; name: string; price: number | string; qty: number; split_mode: 'equal' | 'qty'; created_at: string; receipt_id?: string | null; item_shares: ShareRow[] };
+type ReceiptRow = { id: string; path: string; kind: 'receipt' | 'tickets'; status: string; created_at: string };
 type EventRow = {
   id: string; place_id: string | null; date: string; tips: number | string; tips_mode: 'sum' | 'pct'; currency: string;
-  payer_id: string | null; status: string; receipt_path: string; category?: 'bar' | 'cinema' | 'other'; film?: string; session_time?: string; hall?: string; event_members: { person_id: string; settled: boolean }[]; items: ItemRow[];
+  payer_id: string | null; status: string; receipt_path: string; category?: 'bar' | 'cinema' | 'other'; film?: string; session_time?: string; hall?: string; event_members: { person_id: string; settled: boolean }[]; items: ItemRow[]; receipts?: ReceiptRow[];
 };
 type ChatRow = { id: string; name: string; chat_id: string };
 
-const EVENT_SELECT = 'id, place_id, date, tips, tips_mode, currency, category, payer_id, status, receipt_path, film, session_time, hall, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, item_shares(person_id, qty))';
+const EVENT_SELECT = 'id, place_id, date, tips, tips_mode, currency, category, payer_id, status, receipt_path, film, session_time, hall, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, receipt_id, item_shares(person_id, qty)), receipts(id, path, kind, status, created_at)';
+// без чеков: для «Ждёшь / От тебя ждут» и до миграции bartab-receipts
+const EVENT_SELECT_OLD = 'id, place_id, date, tips, tips_mode, currency, category, payer_id, status, receipt_path, film, session_time, hall, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, item_shares(person_id, qty))';
+
+/** Встречи компании; если миграция чеков ещё не запущена — читаем по-старому */
+async function selectEvents(crewId: string) {
+  const q = (sel: string) => supabase.from('events').select(sel).eq('crew_id', crewId).order('date', { ascending: false });
+  const res = await q(EVENT_SELECT);
+  if (res.error && /receipt/i.test(res.error.message ?? '')) return q(EVENT_SELECT_OLD);
+  return res;
+}
 
 function mapEvent(e: EventRow, byPeopleOrder: (a: string, b: string) => number = () => 0): BarEvent {
   return {
@@ -47,7 +58,11 @@ function mapEvent(e: EventRow, byPeopleOrder: (a: string, b: string) => number =
         splitMode: it.split_mode,
         consumers: it.item_shares.map((s) => s.person_id).sort(byPeopleOrder),
         split: it.split_mode === 'qty' ? Object.fromEntries(it.item_shares.map((s) => [s.person_id, s.qty])) : {},
+        ...(it.receipt_id ? { receiptId: it.receipt_id } : {}),
       })),
+    receipts: [...(e.receipts ?? [])]
+      .sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))
+      .map((r): Receipt => ({ id: r.id, path: r.path, kind: r.kind, status: r.status, createdAt: r.created_at })),
   };
 }
 
@@ -61,17 +76,13 @@ export async function fetchCrew(crewId: string, userId: string): Promise<State> 
     supabase.from('people').select('id, name, tg, user_id, avatar_url, archived').eq('crew_id', crewId).order('created_at'),
     // бары всех моих компаний и встреч — правила доступа в базе решают, что видно
     supabase.from('places').select('id, name, address, hue, photo_path, map_url, lat, lon, category').order('created_at'),
-    supabase
-      .from('events')
-      .select(EVENT_SELECT)
-      .eq('crew_id', crewId)
-      .order('date', { ascending: false }),
+    selectEvents(crewId),
     supabase.from('tg_chats').select('id, name, chat_id').order('created_at'),
   ]);
 
   const people = must(peopleRes) as PersonRow[];
   const places = must(placesRes) as PlaceRow[];
-  const events = must(eventsRes) as EventRow[];
+  const events = must(eventsRes) as unknown as EventRow[];
   const chats = must(chatsRes) as ChatRow[];
   const order = new Map(people.map((p, i) => [p.id, i]));
   const byPeopleOrder = (a: string, b: string) => (order.get(a) ?? 0) - (order.get(b) ?? 0);
@@ -359,7 +370,7 @@ export async function fetchMyDebts(userId: string): Promise<{ waiting: OpenDebt[
   if (!eventIds.length) return { waiting: [], owing: [] };
 
   const [evRes, peopleRes] = await Promise.all([
-    supabase.from('events').select(EVENT_SELECT + ', crew_id, places(name, category)').in('id', eventIds),
+    supabase.from('events').select(EVENT_SELECT_OLD + ', crew_id, places(name, category)').in('id', eventIds),
     supabase.from('people').select('id, name').in('crew_id', [...myByCrew.keys()]),
   ]);
   const rows = must(evRes) as unknown as (EventRow & { crew_id: string; places: { name: string; category: string } | null })[];
@@ -437,10 +448,24 @@ export async function removeTicketQr(crewId: string, eventId: string, name: stri
 }
 
 /** Удалить фото чека у встречи (позиции остаются) */
-export async function deleteReceipt(eventId: string, path: string) {
-  if (path) await supabase.storage.from('receipts').remove([path]);
-  const { error } = await supabase.from('events').update({ receipt_path: '', status: '' }).eq('id', eventId);
+export async function deleteReceipt(eventId: string, r: Receipt, withItems: boolean) {
+  if (withItems) {
+    const { error } = await supabase.from('items').delete().eq('receipt_id', r.id);
+    if (error) throw error;
+  }
+  const { error } = await supabase.from('receipts').delete().eq('id', r.id);
   if (error) throw error;
+  if (r.path) await supabase.storage.from('receipts').remove([r.path]); // файл — не критично
+  // старое поле «последний чек» больше не указывает на удалённое фото
+  if (r.path) await supabase.from('events').update({ receipt_path: '' }).eq('id', eventId).eq('receipt_path', r.path);
+}
+
+/** Временные ссылки на фото чеков (по порядку путей) */
+export async function receiptUrls(paths: string[]): Promise<string[]> {
+  if (!paths.length) return [];
+  const { data, error } = await supabase.storage.from('receipts').createSignedUrls(paths, 60 * 60);
+  if (error) throw error;
+  return paths.map((p) => data?.find((d) => d.path === p)?.signedUrl ?? '');
 }
 
 // ---------- Приглашения внутри приложения ----------

@@ -1,6 +1,8 @@
 // BarTab — распознавание чека.
 // Принимает { eventId, path } (фото уже лежит в хранилище receipts),
 // отправляет фото в Gemini и записывает позиции в посиделку.
+// Каждое фото — отдельная запись в receipts со своим статусом; позиции помнят свой чек (receipt_id).
+// Если миграция bartab-receipts ещё не запущена — работает по-старому, без таблицы чеков.
 //
 // Секреты (Edge Functions → Secrets):
 //   GEMINI_API_KEY          — обязательно
@@ -43,6 +45,12 @@ Deno.serve(async (req) => {
   });
 
   let eventId = '';
+  let receiptId: string | null = null;
+  // статус пишем и в чек, и во встречу (встреча — для старых версий приложения)
+  const setStatus = async (status: string, extra: Record<string, string> = {}) => {
+    await db.from('events').update({ status, ...extra }).eq('id', eventId);
+    if (receiptId) await db.from('receipts').update({ status }).eq('id', receiptId);
+  };
   try {
     const body = await req.json().catch(() => ({}));
     eventId = String(body.eventId ?? '');
@@ -58,14 +66,19 @@ Deno.serve(async (req) => {
     if (evErr || !ev) return json({ error: 'Встреча не найдена или нет доступа' }, 404);
     if (!path.startsWith(`${ev.crew_id}/`)) return json({ error: 'Фото не из этой компании' }, 403);
 
-    await db.from('events').update({ status: kind === 'tickets' ? '⏳ Распознаю билеты…' : '⏳ Распознаю чек…', receipt_path: path }).eq('id', eventId);
+    const busy = kind === 'tickets' ? '⏳ Распознаю билеты…' : '⏳ Распознаю чек…';
+    const { data: rec, error: recErr } = await db.from('receipts').insert({ event_id: eventId, path, kind, status: busy }).select('id').single();
+    if (recErr) console.warn('receipts:', recErr.message); // нет таблицы — без неё
+    receiptId = rec?.id ?? null;
+    await setStatus(busy, { receipt_path: path });
 
     const { data: file, error: fileErr } = await db.storage.from('receipts').download(path);
     if (fileErr || !file) throw new Error('Не удалось прочитать фото: ' + (fileErr?.message ?? 'нет файла'));
     const bytes = new Uint8Array(await file.arrayBuffer());
 
     if (kind === 'tickets') {
-      const res = await handleTickets(db, eventId, bytes, file.type || 'image/jpeg');
+      const res = await handleTickets(db, eventId, receiptId, bytes, file.type || 'image/jpeg');
+      if (receiptId) await db.from('receipts').update({ status: res.status }).eq('id', receiptId);
       await notifyMembers(db, eventId, true);
       return json(res);
     }
@@ -77,7 +90,10 @@ Deno.serve(async (req) => {
     // Позиции добавляются без людей — кто что пил, отмечают в приложении
     // время с шагом в 1 мс — чтобы позиции всегда шли в порядке чека
     const t0 = Date.now();
-    const items = rows.map((r, i) => ({ id: crypto.randomUUID(), event_id: eventId, name: r.name, price: r.price, qty: r.qty, split_mode: 'equal', created_at: new Date(t0 + i).toISOString() }));
+    const items = rows.map((r, i) => ({
+      id: crypto.randomUUID(), event_id: eventId, name: r.name, price: r.price, qty: r.qty, split_mode: 'equal',
+      created_at: new Date(t0 + i).toISOString(), ...(receiptId ? { receipt_id: receiptId } : {}),
+    }));
     const { error: itemsErr } = await db.from('items').insert(items);
     if (itemsErr) throw new Error('Не удалось сохранить позиции: ' + itemsErr.message);
 
@@ -90,14 +106,14 @@ Deno.serve(async (req) => {
     } else if (total > 0) {
       status += ', совпадает с итогом чека';
     }
-    await db.from('events').update({ status }).eq('id', eventId);
+    await setStatus(status);
 
     await notifyMembers(db, eventId, false);
     return json({ count: rows.length, sum, total, status });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error('parse-receipt:', msg);
-    if (eventId) await db.from('events').update({ status: '❌ ' + msg.slice(0, 180) }).eq('id', eventId);
+    if (eventId) await setStatus('❌ ' + msg.slice(0, 180));
     return json({ error: msg }, 500);
   }
 });
@@ -120,7 +136,7 @@ const TICKETS_PROMPT = [
 ].join('\n');
 
 // deno-lint-ignore no-explicit-any
-async function handleTickets(db: any, eventId: string, bytes: Uint8Array, mime: string) {
+async function handleTickets(db: any, eventId: string, receiptId: string | null, bytes: Uint8Array, mime: string) {
   const t = await parseWithGemini(bytes, mime, TICKETS_PROMPT) as Tickets;
   const list = (t.tickets ?? []).map((x) => ({ row: String(x.row ?? '').trim(), seat: String(x.seat ?? '').trim(), price: Number(x.price) || 0 }));
   if (!list.length) throw new Error('Билеты на фото не найдены. Загрузи скриншот, где видны ряд, место и цена.');
@@ -136,6 +152,7 @@ async function handleTickets(db: any, eventId: string, bytes: Uint8Array, mime: 
     price: Math.round(x.price * 100) / 100,
     qty: 1,
     split_mode: 'equal',
+    ...(receiptId ? { receipt_id: receiptId } : {}),
   }));
   const { error } = await db.from('items').insert(items);
   if (error) throw new Error('Не удалось сохранить билеты: ' + error.message);

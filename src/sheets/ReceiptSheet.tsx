@@ -37,7 +37,7 @@ export function ReceiptSheet({ eventId }: { eventId: string }) {
 
   const onFiles = async (files: File[]) => {
     if (!files.length) return;
-    let added = 0;
+    let added = 0, done = 0;
     try {
       await sync(); // встреча и участники должны уже лежать в базе
       for (let i = 0; i < files.length; i++) {
@@ -48,10 +48,11 @@ export function ReceiptSheet({ eventId }: { eventId: string }) {
         setStage('scan');
         const res = await recognizeReceipt(crewId, eventId, blob, tickets ? 'tickets' : 'receipt');
         added += res.count;
+        done++;
       }
       await refresh();
       if (alive.current) ui.close();
-      ui.toast(tickets ? `Билетов добавлено: ${added}` : `Чек распознан: ${added} поз.`);
+      ui.toast(tickets ? `Билетов добавлено: ${added}` : done > 1 ? `Чеков: ${done}, позиций: ${added}` : `Чек распознан: ${added} поз.`);
     } catch (e) {
       await refresh();
       if (alive.current) setStage('pick');
@@ -83,10 +84,10 @@ export function ReceiptSheet({ eventId }: { eventId: string }) {
       <p style={{ color: 'var(--muted)', margin: '-6px 0 16px', fontSize: 15 }}>
         {tickets
           ? 'Скриншот или фото билетов, где видны ряд, место и цена. Можно выбрать несколько скриншотов сразу — каждый билет станет отдельной позицией.'
-          : 'Сфотографируй чек целиком и ровно, при хорошем свете. Позиции добавятся сами, останется отметить, кто что брал.'}
+          : 'Сфотографируй чек целиком и ровно, при хорошем свете. Можно выбрать несколько фото сразу — каждое станет отдельным чеком.'}
       </p>
       <div className="photo-choice">
-        <PhotoButtons className="btn block" galleryLabel={tickets ? 'Скриншоты из галереи' : 'Выбрать из галереи'} onFile={onFile} onFiles={tickets ? onFiles : undefined} />
+        <PhotoButtons className="btn block" galleryLabel={tickets ? 'Скриншоты из галереи' : 'Выбрать из галереи'} onFile={onFile} onFiles={onFiles} />
       </div>
     </>
   );

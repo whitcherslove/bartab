@@ -21,6 +21,19 @@ export type Item = {
   splitMode: SplitMode;
   consumers: string[];
   split: Record<string, number>;
+  /** из какого чека пришла позиция (нет — добавлена вручную) */
+  receiptId?: string;
+};
+
+/** Чек или скриншот билетов у встречи */
+export type Receipt = {
+  id: string;
+  /** путь к фото в хранилище receipts */
+  path: string;
+  kind: 'receipt' | 'tickets';
+  /** статус распознавания: ⏳ / ✅ / ⚠️ / ❌ … */
+  status: string;
+  createdAt: string;
 };
 
 /** sum — чаевые суммой, pct — процентом от счёта */
@@ -43,6 +56,8 @@ export type BarEvent = {
   status: string;
   /** путь к фото последнего чека в хранилище receipts ('' — нет) */
   receiptPath?: string;
+  /** все чеки встречи, по порядку загрузки */
+  receipts?: Receipt[];
   /** категория встречи (если место не выбрано — берётся отсюда) */
   category?: 'bar' | 'cinema' | 'other';
   /** кино: фильм, время сеанса, зал */
