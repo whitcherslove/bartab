@@ -7,7 +7,8 @@ import { Icon } from './Icons';
 import { ReceiptSheet } from '../sheets/ReceiptSheet';
 import { useStore } from '../lib/store';
 import { eventCategory } from '../lib/categories';
-import { plainStatus, receiptItems, receiptLabel, receiptLine, receiptsOf, receiptState, receiptsSummary, receiptsTitle } from '../lib/receipts';
+import { plainStatus, receiptItems, receiptLine, receiptsOf, receiptState, receiptsSummary, receiptsTitle } from '../lib/receipts';
+import { PhotoViewer } from './PhotoViewer';
 
 /** Временные ссылки на фото; пока грузятся — пустые строки */
 function useReceiptUrls(paths: string[]) {
@@ -51,7 +52,8 @@ export function ReceiptBlock({ ev }: { ev: BarEvent }) {
     );
   }
 
-  const all = () => ui.open(<ReceiptsSheet eventId={ev.id} />);
+  // тап — сразу фото: один чек или листание между всеми
+  const all = () => ui.open(<ReceiptViewer eventId={ev.id} />, { full: true });
   const sum = receiptsSummary(ev);
 
   return (
@@ -73,95 +75,70 @@ export function ReceiptBlock({ ev }: { ev: BarEvent }) {
   );
 }
 
-/** Все чеки встречи */
-function ReceiptsSheet({ eventId }: { eventId: string }) {
-  const ui = useUI();
-  const { state } = useStore();
-  const ev = state.events.find((e) => e.id === eventId);
-  const list = ev ? receiptsOf(ev) : [];
-  const urls = useReceiptUrls(list.map((r) => r.path));
-  if (!ev) return <div className="empty">Встреча не найдена</div>;
-  const tickets = eventCategory(ev, state.places) === 'cinema';
-
-  return (
-    <>
-      <h4>{tickets ? 'Билеты' : list.length > 1 ? 'Чеки' : 'Чек'}</h4>
-      <div className="list">
-        {list.map((r, i) => (
-          <button key={r.id} className="row receipt-row" onClick={() => ui.open(<ReceiptView eventId={eventId} receiptId={r.id} />)}>
-            <span className="receipt-thumb sm">{urls[i] ? <img src={urls[i]} alt="" /> : <span className="receipt-thumb-ph">{Icon.cam}</span>}</span>
-            <div className="grow">
-              <div className="t">{receiptLabel(ev, r)}</div>
-              <div className={'s rs-' + receiptState(r)}>{receiptLine(ev, r)}</div>
-            </div>
-          </button>
-        ))}
-        {!list.length && <div className="empty">Чеков пока нет</div>}
-      </div>
-      <button className="btn primary block" style={{ marginTop: 14 }} onClick={() => ui.open(<ReceiptSheet eventId={eventId} />)}>
-        {Icon.plus} {tickets ? 'Добавить скриншоты' : 'Добавить чек'}
-      </button>
-    </>
-  );
-}
-
-/** Один чек: фото, статус, удаление */
-function ReceiptView({ eventId, receiptId }: { eventId: string; receiptId: string }) {
+/** Чеки встречи на весь экран: листаются свайпом, удаляются с позициями или без */
+function ReceiptViewer({ eventId }: { eventId: string }) {
   const ui = useUI();
   const { state, sync, refresh } = useStore();
   const ev = state.events.find((e) => e.id === eventId);
-  const r = ev ? receiptsOf(ev).find((x) => x.id === receiptId) : undefined;
-  const [url] = useReceiptUrls(r ? [r.path] : []);
-  const [asking, setAsking] = useState(false);
+  const list = ev ? receiptsOf(ev) : [];
+  const urls = useReceiptUrls(list.map((r) => r.path));
+  const [asking, setAsking] = useState('');
   const [busy, setBusy] = useState(false);
-  if (!ev || !r) return <div className="empty">Удалено</div>;
+  if (!ev || !list.length) return null;
+  const tickets = eventCategory(ev, state.places) === 'cinema';
 
-  const items = receiptItems(ev, r);
-  const many = receiptsOf(ev).length > 1;
-  const label = receiptLabel(ev, r);
-
-  const remove = async (withItems: boolean) => {
+  const remove = async (i: number, withItems: boolean) => {
+    const r = list[i];
+    const n = receiptItems(ev, r).length;
     setBusy(true);
     try {
       await sync(); // сначала отправляем, что накопилось
       await deleteReceipt(ev.id, r, withItems);
       await refresh();
-      if (many) ui.open(<ReceiptsSheet eventId={eventId} />);
-      else ui.close();
-      ui.toast(withItems && items.length ? `Удалено: ${label} и позиции (${items.length})` : `Удалено: ${label}`);
+      if (list.length === 1) ui.close();
+      ui.toast(withItems && n ? `Удалено вместе с позициями (${n})` : 'Удалено');
     } catch (e) {
-      setBusy(false);
       ui.toast(humanError(e));
     }
+    setAsking('');
+    setBusy(false);
+  };
+
+  const footer = (i: number) => {
+    const r = list[i];
+    const n = receiptItems(ev, r).length;
+    if (asking === r.id) {
+      return (
+        <div className="viewer-ask">
+          <p>С этого фото пришло позиций: {n}. Удалить их тоже?</p>
+          <button className="btn block danger" disabled={busy} onClick={() => remove(i, true)}>Удалить вместе с позициями</button>
+          <button className="btn block" disabled={busy} onClick={() => remove(i, false)}>Только фото, позиции оставить</button>
+          <button className="viewer-link" disabled={busy} onClick={() => setAsking('')}>Отмена</button>
+        </div>
+      );
+    }
+    return (
+      <div className="viewer-btns">
+        <button className="viewer-btn" disabled={busy} onClick={() => (n ? setAsking(r.id) : confirm('Удалить это фото?') && remove(i, false))}>
+          {Icon.trash} Удалить
+        </button>
+        <button className="viewer-btn" onClick={() => ui.open(<ReceiptSheet eventId={eventId} />)}>
+          {Icon.plus} {tickets ? 'Ещё билеты' : 'Ещё чек'}
+        </button>
+      </div>
+    );
   };
 
   return (
-    <>
-      <h4>
-        {many && <button className="icon-btn sm sheet-back" aria-label="Все чеки" onClick={() => ui.open(<ReceiptsSheet eventId={eventId} />)}>{Icon.back}</button>}
-        {label}
-      </h4>
-      {r.status && <p className={'receipt-status rs-' + receiptState(r)}>{plainStatus(r.status)}</p>}
-      {url ? <img className="receipt-full" src={url} alt={label} /> : <div className="empty">Загружаю…</div>}
-      {url && <a className="btn block" style={{ marginTop: 12 }} href={url} target="_blank" rel="noopener">Открыть в полном размере</a>}
-
-      {!asking ? (
-        <button
-          className="btn block danger"
-          style={{ marginTop: 10 }}
-          disabled={busy}
-          onClick={() => (items.length ? setAsking(true) : confirm(`Удалить «${label}»?`) && remove(false))}
-        >
-          Удалить
-        </button>
-      ) : (
-        <div className="receipt-ask">
-          <p>С этого фото пришло позиций: {items.length}. Удалить их тоже?</p>
-          <button className="btn block danger" disabled={busy} onClick={() => remove(true)}>Удалить вместе с позициями</button>
-          <button className="btn block" disabled={busy} onClick={() => remove(false)}>Только фото, позиции оставить</button>
-          <button className="link-btn" disabled={busy} onClick={() => setAsking(false)}>Отмена</button>
-        </div>
-      )}
-    </>
+    <PhotoViewer
+      photos={list.map((r, i) => ({
+        key: r.id,
+        url: urls[i],
+        title: r.kind === 'tickets' ? 'Билеты' : 'Чек',
+        caption: receiptState(r) === 'busy' ? plainStatus(r.status) : receiptLine(ev, r),
+        tone: receiptState(r),
+      }))}
+      footer={footer}
+    />
   );
 }

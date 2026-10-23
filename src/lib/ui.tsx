@@ -11,7 +11,8 @@ type UI = {
   back: () => void;
   /** закрыть шторку и сразу вернуться на экран назад (например, после удаления встречи) */
   closeAndBack: () => void;
-  open: (node: ReactNode) => void;
+  /** full — на весь экран (просмотр фото), без шторки */
+  open: (node: ReactNode, opts?: { full?: boolean }) => void;
   close: () => void;
   toast: (text: string) => void;
   /** открыта ли сейчас шторка */
@@ -39,7 +40,7 @@ const sameView = (a: View, b: View) => a.screen === b.screen && (a.screen !== 'e
 
 export function UIProvider({ children }: { children: ReactNode }) {
   const [view, setView] = useState<View>(startView);
-  const [sheet, setSheet] = useState<{ node: ReactNode; key: number } | null>(null);
+  const [sheet, setSheet] = useState<{ node: ReactNode; key: number; full?: boolean } | null>(null);
   const [toastMsg, setToastMsg] = useState<{ text: string; key: number } | null>(null);
   const counter = useRef(0);
   const viewRef = useRef<View>(view);
@@ -51,7 +52,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   /** Показать экран; dir — направление анимации (въезд встречи справа, «назад» — вправо) */
   /** Убрать шторку с анимацией «уезжает вниз» (копия DOM, чтобы не трогать React) */
   const dropSheet = useCallback(() => {
-    const el = document.querySelector('.scrim:not(.leaving)') as HTMLElement | null;
+    const el = document.querySelector('.scrim:not(.leaving), .viewer:not(.leaving)') as HTMLElement | null;
     if (el && !swiped.current && !reducedMotion()) {
       const ghost = el.cloneNode(true) as HTMLElement;
       ghost.classList.add('leaving');
@@ -143,14 +144,14 @@ export function UIProvider({ children }: { children: ReactNode }) {
     window.history.go(-steps); // одно перемещение — обработчик «Назад» покажет нужный экран
   }, [showView]);
 
-  const open = useCallback((node: ReactNode) => {
+  const open = useCallback((node: ReactNode, opts?: { full?: boolean }) => {
     if (!sheetOpen.current) {
       const st: HistState = { bartab: true, view: viewRef.current, depth: depthRef.current, sheet: true };
       window.history.pushState(st, '');
       sheetOpen.current = true;
     }
     // шторка из шторки — заменяем содержимое, «Назад» закроет её целиком
-    setSheet({ node, key: ++counter.current });
+    setSheet({ node, key: ++counter.current, full: opts?.full });
   }, []);
 
   const close = useCallback(() => {
@@ -227,7 +228,12 @@ export function UIProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{ view, go, back, closeAndBack, open, close, toast, hasSheet: !!sheet }}>
       {children}
-      {sheet && (
+      {sheet?.full && (
+        <div className="viewer" role="dialog" aria-modal="true" key={sheet.key}>
+          {sheet.node}
+        </div>
+      )}
+      {sheet && !sheet.full && (
         <div className="scrim" ref={scrimEl} onClick={(e) => e.target === e.currentTarget && close()}>
           <div
             className="sheet"

@@ -8,6 +8,16 @@ import './lib/install'; // ловим «можно установить» как
 applyTheme();
 applyAccent();
 
+// Зум пальцами выключен во всём приложении — увеличивать можно только фото в просмотре.
+// viewport и touch-action в CSS это уже запрещают; iPhone иногда их игнорирует, поэтому ещё и здесь.
+const inViewer = (t: EventTarget | null) => t instanceof Element && !!t.closest('.viewer-stage');
+for (const type of ['gesturestart', 'gesturechange', 'gestureend']) {
+  document.addEventListener(type, (e) => { if (!inViewer(e.target)) e.preventDefault(); }, { passive: false });
+}
+document.addEventListener('touchmove', (e) => {
+  if (e.touches.length > 1 && !inViewer(e.target)) e.preventDefault();
+}, { passive: false });
+
 /** Если что-то упало при отрисовке — показываем ошибку и кнопки вместо пустого экрана */
 class Crash extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };

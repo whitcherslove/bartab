@@ -30,7 +30,7 @@
 
 /* ===== База ===== */
 *, *::before, *::after { box-sizing: inherit }
-html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); overscroll-behavior-y: none }
+html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); overscroll-behavior-y: none; touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adjust: 100% }
 body { overscroll-behavior-y: none; margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); font: 400 16px/1.45 var(--text); -webkit-font-smoothing: antialiased }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg) }
 button, input, select { font: inherit; color: inherit }
@@ -409,18 +409,10 @@ button.profile-avatar, button.crew-head-av { border: 0; background: none; paddin
 .rs-count { position: absolute; right: -4px; bottom: -4px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--amber); color: var(--amber-ink); font-size: 12px; font-weight: 700; display: grid; place-items: center; border: 2px solid var(--surface) }
 .receipt-info { border: 0; background: none; padding: 0; text-align: left; min-width: 0; color: inherit; display: flex; flex-direction: column }
 .receipt-info .t { font-weight: 600 }
-.receipt-info .s, .receipt-row .s { color: var(--muted); font-size: 13px; margin-top: 2px }
+.receipt-info .s { color: var(--muted); font-size: 13px; margin-top: 2px }
 .rs-warn { color: var(--amber) !important }
 .rs-error { color: var(--cherry) !important }
 .rs-busy { color: var(--muted) }
-.receipt-thumb.sm { width: 44px; height: 54px; border-radius: 8px; display: block }
-.receipt-thumb.sm img { width: 100%; height: 100%; object-fit: cover; display: block }
-.receipt-row { width: 100%; text-align: left }
-.receipt-status { margin: -8px 0 12px; font-size: 14px; color: var(--muted) }
-.receipt-ask { margin-top: 12px; display: grid; gap: 8px; text-align: center }
-.receipt-ask p { margin: 0 0 4px; font-size: 14px; color: var(--muted) }
-.receipt-ask .link-btn { margin: 4px auto 0 }
-.sheet h4:has(.sheet-back) { display: flex; align-items: center; gap: 10px }
 /* позиции разделами по чекам */
 .item-group + .item-group { margin-top: 14px }
 .item-group-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0 4px 6px; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em }
@@ -693,3 +685,37 @@ html[data-nav="back"]::view-transition-new(root) { animation: vt-in-left .24s cu
 html, body { overscroll-behavior-x: none; overflow-x: clip }
 .app, .swipe-area { overflow-x: clip }
 .swipe-area { overscroll-behavior-x: none }
+
+/* ===== Просмотр фото на весь экран: чеки, билеты, QR ===== */
+.viewer { position: fixed; inset: 0; z-index: 30; background: #000; color: #fff; display: flex; flex-direction: column; padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); animation: fade .2s ease; overscroll-behavior: contain }
+.viewer.leaving { pointer-events: none; animation: fade-out .2s ease forwards }
+.viewer-top { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px 8px; position: relative; z-index: 2 }
+.viewer-title { font: 600 17px/1.25 var(--display) }
+.viewer-cap { font-size: 13px; color: rgba(255, 255, 255, .7); margin-top: 3px }
+.viewer-cap.rs-warn { color: #F2B45E !important }
+.viewer-cap.rs-error { color: #FF8A8F !important }
+.viewer-x { width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .14); color: #fff; display: grid; place-items: center; flex: none }
+.viewer-x svg { width: 20px; height: 20px }
+.viewer-stage { flex: 1; position: relative; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none }
+.viewer-track { display: flex; height: 100%; will-change: transform }
+.viewer-slide { flex: 0 0 100%; height: 100%; display: grid; place-items: center; overflow: hidden; padding: 0 6px }
+.viewer-slide img { max-width: 100%; max-height: 100%; object-fit: contain; transform-origin: center; will-change: transform; -webkit-user-drag: none }
+.viewer-slide .spinner { border-color: rgba(255, 255, 255, .25); border-top-color: #fff }
+.viewer-nav { position: absolute; top: 50%; width: 40px; height: 40px; margin-top: -20px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .14); color: #fff; display: none; place-items: center }
+.viewer-nav svg { width: 20px; height: 20px }
+.viewer-nav.prev { left: 12px }
+.viewer-nav.next { right: 12px }
+.viewer-nav.next svg { transform: scaleX(-1) }
+.viewer-nav:disabled { opacity: .25 }
+@media (hover: hover) and (pointer: fine) { .viewer-nav { display: grid } }
+.viewer-dots { display: flex; justify-content: center; gap: 6px; padding: 10px 0 2px }
+.viewer-dots span { width: 6px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .35); transition: width .25s, background .25s }
+.viewer-dots span.on { width: 18px; background: #fff }
+.viewer-foot { padding: 10px 14px 12px }
+.viewer-btns { display: flex; gap: 10px; max-width: 520px; margin: 0 auto }
+.viewer-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 14px; padding: 13px; background: rgba(255, 255, 255, .14); color: #fff; font-weight: 500 }
+.viewer-btn svg { width: 19px; height: 19px }
+.viewer-btn:active { background: rgba(255, 255, 255, .24) }
+.viewer-ask { display: grid; gap: 8px; max-width: 520px; margin: 0 auto; text-align: center }
+.viewer-ask p { margin: 0 0 4px; font-size: 14px; color: rgba(255, 255, 255, .75) }
+.viewer-link { border: 0; background: none; color: rgba(255, 255, 255, .8); padding: 8px; font-size: 14px }

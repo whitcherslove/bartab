@@ -6,6 +6,7 @@ import { addTicketQrs, listTicketQrs, removeTicketQr, type TicketQr } from '../l
 import { humanError } from '../lib/supabase';
 import { PhotoButtons } from './PhotoPick';
 import { Icon } from './Icons';
+import { PhotoViewer } from './PhotoViewer';
 
 /** QR-коды для входа в кино: просто картинки, видны всем участникам */
 export function TicketQrBlock({ ev }: { ev: BarEvent }) {
@@ -43,25 +44,27 @@ export function TicketQrBlock({ ev }: { ev: BarEvent }) {
       </>,
     );
 
+  // тот же просмотр, что у чеков: на весь экран, свайп и зум
   const view = (i: number) => {
     if (!list) return;
-    const q = list[i];
     ui.open(
-      <>
-        <h4>Билет {list.length > 1 ? `${i + 1} из ${list.length}` : ''}</h4>
-        <div className="qr-full"><img src={q.url} alt="QR-код билета" /></div>
-        <p className="hint" style={{ textAlign: 'center', margin: '10px 0 12px' }}>Прибавь яркость экрана — так сканер на входе прочитает быстрее.</p>
-        <div className="sheet-btns">
-          {list.length > 1 && <button className="btn" onClick={() => view((i + 1) % list.length)}>Следующий</button>}
-          <button
-            className="btn danger"
-            onClick={async () => {
-              if (!confirm('Удалить этот QR-код?')) return;
-              try { await removeTicketQr(crewId, ev.id, q.name); ui.close(); ui.toast('Удалено'); load(); } catch (e) { ui.toast(humanError(e)); }
-            }}
-          >Удалить</button>
-        </div>
-      </>,
+      <PhotoViewer
+        start={i}
+        photos={list.map((q) => ({ key: q.name, url: q.url, title: 'QR для входа', caption: 'Прибавь яркость — сканер прочитает быстрее' }))}
+        footer={(j) => (
+          <div className="viewer-btns">
+            <button
+              className="viewer-btn"
+              onClick={async () => {
+                if (!confirm('Удалить этот QR-код?')) return;
+                try { await removeTicketQr(crewId, ev.id, list[j].name); ui.close(); ui.toast('Удалено'); load(); } catch (e) { ui.toast(humanError(e)); }
+              }}
+            >{Icon.trash} Удалить</button>
+            <button className="viewer-btn" onClick={openAdd}>{Icon.plus} Добавить</button>
+          </div>
+        )}
+      />,
+      { full: true },
     );
   };
 

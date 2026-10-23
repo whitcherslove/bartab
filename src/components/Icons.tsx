@@ -37,6 +37,12 @@ export const Icon = {
   down: (
     <svg viewBox="0 0 24 24" {...s} strokeWidth={2.2} aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
   ),
+  close: (
+    <svg viewBox="0 0 24 24" {...s} strokeWidth={2} aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+  ),
+  trash: (
+    <svg viewBox="0 0 24 24" {...s} aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
+  ),
   back: (
     <svg viewBox="0 0 24 24" {...s} strokeWidth={2} aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
   ),
