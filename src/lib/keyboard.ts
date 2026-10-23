@@ -21,20 +21,42 @@ export function watchKeyboard() {
     root.classList.toggle('kb-open', open);
   };
 
-  // поле под клавиатурой — подкручиваем, чтобы было видно (и его, и кнопки рядом)
+  // клавиатура открылась — поднимаем содержимое: поле встаёт наверх видимой части,
+  // всё, что ниже (следующие поля, кнопка «Сохранить»), видно под ним.
+  // Если ниже мало — прокрутится до самого низа.
   const reveal = () => {
     const el = document.activeElement as HTMLElement | null;
-    if (!isEditable(el)) return;
-    // страница (или шторка) просто поднимается: поле — в верхнюю часть видимого,
-    // под ним остаётся место для следующих полей и кнопки
-    setTimeout(() => { if (document.activeElement === el) el!.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 60);
+    if (!el || !isEditable(el) || !root.classList.contains('kb-open')) return; // на компьютере — не трогаем
+    const label = (el.closest('.field') as HTMLElement | null) ?? el; // вместе с подписью над полем
+    const sheet = el.closest('.sheet') as HTMLElement | null;
+    if (sheet) {
+      const top = label.getBoundingClientRect().top - sheet.getBoundingClientRect().top + sheet.scrollTop - 12;
+      sheet.scrollTo({ top: Math.max(0, top) });
+    } else {
+      const head = (document.querySelector('.top') as HTMLElement | null)?.offsetHeight ?? 0;
+      window.scrollTo({ top: Math.max(0, label.getBoundingClientRect().top + window.scrollY - head - 12) });
+    }
+  };
+  // клавиатура выезжает не сразу — поднимаем несколько раз, пока она не встанет
+  let timers: number[] = [];
+  const revealSoon = () => {
+    timers.forEach(clearTimeout);
+    timers = [80, 250, 450, 700].map((t) => window.setTimeout(() => requestAnimationFrame(reveal), t));
   };
 
-  vv?.addEventListener('resize', () => { apply(); reveal(); });
+  // поднимаем только когда выезжает клавиатура (сильное изменение высоты),
+  // а не когда в браузере прячется адресная строка
+  let lastH = vv?.height ?? window.innerHeight;
+  vv?.addEventListener('resize', () => {
+    apply();
+    const h = vv.height;
+    if (Math.abs(h - lastH) > 100 && root.classList.contains('kb-open')) revealSoon();
+    lastH = h;
+  });
   vv?.addEventListener('scroll', apply);
   window.addEventListener('resize', apply);
   window.addEventListener('orientationchange', () => { fullH = 0; setTimeout(apply, 300); });
-  document.addEventListener('focusin', () => { apply(); setTimeout(apply, 350); });
+  document.addEventListener('focusin', () => { apply(); setTimeout(apply, 350); revealSoon(); });
   document.addEventListener('focusout', () => setTimeout(apply, 50));
   apply();
 }
