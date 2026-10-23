@@ -7,7 +7,7 @@ import { LoginScreen } from '../screens/auth/LoginScreen';
 import { ProfileStep } from '../screens/auth/ProfileStep';
 import { CrewSetup } from '../screens/auth/CrewSetup';
 import { Splash } from '../screens/auth/Splash';
-import { forgetView } from './ui';
+import { forgetView, startOn } from './ui';
 
 export type Profile = { id: string; name: string; tg: string; avatar_url: string; currency: string };
 export type Invite = { id: string; crew_id: string; crew_name: string; crew_avatar: string; inviter_name: string };
@@ -98,6 +98,7 @@ export function AccountGate({ children }: { children: ReactNode }) {
         clearJoinCode();
         if (joinErr) setError(humanError(joinErr));
         else if (joined) {
+          startOn({ screen: 'crew' }); // вступил по ссылке или QR — сразу на экран компании
           setCrewId(joined as string);
           try { localStorage.setItem('bartab-welcome', '1'); } catch { /* ignore */ }
         }
@@ -161,7 +162,10 @@ export function AccountGate({ children }: { children: ReactNode }) {
     const { data, error: e } = await supabase.rpc('respond_invite', { invite: id, accept });
     if (e) throw e;
     setInvites((list) => list.filter((x) => x.id !== id));
-    if (accept && data) setCrewId(data as string);
+    if (accept && data) {
+      startOn({ screen: 'crew' }); // принял приглашение — тоже на экран компании
+      setCrewId(data as string);
+    }
     await reload();
   }, [reload, setCrewId]);
 

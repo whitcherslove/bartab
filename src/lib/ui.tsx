@@ -38,7 +38,14 @@ const rootView = (): View => ({ screen: getHome() });
 // При смене компании данные грузятся заново и экраны пересоздаются.
 // Запоминаем текущий экран, чтобы не выкидывало на главный (например, после создания компании).
 let keptView: View | null = null;
-const startView = (): View => keptView ?? rootView();
+// куда открыть приложение в следующий раз (вступил в компанию — на экран компании)
+// (живёт 5 минут — хватает на «Кто ты в списке?», но не всплывёт внезапно потом)
+let pendingView: { v: View; until: number } | null = null;
+const pending = () => (pendingView && Date.now() < pendingView.until ? pendingView.v : null);
+const startView = (): View => pending() ?? keptView ?? rootView();
+/** Следующий запуск экранов начнётся с этого экрана (важнее запомненного) */
+// eslint-disable-next-line react-refresh/only-export-components
+export function startOn(v: View) { pendingView = { v, until: Date.now() + 5 * 60_000 }; }
 /** Выход из аккаунта: после входа начинаем с главного экрана */
 // eslint-disable-next-line react-refresh/only-export-components
 export function forgetView() { keptView = null; }
@@ -87,6 +94,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
     const st: HistState = { bartab: true, view: viewRef.current, depth: 0 };
     window.history.replaceState(st, '');
     keptView = null;
+    pendingView = null;
     // экраны пересоздаются (смена компании) — запоминаем, где были
     return () => { keptView = viewRef.current; };
   }, []);
