@@ -662,6 +662,8 @@ html[data-nav="back"]::view-transition-new(root) { animation: vt-in-left .24s cu
 /* нижние вкладки не ездят вместе с экраном */
 .tabbar { view-transition-name: tabbar }
 ::view-transition-group(tabbar), ::view-transition-old(tabbar), ::view-transition-new(tabbar) { animation: none }
+/* старый снимок панели не показываем — иначе подложка вкладки оставляла «след» на старом месте */
+::view-transition-old(tabbar) { display: none }
 
 /* сканирование чека */
 .scan-box { position: relative; width: min(70vw, 260px); aspect-ratio: 3 / 4; margin: 0 auto 14px; border-radius: 14px; overflow: hidden; background: var(--chip); box-shadow: 0 0 0 1px var(--line) }

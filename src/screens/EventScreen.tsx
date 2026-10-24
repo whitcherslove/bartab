@@ -69,7 +69,7 @@ export function EventScreen({ id }: { id: string }) {
     updateEvent(id, (e) => {
       e.settled = was ? e.settled.filter((m) => m !== pid) : [...e.settled, pid];
     });
-    done(pid); // подставка и так поменяется — подсвечиваем её
+    done(); // подставка и так поменяется — только лёгкая вибрация, без подсветки
   };
 
   // одна строка позиции — в общем списке или в разделе своего чека
@@ -200,7 +200,7 @@ export function EventScreen({ id }: { id: string }) {
           }
           return (
             <button key={m} data-flip={m} className={'coaster ' + cls} onClick={() => ui.open(<MemberSheet eventId={id} pid={m} />)}>
-              <span className="mat num" data-flash={m} data-flash-shape="round"><small>{cap}</small>{val}</span>
+              <span className="mat num"><small>{cap}</small>{val}</span>
               <span className="nm">{nameOf(m)}</span>
             </button>
           );

@@ -36,7 +36,7 @@ export function MemberSheet({ eventId, pid }: { eventId: string; pid: string }) 
       e.settled = st.settled ? e.settled.filter((m) => m !== pid) : [...e.settled, pid];
     });
     ui.close();
-    done(pid);
+    done();
   };
 
   return (
