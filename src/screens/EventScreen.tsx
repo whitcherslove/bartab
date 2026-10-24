@@ -164,7 +164,7 @@ export function EventScreen({ id }: { id: string }) {
       {cat === 'cinema' && <TicketQrBlock ev={ev} />}
 
       <h3>Кто заплатил</h3>
-      <div className="chips">
+      <div className="chips big-av">
         {ev.members.map((m) => (
           <button key={m} type="button" className="chip" aria-pressed={m === payer} onClick={() => setPayer(m)}>
             <Av id={m} sm />{nameOf(m)}

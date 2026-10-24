@@ -5,13 +5,13 @@ import { useStore } from '../lib/store';
 import { crewPlaceholderFor, personPlaceholderFor, placeholderFor } from '../lib/placeholders';
 import { CATEGORIES, type Category } from '../lib/categories';
 
-export function Av({ id, sm, lg }: { id: string; sm?: boolean; lg?: boolean }) {
+export function Av({ id, sm, md, lg }: { id: string; sm?: boolean; md?: boolean; lg?: boolean }) {
   const { nameOf, state } = useStore();
   const name = nameOf(id);
   const person = state.people.find((p) => p.id === id);
   // своё фото или значок; ключ — аккаунт, чтобы значок совпадал с профилем во всех компаниях
   const src = person?.avatar || personPlaceholderFor(person?.userId || id);
-  return <img className={'av' + (sm ? ' sm' : '') + (lg ? ' lg' : '')} src={src} alt={name} title={name} loading="lazy" />;
+  return <img className={'av' + (sm ? ' sm' : '') + (md ? ' md' : '') + (lg ? ' lg' : '')} src={src} alt={name} title={name} loading="lazy" />;
 }
 
 /** Баланс словами: «тебе должны 1 300 ₽» / «должен 700 ₽» / «в расчёте» */
@@ -53,7 +53,7 @@ export function PlacePhoto({ place, className = '', children }: { place?: Place;
 export function PeopleChips({ ids, selected, onToggle }: { ids: string[]; selected: string[]; onToggle: (id: string) => void }) {
   const { nameOf } = useStore();
   return (
-    <div className="chips">
+    <div className="chips big-av">
       {ids.map((id) => (
         <button key={id} type="button" className="chip" aria-pressed={selected.includes(id)} onClick={() => onToggle(id)}>
           <Av id={id} sm />

@@ -833,3 +833,11 @@ html.kb-open .tabbar, html.kb-open .fab { display: none }
 .crew-chip:active { background: var(--chip) }
 .settled-all { margin: 0 }
 .settled-all .all-done-row { cursor: default }
+.av.md { width: 42px; height: 42px; font-size: 15px; border-width: 0 }
+/* крупнее аватарки: «Кто заплатил», участники и «кто брал», переводы */
+.chips.big-av .chip { padding: 4px 12px 4px 4px }
+.chips.big-av .av { width: 28px; height: 28px; border-width: 0 }
+.pending-chip .av { width: 30px; height: 30px; border-width: 0 }
+.pending-chip { padding-top: 4px; padding-bottom: 4px }
+.done-item .av { width: 28px; height: 28px }
+.split-list .av { width: 34px; height: 34px; border-width: 0 }

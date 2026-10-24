@@ -124,7 +124,7 @@ export function CrewScreen() {
       <div className="list">
         {state.people.filter((p) => !p.archived).map((p) => (
           <button key={p.id} data-flash={p.id} className="row" onClick={() => ui.open(<PersonSheet id={p.id} />)}>
-            <Av id={p.id} />
+            <Av id={p.id} md />
             <div className="grow">
               <div className="t">{p.name}{p.id === state.me ? ' (это ты)' : ''}</div>
               <div className="s">{pendingPeople.has(p.id) ? 'ждёт ответа на приглашение' : `${p.tg ? '@' + p.tg : 'нет Telegram'}${p.userId ? '' : ' · без аккаунта'}`}</div>
