@@ -816,3 +816,17 @@ html.kb-open .tabbar, html.kb-open .fab { display: none }
 .place-crew.on .pc-mark svg { stroke-width: 3 }
 .pc-mark.locked { background: var(--chip) !important; border-color: var(--chip) !important; color: var(--muted) !important }
 .pc-mark.locked svg { stroke-width: 2 !important }
+
+/* компании — компактные чипсы в одну строку, листаются вбок */
+.crew-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -18px; padding: 2px 18px 4px; scroll-padding: 0 18px }
+.crew-chips::-webkit-scrollbar { display: none }
+.crew-chip { flex: none; display: inline-flex; align-items: center; gap: 7px; max-width: 70vw; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 999px; padding: 4px 12px 4px 4px; font-size: 14px; font-weight: 500 }
+.crew-chip img { border-radius: 50% !important }
+.crew-chip .cc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.crew-chip .cc-ico { display: grid; margin-right: -4px }
+.crew-chip .cc-ico svg { width: 15px; height: 15px; stroke-width: 2.6 }
+.crew-chip.on { border-color: var(--amber); background: color-mix(in srgb, var(--amber) 12%, var(--surface)); color: var(--amber) }
+.crew-chip.locked { border-color: var(--line); background: var(--chip); color: var(--muted) }
+.crew-chip.locked .cc-ico svg { stroke-width: 2 }
+.crew-chip:active { transform: scale(.96) }
+.place-crews-field .crew-chips { margin-top: 2px }

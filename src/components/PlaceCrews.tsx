@@ -57,21 +57,23 @@ export function PlaceCrews({ placeId }: { placeId: string }) {
   return (
     <div className="place-crews">
       <h3>Компании <small>где видно это место</small></h3>
-      <div className="list">
+      <div className="crew-chips">
         {acc.crews.map((c) => {
           const l = links.find((x) => x.crewId === c.id);
           if (!l) return null;
           const locked = l.linked && l.events > 0;
           return (
-            <button key={c.id} className={'row place-crew' + (l.linked ? ' on' : '')} disabled={busy === c.id} onClick={() => toggle(l)} aria-pressed={l.linked}>
-              <CrewAvatar crew={c} size={34} />
-              <div className="grow">
-                <div className="t">{c.name}{c.id === acc.crew.id && <span className="muted"> · текущая</span>}</div>
-                {l.events > 0 && <div className="s">{l.events} {plural(l.events, 'встреча', 'встречи', 'встреч')}</div>}
-              </div>
-              <span className={'pc-mark' + (locked ? ' locked' : '')} aria-hidden="true">
-                {locked ? Icon.lock : l.linked ? Icon.check : null}
-              </span>
+            <button
+              key={c.id}
+              className={'crew-chip' + (l.linked ? ' on' : '') + (locked ? ' locked' : '')}
+              disabled={busy === c.id}
+              onClick={() => toggle(l)}
+              aria-pressed={l.linked}
+              title={locked ? `${l.events} ${plural(l.events, 'встреча', 'встречи', 'встреч')} — отвязать нельзя` : undefined}
+            >
+              <CrewAvatar crew={c} size={24} />
+              <span className="cc-name">{c.name}</span>
+              {locked ? <span className="cc-ico">{Icon.lock}</span> : l.linked && <span className="cc-ico">{Icon.check}</span>}
             </button>
           );
         })}
@@ -91,18 +93,16 @@ export function CrewChecklist({ selected, onChange }: { selected: string[]; onCh
     onChange(on ? selected.filter((x) => x !== id) : [...selected, id]);
   };
   return (
-    <div className="place-crews">
-      <h3>Компании <small>где будет видно это место</small></h3>
-      <div className="list">
+    <div className="field place-crews-field">
+      <span>Компании</span>
+      <div className="crew-chips">
         {acc.crews.map((c) => {
           const on = selected.includes(c.id);
           return (
-            <button key={c.id} type="button" className={'row place-crew' + (on ? ' on' : '')} onClick={() => toggle(c.id)} aria-pressed={on}>
-              <CrewAvatar crew={c} size={34} />
-              <div className="grow">
-                <div className="t">{c.name}{c.id === acc.crew.id && <span className="muted"> · текущая</span>}</div>
-              </div>
-              <span className="pc-mark" aria-hidden="true">{on ? Icon.check : null}</span>
+            <button key={c.id} type="button" className={'crew-chip' + (on ? ' on' : '')} onClick={() => toggle(c.id)} aria-pressed={on}>
+              <CrewAvatar crew={c} size={24} />
+              <span className="cc-name">{c.name}</span>
+              {on && <span className="cc-ico">{Icon.check}</span>}
             </button>
           );
         })}
