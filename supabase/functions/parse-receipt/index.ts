@@ -28,6 +28,8 @@ const TIME_BUDGET_MS = 60_000; // общий лимит на распознав�
 type Receipt = {
   items?: { name?: string; qty?: number; unit_price?: number; line_total?: number }[];
   service_charge?: number;
+  /** доставка суммой — отдельной позицией «Доставка» */
+  delivery?: number;
   total?: number;
 };
 
@@ -214,6 +216,9 @@ async function notifyMembers(userDb: any, eventId: string, tickets: boolean) {
 function normalize(r: Receipt) {
   const list = [...(r.items ?? [])];
   if (Number(r.service_charge) > 0) list.push({ name: 'Сервисный сбор', qty: 1, unit_price: Number(r.service_charge) });
+  // доставку модель может вернуть и строкой в items — тогда не дублируем
+  const hasDelivery = list.some((it) => /доставк|delivery/i.test(String(it.name ?? '')));
+  if (Number(r.delivery) > 0 && !hasDelivery) list.push({ name: 'Доставка', qty: 1, unit_price: Number(r.delivery) });
   return list
     .map((it) => {
       const rawQty = Number(it.qty) > 0 ? Number(it.qty) : 1;
@@ -240,14 +245,15 @@ function toBase64(bytes: Uint8Array) {
 }
 
 const PROMPT = [
-  'Это фото чека из бара или ресторана. Извлеки все позиции.',
+  'Это фото чека или скриншот заказа: бар, ресторан, кафе или доставка еды. Извлеки все позиции.',
   'Верни только JSON такого вида:',
-  '{"items":[{"name":"","qty":1,"unit_price":0,"line_total":0}],"service_charge":0,"total":0}',
+  '{"items":[{"name":"","qty":1,"unit_price":0,"line_total":0}],"service_charge":0,"delivery":0,"total":0}',
   'Правила:',
   '- name: название позиции как в чеке, кратко;',
   '- qty: количество (число), unit_price: цена за единицу, line_total: сумма строки;',
   '- если скидка относится к конкретной строке — учти её в цене этой строки;',
   '- service_charge: сервисный сбор суммой, если есть, иначе 0;',
+  '- delivery: стоимость доставки суммой, если она платная, иначе 0 (саму доставку в items не добавляй);',
   '- total: итог к оплате;',
   '- НЕ добавляй в items строки итогов, налогов, сдачи, чаевых и способов оплаты;',
   '- числа без валюты, десятичный разделитель — точка.',
