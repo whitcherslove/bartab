@@ -13,18 +13,35 @@ import { Icon } from './Icons';
  * Блок «Компании» в карточке места: в каких моих компаниях оно видно.
  * Отвязать нельзя, пока в компании есть встречи с этим местом — там замочек.
  */
+// число встреч по компаниям — запоминаем, чтобы при повторном открытии было сразу
+const linkCache = new Map<string, PlaceLink[]>();
+
 export function PlaceCrews({ placeId }: { placeId: string }) {
   const acc = useAccount();
   const ui = useUI();
-  const { refresh } = useStore();
-  const [links, setLinks] = useState<PlaceLink[] | null>(null);
+  const { state, refresh } = useStore();
+  const place = state.places.find((p) => p.id === placeId);
+  const [fetched, setFetched] = useState<PlaceLink[] | null>(() => linkCache.get(placeId) ?? null);
   const [busy, setBusy] = useState('');
 
   useEffect(() => {
     let alive = true;
-    placeLinks(placeId).then((l) => alive && setLinks(l)).catch(() => alive && setLinks([]));
+    placeLinks(placeId)
+      .then((l) => { linkCache.set(placeId, l); if (alive) setFetched(l); })
+      .catch(() => {});
     return () => { alive = false; };
   }, [placeId]);
+
+  // сразу — из загруженных данных (галочки), число встреч и замочки догружаются без сдвигов
+  const known = place?.crewIds;
+  const links: PlaceLink[] | null = fetched ?? (known
+    ? acc.crews.map((c) => ({ crewId: c.id, linked: known.includes(c.id), events: c.id === acc.crew.id ? state.events.filter((e) => e.placeId === placeId).length : 0 }))
+    : null);
+  const setLinks = (fn: (cur: PlaceLink[] | null) => PlaceLink[] | null) => {
+    const next = fn(links);
+    if (next) linkCache.set(placeId, next);
+    setFetched(next);
+  };
 
   // одна компания или миграция ещё не запущена — блок не нужен
   if (acc.crews.length < 2 || !links?.length) return null;
@@ -71,7 +88,7 @@ export function PlaceCrews({ placeId }: { placeId: string }) {
               aria-pressed={l.linked}
               title={locked ? `${l.events} ${plural(l.events, 'встреча', 'встречи', 'встреч')} — отвязать нельзя` : undefined}
             >
-              <CrewAvatar crew={c} size={26} />
+              <CrewAvatar crew={c} size={30} />
               <span className="cc-name">{c.name}</span>
               {c.id === acc.crew.id && <span className="cc-now">текущая</span>}
               {locked && <span className="cc-meta">{l.events} {plural(l.events, 'встреча', 'встречи', 'встреч')}</span>}
@@ -102,7 +119,7 @@ export function CrewChecklist({ selected, onChange }: { selected: string[]; onCh
           const on = selected.includes(c.id);
           return (
             <button key={c.id} type="button" className={'crew-chip' + (on ? ' on' : '')} onClick={() => toggle(c.id)} aria-pressed={on}>
-              <CrewAvatar crew={c} size={26} />
+              <CrewAvatar crew={c} size={30} />
               <span className="cc-name">{c.name}</span>
               {c.id === acc.crew.id && <span className="cc-now">текущая</span>}
               <span className="cc-ico">{on ? Icon.check : null}</span>

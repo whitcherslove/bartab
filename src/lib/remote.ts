@@ -79,15 +79,18 @@ export async function fetchCrew(crewId: string, userId: string): Promise<State> 
     selectEvents(crewId),
     supabase.from('tg_chats').select('id, name, chat_id').order('created_at'),
     // места этой компании (миграция bartab-place-crews); до неё — все видимые, как раньше
-    supabase.from('place_crews').select('place_id').eq('crew_id', crewId),
+    supabase.from('place_crews').select('place_id, crew_id'), // связи во всех моих компаниях — для карточки места
   ]);
 
   const people = must(peopleRes) as PersonRow[];
   const events = must(eventsRes) as unknown as EventRow[];
   let places = must(placesRes) as PlaceRow[];
-  if (!linksRes.error) {
+  const links = linksRes.error ? null : (linksRes.data as { place_id: string; crew_id: string }[]);
+  const crewsOf = new Map<string, string[]>();
+  links?.forEach((l) => crewsOf.set(l.place_id, [...(crewsOf.get(l.place_id) ?? []), l.crew_id]));
+  if (links) {
     // только места текущей компании (+ на всякий случай те, что уже стоят в её встречах)
-    const mine = new Set((linksRes.data as { place_id: string }[]).map((l) => l.place_id));
+    const mine = new Set(links.filter((l) => l.crew_id === crewId).map((l) => l.place_id));
     events.forEach((e) => { if (e.place_id) mine.add(e.place_id); });
     places = places.filter((p) => mine.has(p.id));
   }
@@ -98,7 +101,7 @@ export async function fetchCrew(crewId: string, userId: string): Promise<State> 
   return {
     me: people.find((p) => p.user_id === userId)?.id ?? '',
     people: people.map((p) => ({ id: p.id, name: p.name, tg: p.tg, userId: p.user_id, avatar: p.avatar_url ?? '', archived: !!p.archived })),
-    places: places.map((p) => ({ id: p.id, name: p.name, address: p.address, hue: p.hue, photo: p.photo_path, mapUrl: p.map_url ?? '', lat: p.lat, lon: p.lon, category: p.category ?? 'bar' })),
+    places: places.map((p) => ({ id: p.id, name: p.name, address: p.address, hue: p.hue, photo: p.photo_path, mapUrl: p.map_url ?? '', lat: p.lat, lon: p.lon, category: p.category ?? 'bar', ...(links ? { crewIds: crewsOf.get(p.id) ?? [] } : {}) })),
     chats: chats.map((c) => ({ id: c.id, name: c.name, chatId: c.chat_id })),
     events: events.map((e) => mapEvent(e, byPeopleOrder)),
   };

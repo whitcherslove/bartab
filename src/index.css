@@ -819,14 +819,14 @@ html.kb-open .tabbar, html.kb-open .fab { display: none }
 
 /* компании — компактный список друг под другом, всё видно сразу */
 .crew-chips { display: flex; flex-direction: column; background: var(--bg); border: 1px solid var(--line); border-radius: 14px; overflow: hidden }
-.crew-chip { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); padding: 7px 12px 7px 8px; font-size: 15px; text-align: left; min-height: 42px }
+.crew-chip { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); padding: 9px 14px 9px 10px; font-size: 16px; font-weight: 500; text-align: left; min-height: 50px }
 .crew-chip:first-child { border-top: 0 }
 .crew-chip img { border-radius: 50% !important; flex: none }
 .crew-chip .cc-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
-.crew-chip .cc-now { flex: none; font-size: 11px; font-weight: 600; color: var(--muted); background: var(--chip); border-radius: 999px; padding: 2px 8px }
+.crew-chip .cc-now { flex: none; font-size: 12px; font-weight: 600; color: var(--muted); background: var(--chip); border-radius: 999px; padding: 2px 8px }
 .crew-chip .cc-meta { flex: none; font-size: 12px; color: var(--muted) }
-.crew-chip .cc-ico { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center }
-.crew-chip .cc-ico svg { width: 13px; height: 13px; stroke-width: 3 }
+.crew-chip .cc-ico { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center }
+.crew-chip .cc-ico svg { width: 14px; height: 14px; stroke-width: 3 }
 .crew-chip.on .cc-ico { background: var(--amber); border-color: var(--amber); color: var(--amber-ink) }
 .crew-chip.locked .cc-ico { background: var(--chip); border-color: var(--chip); color: var(--muted) }
 .crew-chip.locked .cc-ico svg { stroke-width: 2 }
