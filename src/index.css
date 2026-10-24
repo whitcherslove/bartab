@@ -803,3 +803,14 @@ html.kb-open .tabbar, html.kb-open .fab { display: none }
 .ask-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px }
 .ask-btns .btn { justify-content: center; padding: 13px }
 @keyframes ask-in { from { transform: scale(.92); opacity: 0 } }
+
+/* ===== Карточка места: в каких компаниях ===== */
+.place-crews { margin-top: 18px }
+.place-crew { width: 100%; text-align: left }
+.place-crew .muted { color: var(--muted); font-weight: 400 }
+.pc-mark { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; flex: none; border: 2px solid var(--line); color: transparent }
+.pc-mark svg { width: 15px; height: 15px }
+.place-crew.on .pc-mark { background: var(--amber); border-color: var(--amber); color: var(--amber-ink) }
+.place-crew.on .pc-mark svg { stroke-width: 3 }
+.pc-mark.locked { background: var(--chip) !important; border-color: var(--chip) !important; color: var(--muted) !important }
+.pc-mark.locked svg { stroke-width: 2 !important }

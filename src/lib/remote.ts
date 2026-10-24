@@ -72,17 +72,25 @@ function must<T>(res: { data: T | null; error: unknown }): T {
 }
 
 export async function fetchCrew(crewId: string, userId: string): Promise<State> {
-  const [peopleRes, placesRes, eventsRes, chatsRes] = await Promise.all([
+  const [peopleRes, placesRes, eventsRes, chatsRes, linksRes] = await Promise.all([
     supabase.from('people').select('id, name, tg, user_id, avatar_url, archived').eq('crew_id', crewId).order('created_at'),
     // бары всех моих компаний и встреч — правила доступа в базе решают, что видно
     supabase.from('places').select('id, name, address, hue, photo_path, map_url, lat, lon, category').order('created_at'),
     selectEvents(crewId),
     supabase.from('tg_chats').select('id, name, chat_id').order('created_at'),
+    // места этой компании (миграция bartab-place-crews); до неё — все видимые, как раньше
+    supabase.from('place_crews').select('place_id').eq('crew_id', crewId),
   ]);
 
   const people = must(peopleRes) as PersonRow[];
-  const places = must(placesRes) as PlaceRow[];
   const events = must(eventsRes) as unknown as EventRow[];
+  let places = must(placesRes) as PlaceRow[];
+  if (!linksRes.error) {
+    // только места текущей компании (+ на всякий случай те, что уже стоят в её встречах)
+    const mine = new Set((linksRes.data as { place_id: string }[]).map((l) => l.place_id));
+    events.forEach((e) => { if (e.place_id) mine.add(e.place_id); });
+    places = places.filter((p) => mine.has(p.id));
+  }
   const chats = must(chatsRes) as ChatRow[];
   const order = new Map(people.map((p, i) => [p.id, i]));
   const byPeopleOrder = (a: string, b: string) => (order.get(a) ?? 0) - (order.get(b) ?? 0);
@@ -502,4 +510,25 @@ export async function inviteToCrew(crewId: string, fromPerson: string, invitee?:
   if (error) throw error;
   // пуш приглашённому; если не получилось — приглашение всё равно есть в приложении
   if (invitee) supabase.functions.invoke(PUSH_FN, { body: { type: 'invite', crewId, invitee } }).catch(() => {});
+}
+
+// ---------- Места ↔ компании ----------
+export type PlaceLink = { crewId: string; linked: boolean; events: number };
+
+/** В каких моих компаниях место и сколько там с ним встреч */
+export async function placeLinks(placeId: string): Promise<PlaceLink[]> {
+  const { data, error } = await supabase.rpc('place_links', { p_place: placeId });
+  if (error) throw error;
+  return (data as { crew_id: string; linked: boolean; events: number }[]).map((r) => ({ crewId: r.crew_id, linked: r.linked, events: r.events }));
+}
+
+export async function setPlaceLink(placeId: string, crewId: string, on: boolean) {
+  if (on) {
+    const { error } = await supabase.from('place_crews').upsert({ place_id: placeId, crew_id: crewId }, { onConflict: 'place_id,crew_id', ignoreDuplicates: true });
+    if (error) throw error;
+  } else {
+    const { data, error } = await supabase.from('place_crews').delete().eq('place_id', placeId).eq('crew_id', crewId).select('place_id');
+    if (error) throw error;
+    if (!data?.length) throw new Error('Нельзя отвязать: в этой компании есть встречи с этим местом');
+  }
 }

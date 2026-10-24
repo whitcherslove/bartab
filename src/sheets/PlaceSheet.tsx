@@ -3,6 +3,7 @@ import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { hueOf, uid } from '../lib/format';
 import { Icon } from '../components/Icons';
+import { PlaceCrews } from '../components/PlaceCrews';
 import { photoStyle } from '../components/common';
 import { MapButtons, mapSource } from '../components/MapButtons';
 import { CategorySeg } from '../components/common';
@@ -209,6 +210,7 @@ export function PlaceSheet({ id, category: initialCat, onCreated }: { id?: strin
           <p className="hint" style={{ margin: '14px 2px 0' }}>
             {(() => { const n = state.events.filter((e) => e.placeId === id).length; return n ? `Встреч здесь: ${n}` : 'Встреч здесь пока не было'; })()}
           </p>
+          <PlaceCrews placeId={id} />
         </>
       ) : (
         <>

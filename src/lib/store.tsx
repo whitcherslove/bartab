@@ -143,6 +143,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'events', filter }, onRemote)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'people', filter }, onRemote)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'places', filter }, onRemote)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'place_crews', filter }, onRemote)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'event_members' }, onRemote)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, onRemote)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'receipts' }, onRemote)
