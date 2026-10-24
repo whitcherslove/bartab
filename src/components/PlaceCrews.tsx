@@ -71,9 +71,11 @@ export function PlaceCrews({ placeId }: { placeId: string }) {
               aria-pressed={l.linked}
               title={locked ? `${l.events} ${plural(l.events, 'встреча', 'встречи', 'встреч')} — отвязать нельзя` : undefined}
             >
-              <CrewAvatar crew={c} size={24} />
+              <CrewAvatar crew={c} size={26} />
               <span className="cc-name">{c.name}</span>
-              {locked ? <span className="cc-ico">{Icon.lock}</span> : l.linked && <span className="cc-ico">{Icon.check}</span>}
+              {c.id === acc.crew.id && <span className="cc-now">текущая</span>}
+              {locked && <span className="cc-meta">{l.events} {plural(l.events, 'встреча', 'встречи', 'встреч')}</span>}
+              <span className="cc-ico">{locked ? Icon.lock : l.linked ? Icon.check : null}</span>
             </button>
           );
         })}
@@ -100,9 +102,10 @@ export function CrewChecklist({ selected, onChange }: { selected: string[]; onCh
           const on = selected.includes(c.id);
           return (
             <button key={c.id} type="button" className={'crew-chip' + (on ? ' on' : '')} onClick={() => toggle(c.id)} aria-pressed={on}>
-              <CrewAvatar crew={c} size={24} />
+              <CrewAvatar crew={c} size={26} />
               <span className="cc-name">{c.name}</span>
-              {on && <span className="cc-ico">{Icon.check}</span>}
+              {c.id === acc.crew.id && <span className="cc-now">текущая</span>}
+              <span className="cc-ico">{on ? Icon.check : null}</span>
             </button>
           );
         })}
