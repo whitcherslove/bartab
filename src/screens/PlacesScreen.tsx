@@ -7,7 +7,8 @@ import { CATEGORIES, catOf, DEFAULT_CATEGORY, type Category } from '../lib/categ
 import { useSwipeTabs } from '../lib/swipe';
 import { mergeOrder, moveItem, sortPlaces } from '../lib/placeOrder';
 import { done } from '../lib/motion';
-import { CategorySeg, Fab, PlacePhoto } from '../components/common';
+import { CategorySeg, CrewAvatar, Fab, PlacePhoto } from '../components/common';
+import { CrewPickerSheet } from '../sheets/CrewPickerSheet';
 import { Icon } from '../components/Icons';
 import { ReorderList } from '../components/ReorderList';
 import { PlaceSheet } from '../sheets/PlaceSheet';
@@ -66,8 +67,16 @@ export function PlacesScreen() {
         <h1>Места</h1>
         {editing ? (
           <button className="btn sm primary" onClick={finish}>Готово</button>
-        ) : list.length > 1 && (
-          <button className="btn sm ghost head-btn" onClick={() => setDraft(list)} aria-label="Поменять порядок мест">{Icon.sort} Порядок</button>
+        ) : (
+          <>
+            {list.length > 1 && (
+              <button className="btn sm ghost head-btn" onClick={() => setDraft(list)} aria-label="Поменять порядок мест">{Icon.sort} Порядок</button>
+            )}
+            {/* та же кнопка компании, что на «Встречах»: места — только этой компании */}
+            <button className="crew-btn" onClick={() => ui.open(<CrewPickerSheet />)} aria-label={`Компания «${acc.crew.name}» — сменить`}>
+              <CrewAvatar crew={acc.crew} size={38} />
+            </button>
+          </>
         )}
       </header>
       <CategorySeg value={cat} onChange={changeCat} />
