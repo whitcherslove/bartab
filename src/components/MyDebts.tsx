@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
 import { useAccount } from '../lib/account';
 import { useUI } from '../lib/ui';
 import { fetchMyDebts, type OpenDebt } from '../lib/remote';
+import { useCached } from '../lib/cached';
+import { Icon } from './Icons';
 import { fdate, money } from '../lib/format';
 import { catOf } from '../lib/categories';
 
@@ -16,18 +17,21 @@ const totals = (list: OpenDebt[]) => {
 export function MyDebts() {
   const acc = useAccount();
   const ui = useUI();
-  const [data, setData] = useState<{ waiting: OpenDebt[]; owing: OpenDebt[] } | null>(null);
-
-  useEffect(() => {
-    fetchMyDebts(acc.session.user.id).then(setData).catch(() => setData({ waiting: [], owing: [] }));
-  }, [acc.session.user.id]);
+  const uid = acc.session.user.id;
+  // сразу из запомненного, свежее — в фоне
+  const { data } = useCached(`debts:${uid}`, () => fetchMyDebts(uid));
 
   if (!data) return null;
   if (!data.waiting.length && !data.owing.length) {
     return (
       <>
         <h3>Переводы</h3>
-        <div className="list"><div className="empty">Ты со всеми в расчёте ✅</div></div>
+        <div className="all-done settled-all">
+          <div className="all-done-row">
+            <span className="done-ico" aria-hidden="true">{Icon.check}</span>
+            <span className="grow">Ты со всеми в расчёте</span>
+          </div>
+        </div>
       </>
     );
   }

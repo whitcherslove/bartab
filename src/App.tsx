@@ -1,6 +1,9 @@
 import { StoreProvider } from './lib/store';
 import { AccountGate, useAccount } from './lib/account';
 import { UIProvider, useUI, type View } from './lib/ui';
+import { load } from './lib/cached';
+import { fetchMyDebts, fetchMyVisits } from './lib/remote';
+import { isAdmin } from './lib/admin';
 import { Icon } from './components/Icons';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { getTabOrder, onTabsChange, TAB_ICONS, TAB_LABELS, type TabId } from './lib/tabs';
@@ -59,6 +62,17 @@ function Shell() {
   // ссылка из уведомления: открыть вкладку или встречу
   const acc = useAccount();
   const { go } = useUI();
+
+  // заранее, в фоне: профиль («Ждёшь / От тебя ждут», история) и админка открываются без задержки
+  const uid = acc.session.user.id;
+  useEffect(() => {
+    const t = setTimeout(() => {
+      load(`debts:${uid}`, () => fetchMyDebts(uid)).catch(() => {});
+      load(`visits:${uid}`, () => fetchMyVisits(uid)).catch(() => {});
+      load(`admin:${uid}`, isAdmin).catch(() => {});
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [uid]);
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     const tab = q.get('tab'), crew = q.get('crew'), event = q.get('event');

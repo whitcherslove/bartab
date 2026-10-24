@@ -831,3 +831,5 @@ html.kb-open .tabbar, html.kb-open .fab { display: none }
 .crew-chip.locked .cc-ico { background: var(--chip); border-color: var(--chip); color: var(--muted) }
 .crew-chip.locked .cc-ico svg { stroke-width: 2 }
 .crew-chip:active { background: var(--chip) }
+.settled-all { margin: 0 }
+.settled-all .all-done-row { cursor: default }

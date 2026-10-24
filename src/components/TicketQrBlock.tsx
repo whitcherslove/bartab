@@ -9,16 +9,20 @@ import { Icon } from './Icons';
 import { PhotoViewer, ViewerAsk } from './PhotoViewer';
 import { done } from '../lib/motion';
 
+const qrLists = new Map<string, TicketQr[]>();
+
 /** QR-коды для входа в кино: просто картинки, видны всем участникам */
 export function TicketQrBlock({ ev }: { ev: BarEvent }) {
   const { crewId } = useStore();
   const ui = useUI();
-  const [list, setList] = useState<TicketQr[] | null>(null);
+  // список QR встречи запоминаем — при повторном открытии видно сразу
+  const [list, setListState] = useState<TicketQr[] | null>(() => qrLists.get(ev.id) ?? null);
+  const setList = useCallback((l: TicketQr[]) => { qrLists.set(ev.id, l); setListState(l); }, [ev.id]);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(() => {
     listTicketQrs(crewId, ev.id).then(setList).catch(() => setList([]));
-  }, [crewId, ev.id]);
+  }, [crewId, ev.id, setList]);
   useEffect(() => { load(); }, [load]);
 
   const add = async (files: File[]) => {

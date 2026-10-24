@@ -15,6 +15,7 @@ import { CrewPickerSheet } from '../sheets/CrewPickerSheet';
 import { AddPersonSheet } from '../sheets/AddPersonSheet';
 import { InviteCards } from '../components/InviteCards';
 import { done } from '../lib/motion';
+import { peek, put } from '../lib/cached';
 
 export function CrewScreen() {
   const acc = useAccount();
@@ -24,11 +25,18 @@ export function CrewScreen() {
   const [crewName, setCrewName] = useState(acc.crew.name);
   const [avBusy, setAvBusy] = useState(false);
   // гости, которых пригласили и ждём ответа
-  const [pendingPeople, setPendingPeople] = useState<Set<string>>(new Set());
+  // запоминаем, чтобы пометки «ждём ответа» не появлялись с задержкой
+  const pendingKey = `pending:${acc.crew.id}`;
+  const [pendingList, setPendingList] = useState<{ key: string; ids: string[] }>(() => ({ key: pendingKey, ids: peek<string[]>(pendingKey) ?? [] }));
+  const pendingPeople = new Set(pendingList.key === pendingKey ? pendingList.ids : peek<string[]>(pendingKey) ?? []);
   const loadPending = useCallback(() => {
-    supabase.rpc('crew_pending_invites', { c: acc.crew.id }).then(({ data }) =>
-      setPendingPeople(new Set(((data ?? []) as { person_id: string | null }[]).map((r) => r.person_id ?? '').filter(Boolean))));
-  }, [acc.crew.id]);
+    supabase.rpc('crew_pending_invites', { c: acc.crew.id }).then(({ data, error }) => {
+      if (error) return;
+      const ids = ((data ?? []) as { person_id: string | null }[]).map((r) => r.person_id ?? '').filter(Boolean);
+      put(pendingKey, ids);
+      setPendingList({ key: pendingKey, ids });
+    });
+  }, [acc.crew.id, pendingKey]);
   useEffect(() => { loadPending(); }, [loadPending]);
 
   const changeAvatar = async (file: File | null) => {

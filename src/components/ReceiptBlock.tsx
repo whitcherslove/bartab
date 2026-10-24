@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { BarEvent } from '../lib/types';
 import { useUI } from '../lib/ui';
 import { done } from '../lib/motion';
-import { deleteReceipt, receiptUrls } from '../lib/remote';
+import { cachedReceiptUrl, deleteReceipt, receiptUrls } from '../lib/remote';
 import { humanError } from '../lib/supabase';
 import { Icon } from './Icons';
 import { ReceiptSheet } from '../sheets/ReceiptSheet';
@@ -27,7 +27,7 @@ function useReceiptUrls(paths: string[]) {
       .catch(() => {});
     return () => { alive = false; };
   }, [key]);
-  return urls.key === key ? urls.list : paths.map(() => '');
+  return urls.key === key ? urls.list : paths.map(cachedReceiptUrl); // запомненные ссылки — сразу
 }
 
 /** Блок чеков во встрече: большая кнопка загрузки или стопка чеков */

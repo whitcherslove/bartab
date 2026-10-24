@@ -8,6 +8,7 @@ import { ProfileStep } from '../screens/auth/ProfileStep';
 import { CrewSetup } from '../screens/auth/CrewSetup';
 import { Splash } from '../screens/auth/Splash';
 import { forgetView, startOn } from './ui';
+import { clearCached } from './cached';
 
 export type Profile = { id: string; name: string; tg: string; avatar_url: string; currency: string; place_order?: string[] };
 export type Invite = { id: string; crew_id: string; crew_name: string; crew_avatar: string; inviter_name: string };
@@ -202,6 +203,7 @@ export function AccountGate({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     clearCache();
+    clearCached();
     try { localStorage.removeItem(CREW_KEY); } catch { /* ignore */ }
   }, []);
 

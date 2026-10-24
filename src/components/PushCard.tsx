@@ -3,11 +3,14 @@ import { useUI } from '../lib/ui';
 import { disablePush, enablePush, pushState, type PushState } from '../lib/push';
 import { humanError } from '../lib/supabase';
 import { done } from '../lib/motion';
+import { peek, put } from '../lib/cached';
 
 /** Включить / выключить пуш-уведомления на этом устройстве */
 export function PushCard() {
   const ui = useUI();
-  const [st, setSt] = useState<PushState | null>(null);
+  // последнее известное состояние — сразу, чтобы карточка не появлялась с задержкой
+  const [st, setStState] = useState<PushState | null>(() => peek<PushState>('push-state') ?? null);
+  const setSt = (s: PushState) => { put('push-state', s); setStState(s); };
   const [busy, setBusy] = useState(false);
   useEffect(() => { pushState().then(setSt).catch(() => setSt('unsupported')); }, []);
   if (!st || st === 'no-key') return null;

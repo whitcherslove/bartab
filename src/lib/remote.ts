@@ -440,9 +440,8 @@ export async function listTicketQrs(crewId: string, eventId: string): Promise<Ti
   if (error) throw error;
   const files = (data ?? []).filter((f) => f.name && !f.name.startsWith('.'));
   if (!files.length) return [];
-  const { data: signed, error: e2 } = await supabase.storage.from('receipts').createSignedUrls(files.map((f) => `${folder}/${f.name}`), 60 * 60);
-  if (e2) throw e2;
-  return files.map((f, i) => ({ name: f.name, url: signed?.[i]?.signedUrl ?? '' })).filter((x) => x.url);
+  const urls = await signReceipts(files.map((f) => `${folder}/${f.name}`));
+  return files.map((f, i) => ({ name: f.name, url: urls[i] })).filter((x) => x.url);
 }
 
 export async function addTicketQrs(crewId: string, eventId: string, files: File[]) {
@@ -473,12 +472,29 @@ export async function deleteReceipt(eventId: string, r: Receipt, itemIds: string
   if (r.path) await supabase.from('events').update({ receipt_path: '' }).eq('id', eventId).eq('receipt_path', r.path);
 }
 
+// Временные ссылки живут час — запоминаем на 50 минут: фото показываются сразу,
+// а одинаковая ссылка даёт браузеру взять картинку из своего кэша, без повторной загрузки.
+const signedCache = new Map<string, { url: string; until: number }>();
+/** Запомненная ссылка на файл в receipts или '' */
+export function cachedReceiptUrl(path: string) {
+  const c = signedCache.get(path);
+  return c && c.until > Date.now() ? c.url : '';
+}
+async function signReceipts(paths: string[]) {
+  const missing = [...new Set(paths.filter((p) => p && !cachedReceiptUrl(p)))];
+  if (missing.length) {
+    const { data, error } = await supabase.storage.from('receipts').createSignedUrls(missing, 60 * 60);
+    if (error) throw error;
+    const until = Date.now() + 50 * 60_000;
+    missing.forEach((p) => { const url = data?.find((d) => d.path === p)?.signedUrl; if (url) signedCache.set(p, { url, until }); });
+  }
+  return paths.map(cachedReceiptUrl);
+}
+
 /** Временные ссылки на фото чеков (по порядку путей) */
 export async function receiptUrls(paths: string[]): Promise<string[]> {
   if (!paths.length) return [];
-  const { data, error } = await supabase.storage.from('receipts').createSignedUrls(paths, 60 * 60);
-  if (error) throw error;
-  return paths.map((p) => data?.find((d) => d.path === p)?.signedUrl ?? '');
+  return signReceipts(paths);
 }
 
 // ---------- Приглашения внутри приложения ----------

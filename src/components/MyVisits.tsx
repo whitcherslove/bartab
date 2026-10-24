@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAccount } from '../lib/account';
 import { useUI } from '../lib/ui';
+import { useCached } from '../lib/cached';
 import { fetchMyVisits, type Visit } from '../lib/remote';
 import { fdate } from '../lib/format';
 import { catOf } from '../lib/categories';
@@ -78,12 +79,9 @@ function HistoryLog({ visits }: { visits: Visit[] }) {
 export function MyVisits() {
   const acc = useAccount();
   const ui = useUI();
-  const [visits, setVisits] = useState<Visit[] | null>(null);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    fetchMyVisits(acc.session.user.id).then(setVisits).catch(() => setError(true));
-  }, [acc.session.user.id]);
+  const uid = acc.session.user.id;
+  // сразу из запомненного, свежее — в фоне
+  const { data: visits, error } = useCached<Visit[]>(`visits:${uid}`, () => fetchMyVisits(uid));
 
   if (error) return <div className="list"><div className="empty">Не удалось загрузить историю. Проверь интернет.</div></div>;
   if (!visits) return <div className="list"><div className="empty">Загружаю…</div></div>;

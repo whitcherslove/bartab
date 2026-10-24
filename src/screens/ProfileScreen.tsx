@@ -17,6 +17,7 @@ import { QrSheet } from '../sheets/QrSheet';
 import { PhotoChoiceSheet } from '../components/PhotoPick';
 import { getHome, getTabOrder, setHome, setTabOrder, TAB_ICONS, TAB_LABELS, type TabId } from '../lib/tabs';
 import { done } from '../lib/motion';
+import { load, peek } from '../lib/cached';
 import { CurrencyPicker, currencyLabel } from '../components/Pickers';
 
 const SECTION_KEY = 'bartab-profile-section';
@@ -30,7 +31,7 @@ export function ProfileScreen() {
   const [busy, setBusy] = useState(false);
   const [theme, setThemeState] = useState<Theme>(getTheme);
   const [accent, setAccentState] = useState<Accent>(getAccent);
-  const [admin, setAdmin] = useState(false);
+  const [admin, setAdmin] = useState(() => peek<boolean>(`admin:${acc.session.user.id}`) ?? false);
   // открытая вкладка (Профиль / Настройки) переживает перерисовку экрана —
   // например, смена валюты пересоздаёт экраны, и раньше выкидывало в «Профиль»
   const [section, setSectionState] = useState<'me' | 'settings'>(() => {
@@ -41,7 +42,9 @@ export function ProfileScreen() {
     try { sessionStorage.setItem(SECTION_KEY, v); } catch { /* ignore */ }
   };
   const swipe = useSwipeTabs(['me', 'settings'] as const, section, setSection);
-  useEffect(() => { isAdmin().then(setAdmin); }, []);
+  // админ или нет — запоминаем, чтобы кнопка «Админка» не появлялась с задержкой
+  const adminKey = `admin:${acc.session.user.id}`;
+  useEffect(() => { load(adminKey, isAdmin).then(setAdmin).catch(() => {}); }, [adminKey]);
   const [order, setOrderState] = useState<TabId[]>(getTabOrder);
   const [home, setHomeState] = useState<TabId>(getHome);
 
