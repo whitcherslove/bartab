@@ -3,7 +3,9 @@ import { useStore } from '../lib/store';
 import { useUI } from '../lib/ui';
 import { hueOf, uid } from '../lib/format';
 import { Icon } from '../components/Icons';
-import { PlaceCrews } from '../components/PlaceCrews';
+import { CrewChecklist, PlaceCrews } from '../components/PlaceCrews';
+import { setPlaceLink } from '../lib/remote';
+import { useAccount } from '../lib/account';
 import { photoStyle } from '../components/common';
 import { MapButtons, mapSource } from '../components/MapButtons';
 import { CategorySeg } from '../components/common';
@@ -34,7 +36,10 @@ function resize(file: File): Promise<string> {
 
 /** onCreated — новое место создано из встречи: вернуть его туда, а не просто закрыть */
 export function PlaceSheet({ id, category: initialCat, onCreated }: { id?: string; category?: Category; onCreated?: (id: string) => void }) {
-  const { state, update, crewId } = useStore();
+  const { state, update, crewId, sync, refresh } = useStore();
+  const acc = useAccount();
+  // новое место: в каких компаниях оно будет — по умолчанию текущая
+  const [crewSel, setCrewSel] = useState<string[]>([crewId]);
   const ui = useUI();
   const place = id ? state.places.find((p) => p.id === id) : undefined;
   const [name, setName] = useState(place?.name ?? '');
@@ -150,6 +155,25 @@ export function PlaceSheet({ id, category: initialCat, onCreated }: { id?: strin
       if (p) Object.assign(p, data);
       else d.places.push({ id: placeId, hue: hueOf(n), ...data });
     });
+    if (!id && crewSel.join() !== crewId) {
+      // место создаётся в текущей компании; остальные привязки — после того, как оно сохранится
+      setBusy(true);
+      try {
+        await sync();
+        for (const c of crewSel) if (c !== crewId) await setPlaceLink(placeId, c, true);
+        if (!crewSel.includes(crewId)) {
+          await setPlaceLink(placeId, crewId, false);
+          await refresh();
+          const names = acc.crews.filter((c) => crewSel.includes(c.id)).map((c) => `«${c.name}»`).join(', ');
+          setBusy(false);
+          ui.close();
+          ui.toast(`Место добавлено в ${names}`); // в текущей его не будет — говорим, где искать
+          return;
+        }
+      } catch (e) {
+        ui.fail(humanError(e));
+      }
+    }
     setBusy(false);
     if (id) { setEditing(false); setSearchOn(false); done(); return; }
     if (onCreated) { onCreated(placeId); return; }
@@ -270,6 +294,9 @@ export function PlaceSheet({ id, category: initialCat, onCreated }: { id?: strin
         <div className="field"><span>Показать на карте</span><MapButtons place={preview} /></div>
       )}
 
+
+      {/* из встречи место всё равно попадёт в её компанию — там выбор не показываем */}
+      {!id && !onCreated && <CrewChecklist selected={crewSel} onChange={setCrewSel} />}
 
       <div className="sheet-btns">
         {id && <button className="btn" onClick={cancelEdit} disabled={busy}>Отмена</button>}

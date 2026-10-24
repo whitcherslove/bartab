@@ -79,3 +79,34 @@ export function PlaceCrews({ placeId }: { placeId: string }) {
     </div>
   );
 }
+
+/** Выбор компаний для нового места — как блок в карточке, по умолчанию отмечена текущая */
+export function CrewChecklist({ selected, onChange }: { selected: string[]; onChange: (ids: string[]) => void }) {
+  const acc = useAccount();
+  const ui = useUI();
+  if (acc.crews.length < 2) return null;
+  const toggle = (id: string) => {
+    const on = selected.includes(id);
+    if (on && selected.length === 1) { ui.fail('Выбери хотя бы одну компанию'); return; }
+    onChange(on ? selected.filter((x) => x !== id) : [...selected, id]);
+  };
+  return (
+    <div className="place-crews">
+      <h3>Компании <small>где будет видно это место</small></h3>
+      <div className="list">
+        {acc.crews.map((c) => {
+          const on = selected.includes(c.id);
+          return (
+            <button key={c.id} type="button" className={'row place-crew' + (on ? ' on' : '')} onClick={() => toggle(c.id)} aria-pressed={on}>
+              <CrewAvatar crew={c} size={34} />
+              <div className="grow">
+                <div className="t">{c.name}{c.id === acc.crew.id && <span className="muted"> · текущая</span>}</div>
+              </div>
+              <span className="pc-mark" aria-hidden="true">{on ? Icon.check : null}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
