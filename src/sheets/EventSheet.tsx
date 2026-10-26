@@ -58,7 +58,7 @@ export function EventSheet({ id, draft }: { id?: string; draft?: Draft }) {
     } else {
       const newId = uid();
       update((d) => {
-        d.events.push({ id: newId, date, placeId, members, currency, category: cat, film: cat === 'cinema' ? film.trim() : '', sessionTime: cat === 'cinema' ? sessionTime.trim() : '', hall: cat === 'cinema' ? hall.trim() : '', tips: 0, tipsMode: 'sum', payer: '', settled: [], status: '', items: [] });
+        d.events.push({ id: newId, createdAt: new Date().toISOString(), date, placeId, members, currency, category: cat, film: cat === 'cinema' ? film.trim() : '', sessionTime: cat === 'cinema' ? sessionTime.trim() : '', hall: cat === 'cinema' ? hall.trim() : '', tips: 0, tipsMode: 'sum', payer: '', settled: [], status: '', items: [] });
       });
       ui.go({ screen: 'event', id: newId });
       done();

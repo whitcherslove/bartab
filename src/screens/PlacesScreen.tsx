@@ -5,7 +5,7 @@ import { useAccount } from '../lib/account';
 import { humanError } from '../lib/supabase';
 import { CATEGORIES, catOf, DEFAULT_CATEGORY, type Category } from '../lib/categories';
 import { useSwipeTabs } from '../lib/swipe';
-import { mergeOrder, moveItem, sortPlaces } from '../lib/placeOrder';
+import { mergeOrder, moveItem, sortPlaces, withForeign } from '../lib/placeOrder';
 import { done } from '../lib/motion';
 import { CategorySeg, CrewAvatar, Fab, PlacePhoto } from '../components/common';
 import { CrewPickerSheet } from '../sheets/CrewPickerSheet';
@@ -37,8 +37,10 @@ export function PlacesScreen() {
 
   const commit = async (next: Place[] | null = draft) => {
     if (!next) return;
-    const ids = mergeOrder(all.map((p) => p.id), next.map((p) => p.id));
-    if (ids.join() === all.map((p) => p.id).join()) return;
+    const merged = mergeOrder(all.map((p) => p.id), next.map((p) => p.id));
+    if (merged.join() === all.map((p) => p.id).join()) return;
+    // места других компаний (их здесь не видно) сохраняют свой порядок
+    const ids = withForeign(merged, all.map((p) => p.id), order);
     try { await acc.savePlaceOrder(ids); done(); } catch (e) { ui.fail(humanError(e)); }
   };
   const finish = () => { commit(); setDraft(null); };

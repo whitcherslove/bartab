@@ -10,7 +10,7 @@ import { Splash } from '../screens/auth/Splash';
 import { forgetView, startOn } from './ui';
 import { clearCached } from './cached';
 
-export type Profile = { id: string; name: string; tg: string; avatar_url: string; currency: string; place_order?: string[] };
+export type Profile = { id: string; name: string; tg: string; avatar_url: string; currency: string; place_order?: string[]; event_order?: string[] };
 export type Invite = { id: string; crew_id: string; crew_name: string; crew_avatar: string; inviter_name: string };
 export type Crew = { id: string; name: string; invite_code: string; tg_chat_id: string | null; tg_chat_name: string; tg_chat_by: string; avatar_url: string };
 
@@ -26,6 +26,8 @@ type Account = {
   saveCurrency: (code: string) => Promise<void>;
   /** личный порядок мест */
   savePlaceOrder: (ids: string[]) => Promise<void>;
+  /** личный порядок встреч */
+  saveEventOrder: (ids: string[]) => Promise<void>;
   invites: Invite[];
   respondInvite: (id: string, accept: boolean) => Promise<void>;
   signOut: () => Promise<void>;
@@ -36,11 +38,13 @@ const Ctx = createContext<Account | null>(null);
 
 /** Профиль; до миграции bartab-place-order — без порядка мест */
 async function selectProfile(id: string) {
-  const res = await supabase.from('profiles').select('id, name, tg, avatar_url, currency, place_order').eq('id', id).maybeSingle();
-  if (res.error && /place_order/.test(res.error.message ?? '')) {
-    return supabase.from('profiles').select('id, name, tg, avatar_url, currency').eq('id', id).maybeSingle();
+  // новые поля могут ещё не существовать (миграции не запущены) — пробуем попроще
+  const base = 'id, name, tg, avatar_url, currency';
+  for (const sel of [`${base}, place_order, event_order`, `${base}, place_order`, base]) {
+    const res = await supabase.from('profiles').select(sel).eq('id', id).maybeSingle();
+    if (!res.error || !/place_order|event_order/.test(res.error.message ?? '')) return res as unknown as { data: Profile | null; error: typeof res.error };
   }
-  return res;
+  return supabase.from('profiles').select(base).eq('id', id).maybeSingle();
 }
 
 const CREW_KEY = 'bartab-crew';
@@ -171,6 +175,14 @@ export function AccountGate({ children }: { children: ReactNode }) {
     if (e) throw e;
   }, [userId]);
 
+  /** Личный порядок встреч */
+  const saveEventOrder = useCallback(async (ids: string[]) => {
+    if (!userId) return;
+    setProfile((pr) => (pr ? { ...pr, event_order: ids } : pr));
+    const { error: e } = await supabase.from('profiles').update({ event_order: ids }).eq('id', userId);
+    if (e) throw e;
+  }, [userId]);
+
   const saveCurrency = useCallback(async (currency: string) => {
     if (!userId) return;
     const { error: e } = await supabase.from('profiles').update({ currency }).eq('id', userId);
@@ -220,7 +232,7 @@ export function AccountGate({ children }: { children: ReactNode }) {
   const inviteLink = `${window.location.origin}/?join=${crew.invite_code}`;
 
   return (
-    <Ctx.Provider value={{ session, profile, crews, crew, setCrewId, reload, saveProfile, leaveCrew, saveCurrency, savePlaceOrder, invites, respondInvite, signOut, inviteLink }}>
+    <Ctx.Provider value={{ session, profile, crews, crew, setCrewId, reload, saveProfile, leaveCrew, saveCurrency, savePlaceOrder, saveEventOrder, invites, respondInvite, signOut, inviteLink }}>
       {children}
     </Ctx.Provider>
   );

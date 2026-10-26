@@ -8,12 +8,34 @@ import { useAccount } from '../lib/account';
 import { CrewPickerSheet } from '../sheets/CrewPickerSheet';
 import { EventSheet } from '../sheets/EventSheet';
 import { catOf, eventCategory } from '../lib/categories';
+import { useState } from 'react';
+import { humanError } from '../lib/supabase';
+import { moveItem, sortEvents, withForeign } from '../lib/placeOrder';
+import { ReorderList } from '../components/ReorderList';
+import { Icon } from '../components/Icons';
+import type { BarEvent } from '../lib/types';
 
 export function EventsScreen() {
   const { state, update } = useStore();
   const ui = useUI();
   const acc = useAccount();
-  const list = [...state.events].sort((a, b) => b.date.localeCompare(a.date));
+  // новые сверху; дальше — личный порядок (кнопка «Порядок»)
+  const order = acc.profile.event_order ?? [];
+  const list = sortEvents(state.events, order);
+
+  // режим «Порядок»: черновик
+  const [draft, setDraft] = useState<BarEvent[] | null>(null);
+  const editing = draft !== null;
+  const finish = async () => {
+    const next = draft;
+    setDraft(null);
+    if (!next || next.map((e) => e.id).join() === list.map((e) => e.id).join()) return;
+    try {
+      await acc.saveEventOrder(withForeign(next.map((e) => e.id), list.map((e) => e.id), order));
+      done();
+    } catch (e) { ui.fail(humanError(e)); }
+  };
+  const evTitle = (ev: BarEvent) => state.places.find((p) => p.id === ev.placeId)?.name ?? 'Без места';
 
   // меню карточки: удалить встречу
   const menu = (id: string, title: string, date: string) =>
@@ -42,19 +64,49 @@ export function EventsScreen() {
     <>
       <header className="top">
         <h1>Встречи</h1>
-        <button className="crew-btn" onClick={() => ui.open(<CrewPickerSheet />)} aria-label={`Компания «${acc.crew.name}» — сменить`}>
-          <CrewAvatar crew={acc.crew} size={38} />
-        </button>
+        {editing ? (
+          <button className="btn sm primary" onClick={finish}>Готово</button>
+        ) : (
+          <>
+            {list.length > 1 && (
+              <button className="btn sm ghost head-btn" onClick={() => setDraft(list)} aria-label="Поменять порядок встреч">{Icon.sort} Порядок</button>
+            )}
+            <button className="crew-btn" onClick={() => ui.open(<CrewPickerSheet />)} aria-label={`Компания «${acc.crew.name}» — сменить`}>
+              <CrewAvatar crew={acc.crew} size={38} />
+            </button>
+          </>
+        )}
       </header>
-      <Fab label="Встреча" onClick={() => ui.open(<EventSheet />)} />
-      {list.length === 0 && (
+      {editing && (
+        <>
+          <p className="hint reorder-hint">Тяни за ⠿, чтобы поменять порядок. Он только твой — у остальных свой. Новые встречи всегда появляются сверху.</p>
+          <ReorderList
+            items={draft}
+            onMove={(from, to) => setDraft(moveItem(draft, from, to))}
+            render={(ev) => {
+              const place = state.places.find((p) => p.id === ev.placeId);
+              return (
+                <>
+                  <PlacePhoto place={coverPlace(place, ev)} className="place-thumb" />
+                  <div className="grow">
+                    <div className="t"><span className="cat-emoji" aria-hidden="true">{catOf(eventCategory(ev, state.places)).emoji}</span> {evTitle(ev)}</div>
+                    <div className="s">{fdate(ev.date)} · {money(evWithTips(ev), ev.currency)}</div>
+                  </div>
+                </>
+              );
+            }}
+          />
+        </>
+      )}
+      {!editing && <Fab label="Встреча" onClick={() => ui.open(<EventSheet />)} />}
+      {!editing && list.length === 0 && (
         <div className="empty">
           Пока ни одной встречи.
           <br /><br />
           <button className="btn primary" onClick={() => ui.open(<EventSheet />)}>Создать первую</button>
         </div>
       )}
-      {list.map((ev) => {
+      {!editing && list.map((ev) => {
         const place = state.places.find((p) => p.id === ev.placeId);
         return (
           <div key={ev.id} className="ev-card" role="button" tabIndex={0} onClick={() => ui.go({ screen: 'event', id: ev.id })} onKeyDown={(e) => e.key === 'Enter' && ui.go({ screen: 'event', id: ev.id })}>

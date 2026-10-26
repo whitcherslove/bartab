@@ -14,12 +14,13 @@ type ShareRow = { person_id: string; qty: number };
 type ItemRow = { id: string; name: string; price: number | string; qty: number; split_mode: 'equal' | 'qty'; created_at: string; receipt_id?: string | null; item_shares: ShareRow[] };
 type ReceiptRow = { id: string; path: string; kind: 'receipt' | 'tickets'; status: string; created_at: string };
 type EventRow = {
+  created_at?: string;
   id: string; place_id: string | null; date: string; tips: number | string; tips_mode: 'sum' | 'pct'; currency: string;
   payer_id: string | null; status: string; receipt_path: string; category?: 'bar' | 'cinema' | 'other'; film?: string; session_time?: string; hall?: string; event_members: { person_id: string; settled: boolean }[]; items: ItemRow[]; receipts?: ReceiptRow[];
 };
 type ChatRow = { id: string; name: string; chat_id: string };
 
-const EVENT_SELECT = 'id, place_id, date, tips, tips_mode, currency, category, payer_id, status, receipt_path, film, session_time, hall, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, receipt_id, item_shares(person_id, qty)), receipts(id, path, kind, status, created_at)';
+const EVENT_SELECT = 'id, created_at, place_id, date, tips, tips_mode, currency, category, payer_id, status, receipt_path, film, session_time, hall, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, receipt_id, item_shares(person_id, qty)), receipts(id, path, kind, status, created_at)';
 // без чеков: для «Ждёшь / От тебя ждут» и до миграции bartab-receipts
 const EVENT_SELECT_OLD = 'id, place_id, date, tips, tips_mode, currency, category, payer_id, status, receipt_path, film, session_time, hall, event_members(person_id, settled), items(id, name, price, qty, split_mode, created_at, item_shares(person_id, qty))';
 
@@ -27,13 +28,20 @@ const EVENT_SELECT_OLD = 'id, place_id, date, tips, tips_mode, currency, categor
 async function selectEvents(crewId: string) {
   const q = (sel: string) => supabase.from('events').select(sel).eq('crew_id', crewId).order('date', { ascending: false });
   const res = await q(EVENT_SELECT);
-  if (res.error && /receipt/i.test(res.error.message ?? '')) return q(EVENT_SELECT_OLD);
+  if (!res.error) return res;
+  // до миграции bartab-event-order — без created_at; до bartab-receipts — без чеков
+  if (/created_at/.test(res.error.message ?? '')) {
+    const r2 = await q(EVENT_SELECT.replace('id, created_at,', 'id,'));
+    if (!r2.error || !/receipt/i.test(r2.error.message ?? '')) return r2;
+  }
+  if (/receipt/i.test(res.error.message ?? '') || /created_at/.test(res.error.message ?? '')) return q(EVENT_SELECT_OLD);
   return res;
 }
 
 function mapEvent(e: EventRow, byPeopleOrder: (a: string, b: string) => number = () => 0): BarEvent {
   return {
     id: e.id,
+    ...(e.created_at ? { createdAt: e.created_at } : {}),
     date: e.date,
     placeId: e.place_id ?? '',
     tips: Number(e.tips) || 0,
