@@ -18,6 +18,8 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
+        // чтобы браузер мог проверить, стоит ли приложение на телефоне на самом деле
+        related_applications: [{ platform: 'webapp', url: '/manifest.webmanifest' }],
         orientation: 'portrait',
         background_color: '#121917',
         theme_color: '#1D2623',

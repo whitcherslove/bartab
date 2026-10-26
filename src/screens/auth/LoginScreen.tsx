@@ -2,14 +2,18 @@ import { useState } from 'react';
 import { humanError, supabase } from '../../lib/supabase';
 import { pendingJoinCode } from '../../lib/account';
 import { InstallAction } from '../../components/InstallCard';
-import { isStandalone } from '../../lib/install';
+import { isIOS, isStandalone } from '../../lib/install';
+
+// Установленное приложение на iPhone живёт отдельно от Safari: ссылка из письма и вход через Google
+// открываются в Safari и входят туда, а не в приложение. Поэтому там — только код из письма.
+const iosApp = () => isIOS() && isStandalone();
 import { Brand } from '../../components/common';
 
 export function LoginScreen() {
   const [email, setEmail] = useState('');
   const [sentTo, setSentTo] = useState('');
   const [code, setCode] = useState('');
-  const [showCode, setShowCode] = useState(false);
+  const [showCode, setShowCode] = useState(iosApp);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const invited = !!pendingJoinCode();
@@ -82,20 +86,24 @@ export function LoginScreen() {
 
       {!sentTo ? (
         <form className="auth-card" onSubmit={(ev) => { ev.preventDefault(); send(); }}>
-          <button type="button" className="btn block google-btn" onClick={google} disabled={busy}>Войти через Google</button>
-          <div className="or"><span>или по почте</span></div>
+          {!iosApp() && (
+            <>
+              <button type="button" className="btn block google-btn" onClick={google} disabled={busy}>Войти через Google</button>
+              <div className="or"><span>или по почте</span></div>
+            </>
+          )}
           <label className="field">
             <span>Почта</span>
             <input type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
           </label>
           {error && <p className="auth-err">{error}</p>}
-          <button className="btn primary block" disabled={busy}>{busy ? 'Отправляю…' : 'Прислать ссылку для входа'}</button>
-          <p className="hint">Пароль не нужен: пришлём письмо со ссылкой для входа.</p>
+          <button className="btn primary block" disabled={busy}>{busy ? 'Отправляю…' : iosApp() ? 'Прислать код для входа' : 'Прислать ссылку для входа'}</button>
+          <p className="hint">{iosApp() ? 'Пароль не нужен: пришлём письмо с кодом — введи его здесь.' : 'Пароль не нужен: пришлём письмо со ссылкой для входа.'}</p>
         </form>
       ) : (
         <form className="auth-card" onSubmit={(ev) => { ev.preventDefault(); verify(); }}>
           <p style={{ margin: '0 0 6px', fontWeight: 600 }}>Проверь почту 📬</p>
-          <p style={{ margin: '0 0 14px' }}>Письмо отправлено на <b>{sentTo}</b>. Открой его на этом устройстве и нажми ссылку для входа.</p>
+          <p style={{ margin: '0 0 14px' }}>Письмо отправлено на <b>{sentTo}</b>. {iosApp() ? 'Скопируй из него код и введи ниже — ссылку не нажимай: она откроется в Safari, а не здесь.' : 'Открой его на этом устройстве и нажми ссылку для входа.'}</p>
           {showCode ? (
             <>
               <label className="field">

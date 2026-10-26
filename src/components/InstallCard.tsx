@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useOptionalUI } from '../lib/ui';
 import {
-  canPrompt, detectBrowser, dismissInstall, isInAppBrowser, isInstalled, isIOS, isPhone, isStandalone,
+  canPrompt, detectBrowser, dismissInstall, isInAppBrowser, isInstalled, isInstalling, isIOS, isPhone, isStandalone,
   onInstallChange, promptInstall,
 } from '../lib/install';
 
@@ -14,7 +14,11 @@ function useInstallState() {
 /** Шаги для браузеров без кнопки установки */
 export function installSteps(): string[] {
   const b = detectBrowser();
-  if (b === 'safari') return ['Нажми «Поделиться» внизу Safari (квадрат со стрелкой вверх)', 'Выбери «На экран „Домой“» → «Добавить»', 'Открой BarTab с иконки и войди ещё раз — iPhone хранит данные приложения отдельно'];
+  if (b === 'safari') return [
+    'Нажми «Поделиться» внизу Safari (квадрат со стрелкой вверх)',
+    'Пролистай вниз и выбери «На экран „Домой“» → «Добавить»',
+    'Открой BarTab с иконки и войди ещё раз по коду из письма — iPhone хранит данные приложения отдельно от Safari',
+  ];
   if (b === 'chrome-ios' || (isIOS() && b !== 'other')) return ['Нажми «Поделиться» в адресной строке', 'Выбери «На экран „Домой“» → «Добавить»', 'Если такого пункта нет — открой ссылку в Safari'];
   if (b === 'yandex') return ['Нажми меню браузера (три точки или полоски)', 'Выбери «Добавить ярлык» или «Установить приложение»'];
   if (b === 'samsung') return ['Нажми меню ☰ внизу', 'Выбери «Добавить страницу на» → «Главный экран»'];
@@ -23,7 +27,14 @@ export function installSteps(): string[] {
   return ['Нажми меню ⋮ в правом верхнем углу', 'Выбери «Установить приложение» или «Добавить на главный экран»'];
 }
 
-const Steps = () => <ol className="steps" style={{ margin: 0 }}>{installSteps().map((t) => <li key={t}>{t}</li>)}</ol>;
+const Steps = () => (
+  <>
+    <ol className="steps" style={{ margin: 0 }}>{installSteps().map((t) => <li key={t}>{t}</li>)}</ol>
+    {isIOS() && (
+      <span className="install-note">Нет пункта «На экран „Домой“»? Значит, ссылка открыта внутри Telegram или другого приложения — нажми значок Safari или «⋯» → «Открыть в Safari».</span>
+    )}
+  </>
+);
 
 /**
  * Одно действие установки, в зависимости от телефона:
@@ -36,8 +47,20 @@ export function InstallAction({ onDone, doneText }: { onDone?: () => void; doneT
   const [justInstalled, setJustInstalled] = useState(false);
   const finish = (dismiss: boolean) => { if (dismiss) dismissInstall(); onDone?.(); };
 
-  // уже установлено (в том числе только что)
-  if (justInstalled || isInstalled()) {
+  // согласились в окне установки — ждём, пока телефон поставит иконку
+  if ((justInstalled || isInstalling()) && !isInstalled()) {
+    return (
+      <div className="install-help">
+        <b>Устанавливается…</b>
+        <span>Иконка BarTab появится на экране через несколько секунд.</span>
+        <span className="install-note">Не появилась? На Xiaomi, Redmi, Honor и некоторых других телефонах: Настройки → Приложения → Chrome → Разрешения → «Ярлыки на рабочем столе» — разреши и установи ещё раз.</span>
+        {onDone && <button className="btn primary block" onClick={() => finish(false)}>Понятно</button>}
+      </div>
+    );
+  }
+
+  // уже установлено
+  if (isInstalled()) {
     return (
       <div className="install-help">
         <b>Готово! BarTab на экране телефона ✅</b>

@@ -516,7 +516,8 @@ export async function fetchInviteCandidates(currentCrew: string, crewIds: string
     others.length
       ? supabase.from('people').select('id, name, avatar_url, user_id, crew_id').in('crew_id', others).not('user_id', 'is', null).eq('archived', false)
       : Promise.resolve({ data: [], error: null }),
-    supabase.from('people').select('user_id').eq('crew_id', currentCrew).not('user_id', 'is', null),
+    // удалённые из компании (в архиве) — уже не здесь, их можно позвать снова
+    supabase.from('people').select('user_id').eq('crew_id', currentCrew).not('user_id', 'is', null).eq('archived', false),
     supabase.rpc('crew_pending_invites', { c: currentCrew }),
   ]);
   if (peopleRes.error) throw peopleRes.error;

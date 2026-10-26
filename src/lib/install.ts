@@ -15,8 +15,21 @@ const set = (k: string, v: string) => { try { localStorage.setItem(k, v); } catc
 /** Отметить, что приложение установлено — больше нигде не предлагаем */
 export function markInstalled() { set(INSTALLED_KEY, '1'); deferred = null; notify(); }
 
-window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e as InstallEvent; notify(); });
-window.addEventListener('appinstalled', () => markInstalled());
+// Chrome присылает «можно установить» только если приложения на телефоне НЕТ.
+// Значит, старая отметка «установлено» неверна (установка не дошла до конца или приложение удалили) — снимаем её.
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferred = e as InstallEvent;
+  try { localStorage.removeItem(INSTALLED_KEY); } catch { /* ignore */ }
+  installing = false;
+  notify();
+});
+// а это — установка действительно завершилась
+window.addEventListener('appinstalled', () => { installing = false; markInstalled(); });
+
+/** Согласились в окне установки, но телефон ещё не подтвердил, что иконка появилась */
+let installing = false;
+export const isInstalling = () => installing;
 
 export const canPrompt = () => !!deferred;
 export const onInstallChange = (fn: () => void) => { listeners.add(fn); return () => { listeners.delete(fn); }; };
@@ -28,15 +41,22 @@ export async function promptInstall(): Promise<boolean> {
   await e.prompt();
   const { outcome } = await e.userChoice;
   deferred = null;
-  if (outcome === 'accepted') markInstalled(); else notify();
+  // «установлено» отмечаем только по сигналу appinstalled — согласие ещё не значит, что иконка появилась
+  if (outcome === 'accepted') installing = true;
+  notify();
   return outcome === 'accepted';
 }
 
 export const isStandalone = () =>
   window.matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true;
 export const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-/** Браузер внутри Telegram/Instagram/VK и т. п. — там установить нельзя */
-export const isInAppBrowser = () => /Telegram|Instagram|FBAN|FBAV|VKClient|\bLine\b|Twitter/i.test(navigator.userAgent);
+/** Браузер внутри Telegram/Instagram/VK и т. п. — там установить нельзя.
+ *  На iPhone встроенные браузеры часто не пишут о себе — их выдаёт отсутствие «Safari» в описании браузера. */
+export const isInAppBrowser = () => {
+  const ua = navigator.userAgent;
+  if (/Telegram|Instagram|FBAN|FBAV|VKClient|\bLine\b|Twitter/i.test(ua)) return true;
+  return /iphone|ipad|ipod/i.test(ua) && !/Safari\//i.test(ua);
+};
 
 export type Browser = 'yandex' | 'samsung' | 'firefox' | 'edge' | 'chrome' | 'safari' | 'chrome-ios' | 'other';
 
@@ -67,3 +87,11 @@ export const shouldOfferInstall = () => isPhone() && !isInstalled() && !isDismis
 
 // запустили с иконки — запоминаем (на Android хранилище общее с браузером)
 if (isStandalone()) set(INSTALLED_KEY, '1');
+
+// Android: проверяем у телефона, стоит ли приложение на самом деле (если браузер умеет отвечать)
+type RelatedApps = { getInstalledRelatedApps?: () => Promise<unknown[]> };
+if (!isStandalone() && get(INSTALLED_KEY) === '1' && (navigator as RelatedApps).getInstalledRelatedApps) {
+  (navigator as RelatedApps).getInstalledRelatedApps!()
+    .then((apps) => { if (!apps.length) { try { localStorage.removeItem(INSTALLED_KEY); } catch { /* ignore */ } notify(); } })
+    .catch(() => {});
+}
